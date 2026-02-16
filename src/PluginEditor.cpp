@@ -34,6 +34,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
             envelopeListSection.updateSelectedEnvelope(data);
             envelopeGraph.repaint();
         };
+    envelopeListSection.selectEnvelope(0);
 
     addAndMakeVisible(envelopeGraph);
 

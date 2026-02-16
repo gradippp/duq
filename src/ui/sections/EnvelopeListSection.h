@@ -14,6 +14,7 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    void selectEnvelope(int i);
     std::function<void(EnvelopeData&)> onEnvelopeSelected;
     void updateSelectedEnvelope(const EnvelopeData& data);
 
@@ -22,7 +23,6 @@ private:
     juce::Component rowContainer;
     juce::TextButton addButton;
     juce::OwnedArray<EnvelopeRowComponent> rows;
-    void selectEnvelope(int i);
     void removeRow(EnvelopeRowComponent* row);
 
     std::vector<EnvelopeData> envelopes;
