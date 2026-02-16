@@ -15,17 +15,29 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(600, 400);
+
+    knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
+
+    controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+    controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+    controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+
+    setSize(900, 600);
     setResizable(true, true);
+    setResizeLimits(600, 400, 900, 600);
 
     tooltipWindow.setMillisecondsBeforeTipAppears(500);
 
     addAndMakeVisible(header);
     addAndMakeVisible(envelopeListSection);
+    addAndMakeVisible(controlSection);
 }
 
 DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
 {
+    controlSection.getRateKnob().getSlider().setLookAndFeel(nullptr);
+    controlSection.getDepthKnob().getSlider().setLookAndFeel(nullptr);
+    controlSection.getSmoothKnob().getSlider().setLookAndFeel(nullptr);
 }
 
 //==============================================================================
@@ -46,11 +58,11 @@ void DuqAudioProcessorEditor::resized()
     constexpr int leftPanelWidth = 260;
     auto leftArea = bounds.removeFromLeft(leftPanelWidth);
 
-    // Envelope section size
-    constexpr int envelopeHeight = 203;
+    constexpr int controlHeight = 250;
 
-    envelopeListSection.setBounds(
-        leftArea.removeFromTop(envelopeHeight)
-    );
+    controlSection.setBounds(leftArea.removeFromBottom(controlHeight));
+    envelopeListSection.setBounds(leftArea);
+
 }
+
 
