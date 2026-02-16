@@ -56,6 +56,7 @@ EnvelopeListSection::EnvelopeListSection()
                 };
 
             rowContainer.addAndMakeVisible(newRow);
+            selectEnvelope(newIndex);
 
             resized();
         };
