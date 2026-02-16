@@ -1,11 +1,11 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
 
-class HeaderComponent : public juce::Component
+class HeaderSection : public juce::Component
 {
 public:
-    HeaderComponent();
-    ~HeaderComponent() override = default;
+    HeaderSection();
+    ~HeaderSection() override = default;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -17,5 +17,5 @@ private:
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderSection)
 };

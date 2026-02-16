@@ -1,22 +1,22 @@
-#include "HeaderComponent.h"
+#include "HeaderSection.h"
 
-HeaderComponent::HeaderComponent()
+HeaderSection::HeaderSection()
 {
 }
 
-void HeaderComponent::setVersionString(const juce::String& version)
+void HeaderSection::setVersionString(const juce::String& version)
 {
     versionString = version;
     repaint();
 }
 
-void HeaderComponent::setProjectURI(const juce::String& uri)
+void HeaderSection::setProjectURI(const juce::String& uri)
 {
     projectURI = uri;
     repaint();
 }
 
-void HeaderComponent::paint(juce::Graphics& g)
+void HeaderSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
@@ -70,6 +70,6 @@ void HeaderComponent::paint(juce::Graphics& g)
         juce::Justification::bottomRight);
 }
 
-void HeaderComponent::resized()
+void HeaderSection::resized()
 {
 }
