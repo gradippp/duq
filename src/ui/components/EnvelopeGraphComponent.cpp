@@ -360,12 +360,18 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
         p3.y - p0.y
     };
 
-    juce::Point<float> mid
+    // Base control points (same logic as drawEnvelope)
+    juce::Point<float> p1
     {
-        p0.x + direction.x * 0.5f,
-        p0.y + direction.y * 0.5f
+        p0.x + direction.x * 0.33f,
+        p0.y + direction.y * 0.33f
     };
 
+    juce::Point<float> p2
+    {
+        p0.x + direction.x * 0.66f,
+        p0.y + direction.y * 0.66f
+    };
 
     juce::Point<float> normal(-direction.y, direction.x);
 
@@ -376,15 +382,35 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
         normal.y /= len;
     }
 
-
     float segmentLength = direction.getDistanceFromOrigin();
     float strength = segmentLength * curveStrength;
 
-    return {
-        mid.x + normal.x * a.curve * strength,
-        mid.y + normal.y * a.curve * strength
+    p1.x += normal.x * a.curve * strength;
+    p1.y += normal.y * a.curve * strength;
+
+    p2.x += normal.x * a.curve * strength;
+    p2.y += normal.y * a.curve * strength;
+
+    // ---- Evaluate cubic at t = 0.5 ----
+    float t = 0.5f;
+    float u = 1.0f - t;
+
+    juce::Point<float> point
+    {
+        u * u * u * p0.x +
+        3 * u * u * t * p1.x +
+        3 * u * t * t * p2.x +
+        t * t * t * p3.x,
+
+        u * u * u * p0.y +
+        3 * u * u * t * p1.y +
+        3 * u * t * t * p2.y +
+        t * t * t * p3.y
     };
+
+    return point;
 }
+
 
 juce::Point<float> EnvelopeGraphComponent::toPixel(
     const EnvelopePoint& p,
