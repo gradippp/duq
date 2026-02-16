@@ -12,7 +12,15 @@ EnvelopeListSection::EnvelopeListSection()
     viewport.setScrollBarsShown(true, false); // vertical only
     addAndMakeVisible(viewport);
 
-    rows.add(new EnvelopeRowComponent("Default"));
+    auto* row = rows.add(new EnvelopeRowComponent("Default"));
+
+    row->onDeleteRequested = [this, row]()
+        {
+            removeRow(row);
+        };
+
+    rowContainer.addAndMakeVisible(row);
+
 
     for (auto* row : rows)
         rowContainer.addAndMakeVisible(row);
@@ -25,11 +33,25 @@ EnvelopeListSection::EnvelopeListSection()
                 new EnvelopeRowComponent("Env " + juce::String(newIndex))
             );
 
+            newRow->onDeleteRequested = [this, newRow]()
+                {
+                    removeRow(newRow);
+                };
+
             rowContainer.addAndMakeVisible(newRow);
 
             resized();
         };
 }
+
+void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
+{
+    rows.removeObject(row, true); // true = delete object
+
+    resized();
+    repaint();
+}
+
 
 void EnvelopeListSection::paint(juce::Graphics& g)
 {

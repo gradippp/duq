@@ -10,6 +10,7 @@ public:
     void resized() override;
 
     void setActive(bool shouldBeActive);
+    std::function<void()> onDeleteRequested;
 
 private:
     juce::String envelopeName;

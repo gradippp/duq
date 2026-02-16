@@ -34,6 +34,13 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
     replaceButton.setTooltip("Replace this envelope from a preset");
     deleteButton.setTooltip("Delete this envelope");
 
+    deleteButton.onClick = [this]()
+        {
+            if (onDeleteRequested)
+                onDeleteRequested();
+        };
+
+
     addAndMakeVisible(saveButton);
     addAndMakeVisible(replaceButton);
     addAndMakeVisible(deleteButton);
