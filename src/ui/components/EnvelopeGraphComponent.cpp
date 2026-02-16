@@ -360,7 +360,6 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
         p3.y - p0.y
     };
 
-    // Base control points (same logic as drawEnvelope)
     juce::Point<float> p1
     {
         p0.x + direction.x * 0.33f,
@@ -388,8 +387,8 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
     p1.x += normal.x * a.curve * strength;
     p1.y += normal.y * a.curve * strength;
 
-    p2.x += normal.x * a.curve * strength;
-    p2.y += normal.y * a.curve * strength;
+    p2.x -= normal.x * a.curve * strength;
+    p2.y -= normal.y * a.curve * strength;
 
     // ---- Evaluate cubic at t = 0.5 ----
     float t = 0.5f;
