@@ -97,7 +97,16 @@ void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
     rows.removeObject(row, true);
 
     if (selectedIndex == index)
-        selectedIndex = -1;
+    {
+        if (!rows.isEmpty())
+            selectEnvelope(juce::jlimit(0, rows.size() - 1, index - 1));
+        else
+            selectedIndex = -1;
+    }
+    else if (selectedIndex > index)
+    {
+        selectEnvelope(selectedIndex - 1);
+    }
 
     resized();
     repaint();
