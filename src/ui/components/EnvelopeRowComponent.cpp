@@ -52,6 +52,15 @@ void EnvelopeRowComponent::setActive(bool shouldBeActive)
     repaint();
 }
 
+void EnvelopeRowComponent::mouseDown(const juce::MouseEvent& e)
+{
+    if (e.mods.isLeftButtonDown())
+    {
+        if (onSelected)
+            onSelected();
+    }
+}
+
 void EnvelopeRowComponent::mouseEnter(const juce::MouseEvent&)
 {
     isHovered = true;

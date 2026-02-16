@@ -12,6 +12,13 @@ static const std::vector<juce::String> rateDivisions =
 
 ControlSection::ControlSection()
 {
+    knobList = { &rateKnob, &depthKnob, &smoothKnob };
+
+    // ===== Default local state =====
+    currentData = EnvelopeData();  // default initialize
+    rateIsFrequencyMode = currentData.rateIsFrequencyMode;
+
+    // ===== Rate Context Menu =====
     rateKnob.extendContextMenu =
         [this](juce::PopupMenu& menu)
         {
@@ -21,38 +28,73 @@ ControlSection::ControlSection()
                 rateIsFrequencyMode);
         };
 
-
     rateKnob.onCustomMenuResult =
         [this](int result)
         {
             if (result == 100)
             {
                 rateIsFrequencyMode = !rateIsFrequencyMode;
+                currentData.rateIsFrequencyMode = rateIsFrequencyMode;
+
                 applyRateMode();
+
+                if (onEnvelopeChanged)
+                    onEnvelopeChanged(currentData);
             }
         };
 
+    // ===== Rate Formatter =====
     rateKnob.valueFormatter =
         [this](double value)
         {
             if (rateIsFrequencyMode)
-            {
                 return juce::String(value, 2) + " Hz";
-            }
-            else
-            {
-                int index = (int)value;
-                index = juce::jlimit(0,
-                    (int)rateDivisions.size() - 1,
-                    index);
 
-                return rateDivisions[index];
-            }
+            int index = (int)value;
+            index = juce::jlimit(0,
+                (int)rateDivisions.size() - 1,
+                index);
+
+            return rateDivisions[index];
         };
 
-    addAndMakeVisible(smoothKnob);
+    // ===== Slider Callbacks =====
+    for (size_t i = 0; i < knobList.size(); ++i)
+    {
+        knobList[i]->onValueChanged =
+            [this, i](double value)
+            {
+                currentData.*(dataMembers[i]) = value;
+
+                if (onEnvelopeChanged)
+                    onEnvelopeChanged(currentData);
+            };
+    }
+
+
+    // ===== Add Components =====
     addAndMakeVisible(rateKnob);
     addAndMakeVisible(depthKnob);
+    addAndMakeVisible(smoothKnob);
+
+    // ===== Initialize Mode =====
+    applyRateMode();
+}
+
+void ControlSection::loadEnvelope(const EnvelopeData& data)
+{
+    currentData = data;   // VERY IMPORTANT
+
+    rateIsFrequencyMode = data.rateIsFrequencyMode;
+    applyRateMode();
+
+    rateKnob.getSlider().setValue(data.rate, juce::dontSendNotification);
+    depthKnob.getSlider().setValue(data.depth, juce::dontSendNotification);
+    smoothKnob.getSlider().setValue(data.smooth, juce::dontSendNotification);
+
+    rateKnob.refreshValueLabel();
+    depthKnob.refreshValueLabel();
+    smoothKnob.refreshValueLabel();
 }
 
 void ControlSection::paint(juce::Graphics& g)

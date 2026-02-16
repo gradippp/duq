@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../components/EnvelopeRowComponent.h"
+#include "../../model/EnvelopeData.h"
 
 class EnvelopeListComponent;
 
@@ -13,12 +14,19 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    std::function<void(const EnvelopeData&)> onEnvelopeSelected;
+    void updateSelectedEnvelope(const EnvelopeData& data);
+
 private:
     juce::Viewport viewport;
     juce::Component rowContainer;
     juce::TextButton addButton;
     juce::OwnedArray<EnvelopeRowComponent> rows;
+    void selectEnvelope(int i);
     void removeRow(EnvelopeRowComponent* row);
+
+    std::vector<EnvelopeData> envelopes;
+    int selectedIndex = -1;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EnvelopeListSection)
 };

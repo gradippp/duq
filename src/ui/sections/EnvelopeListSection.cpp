@@ -7,11 +7,14 @@ EnvelopeListSection::EnvelopeListSection()
 
     addAndMakeVisible(addButton);
 
-    // Setup viewport
     viewport.setViewedComponent(&rowContainer, false);
-    viewport.setScrollBarsShown(true, false); // vertical only
+    viewport.setScrollBarsShown(true, false);
     addAndMakeVisible(viewport);
 
+    // ---- Create default model first ----
+    envelopes.emplace_back();
+
+    // ---- Create default row ----
     auto* row = rows.add(new EnvelopeRowComponent("Default"));
 
     row->onDeleteRequested = [this, row]()
@@ -19,23 +22,37 @@ EnvelopeListSection::EnvelopeListSection()
             removeRow(row);
         };
 
+    row->onSelected = [this, row]()
+        {
+            int index = rows.indexOf(row);
+            selectEnvelope(index);
+        };
+
     rowContainer.addAndMakeVisible(row);
 
+    // ---- Select first envelope ----
+    selectEnvelope(0);
 
-    for (auto* row : rows)
-        rowContainer.addAndMakeVisible(row);
-
+    // ---- Add button logic ----
     addButton.onClick = [this]()
         {
-            const int newIndex = rows.size() + 1;
+            const int newIndex = rows.size();
+
+            envelopes.emplace_back();
 
             auto* newRow = rows.add(
-                new EnvelopeRowComponent("Env " + juce::String(newIndex))
+                new EnvelopeRowComponent("Env " + juce::String(newIndex + 1))
             );
 
             newRow->onDeleteRequested = [this, newRow]()
                 {
                     removeRow(newRow);
+                };
+
+            newRow->onSelected = [this, newRow]()
+                {
+                    int index = rows.indexOf(newRow);
+                    selectEnvelope(index);
                 };
 
             rowContainer.addAndMakeVisible(newRow);
@@ -44,9 +61,41 @@ EnvelopeListSection::EnvelopeListSection()
         };
 }
 
+void EnvelopeListSection::updateSelectedEnvelope(const EnvelopeData& data)
+{
+    if (selectedIndex >= 0 &&
+        selectedIndex < envelopes.size())
+    {
+        envelopes[selectedIndex] = data;
+    }
+}
+
+void EnvelopeListSection::selectEnvelope(int index)
+{
+    if (index < 0 || index >= envelopes.size())
+        return;
+
+    selectedIndex = index;
+
+    for (int i = 0; i < rows.size(); ++i)
+        rows[i]->setActive(i == index);
+
+    if (onEnvelopeSelected)
+        onEnvelopeSelected(envelopes[index]);
+}
+
+
 void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
 {
-    rows.removeObject(row, true); // true = delete object
+    int index = rows.indexOf(row);
+
+    if (index >= 0 && index < envelopes.size())
+        envelopes.erase(envelopes.begin() + index);
+
+    rows.removeObject(row, true);
+
+    if (selectedIndex == index)
+        selectedIndex = -1;
 
     resized();
     repaint();

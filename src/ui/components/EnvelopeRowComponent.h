@@ -11,6 +11,8 @@ public:
 
     void setActive(bool shouldBeActive);
     std::function<void()> onDeleteRequested;
+    std::function<void()> onSelected;
+
 
 private:
     juce::String envelopeName;
@@ -21,6 +23,7 @@ private:
     juce::DrawableButton replaceButton{ "replace", juce::DrawableButton::ImageFitted };
     juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
 
+    void mouseDown(const juce::MouseEvent& e) override;
     void mouseEnter(const juce::MouseEvent&) override;
     void mouseExit(const juce::MouseEvent&) override;
 

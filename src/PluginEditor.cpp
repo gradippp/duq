@@ -21,6 +21,17 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
     controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+    envelopeListSection.onEnvelopeSelected =
+        [this](const EnvelopeData& data)
+        {
+            controlSection.loadEnvelope(data);
+        };
+    controlSection.onEnvelopeChanged =
+        [this](const EnvelopeData& data)
+        {
+            envelopeListSection.updateSelectedEnvelope(data);
+        };
+
 
     setSize(900, 600);
     setResizable(true, true);

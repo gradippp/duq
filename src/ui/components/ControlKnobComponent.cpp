@@ -19,7 +19,11 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
     knob.onValueChange = [this]()
         {
             updateValueLabel();
+
+            if (onValueChanged)
+                onValueChanged(knob.getValue());
         };
+
 
     knob.rightClickHandler = [this](const juce::MouseEvent&)
         {
@@ -34,6 +38,8 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
 
     updateValueLabel();
 }
+
+
 
 void ControlKnobComponent::setLabel(const juce::String& text)
 {

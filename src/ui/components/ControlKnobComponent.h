@@ -35,6 +35,8 @@ public:
     void refreshValueLabel();
     std::function<juce::String(double)> valueFormatter;
 
+    std::function<void(double)> onValueChanged;
+
     juce::Slider& getSlider() { return knob; }
 
 private:
