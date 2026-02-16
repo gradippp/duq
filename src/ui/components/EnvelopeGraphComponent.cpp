@@ -285,13 +285,31 @@ void EnvelopeGraphComponent::drawEnvelope(
         }
 
         float segmentLength = direction.getDistanceFromOrigin();
-        float strength = segmentLength * curveStrength;
 
-        p1.x += normal.x * a.curve * strength;
-        p1.y += normal.y * a.curve * strength;
+        // limit max bend to avoid overshoot
+        float maxStrength = segmentLength * 0.35f;
+        float strength = juce::jlimit(-maxStrength, maxStrength,
+            a.curve * segmentLength * curveStrength);
 
-        p2.x += normal.x * a.curve * strength;
-        p2.y += normal.y * a.curve * strength;
+        p1.x += normal.x * strength;
+        p1.y += normal.y * strength;
+
+        p2.x += normal.x * strength;
+        p2.y += normal.y * strength;
+
+        auto clampToArea = [&](juce::Point<float>& p)
+            {
+                p.x = juce::jlimit((float)area.getX(),
+                    (float)area.getRight(),
+                    p.x);
+
+                p.y = juce::jlimit((float)area.getY(),
+                    (float)area.getBottom(),
+                    p.y);
+            };
+
+        clampToArea(p1);
+        clampToArea(p2);
 
         if (i == 0)
             path.startNewSubPath(p0);
