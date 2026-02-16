@@ -82,7 +82,7 @@ void ControlSection::applyRateMode()
 {
     if (rateIsFrequencyMode)
     {
-        rateKnob.getSlider().setRange(0.1, 20.0, 0.01);
+        rateKnob.getSlider().setRange(0.1, 100.0f, 0.01);
         rateKnob.setLabel("Frequency");
     }
     else
