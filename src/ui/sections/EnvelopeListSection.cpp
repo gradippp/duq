@@ -3,6 +3,7 @@
 EnvelopeListSection::EnvelopeListSection()
 {
     addButton.setButtonText("+");
+    addButton.setTooltip("Add a new envelope");
 
     addAndMakeVisible(addButton);
 
