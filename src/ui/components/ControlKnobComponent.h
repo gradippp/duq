@@ -24,16 +24,20 @@ public:
     ControlKnobComponent(const juce::String& name,
         const juce::String& unitSuffix);
 
+    std::function<void(juce::PopupMenu&)> extendContextMenu;
+
     void resized() override;
     void paint(juce::Graphics& g) override;
-    //void mouseDown(const juce::MouseEvent& e) override;
     std::function<void(int)> onCustomMenuResult;
     void showContextMenu();
+
+    void setLabel(const juce::String& text);
+    void refreshValueLabel();
+    std::function<juce::String(double)> valueFormatter;
 
     juce::Slider& getSlider() { return knob; }
 
 private:
-    std::function<void(juce::PopupMenu&)> extendContextMenu;
     void handleCustomMenuResult(int result);
 
     juce::String labelText;

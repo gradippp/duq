@@ -15,7 +15,9 @@ public:
     ControlKnobComponent& getSmoothKnob() { return smoothKnob; }
 
 private:
-    ControlKnobComponent rateKnob{ "RATE", "%" };
+    bool rateIsFrequencyMode = true;
+    void applyRateMode();
+    ControlKnobComponent rateKnob{ "RATE", "Hz" };
     ControlKnobComponent depthKnob{ "Depth", "%" };
     ControlKnobComponent smoothKnob{ "Smooth", "%" };
 

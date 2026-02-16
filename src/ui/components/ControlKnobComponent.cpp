@@ -35,18 +35,30 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name,
     updateValueLabel();
 }
 
+void ControlKnobComponent::setLabel(const juce::String& text)
+{
+    labelText = text;
+    repaint();
+}
+
+void ControlKnobComponent::refreshValueLabel() {
+    updateValueLabel();
+}
+
 void ControlKnobComponent::updateValueLabel()
 {
     auto value = knob.getValue();
 
     juce::String text;
 
-    if (unit == "%")
-        text = juce::String((int)value) + "%";
-    else if (unit == "Hz")
-        text = juce::String((int)value) + "Hz";
+    if (valueFormatter)
+    {
+        text = valueFormatter(value);
+    }
     else
+    {
         text = juce::String(value, 2) + unit;
+    }
 
     valueLabel.setText("[" + text + "]",
         juce::dontSendNotification);
