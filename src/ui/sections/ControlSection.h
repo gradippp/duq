@@ -17,7 +17,7 @@ public:
 private:
     bool rateIsFrequencyMode = true;
     void applyRateMode();
-    ControlKnobComponent rateKnob{ "RATE", 20.0f, "Hz" };
+    ControlKnobComponent rateKnob{ "Frequency", 20.0f, "Hz" };
     ControlKnobComponent depthKnob{ "Depth", 100.0f, "%" };
     ControlKnobComponent smoothKnob{ "Smooth", 0.0f, "%" };
 

@@ -83,6 +83,7 @@ void ControlSection::applyRateMode()
     if (rateIsFrequencyMode)
     {
         rateKnob.getSlider().setRange(0.1, 20.0, 0.01);
+        rateKnob.setLabel("Frequency");
     }
     else
     {
@@ -90,6 +91,7 @@ void ControlSection::applyRateMode()
             0,
             (int)rateDivisions.size() - 1,
             1.0);
+        rateKnob.setLabel("Rate");
     }
 
     rateKnob.refreshValueLabel();
@@ -101,7 +103,7 @@ void ControlSection::resized()
 
     constexpr int headerHeight = 32;
     constexpr int rowHeight = 56;
-    constexpr int gap = 4;          // was 6
+    constexpr int gap = 4;
     constexpr int bottomPadding = 8;
 
     bounds.removeFromTop(headerHeight);
