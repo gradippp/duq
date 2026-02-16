@@ -47,6 +47,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
     addAndMakeVisible(header);
     addAndMakeVisible(envelopeListSection);
     addAndMakeVisible(controlSection);
+
+    addAndMakeVisible(meterSection);
 }
 
 DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
@@ -70,21 +72,26 @@ void DuqAudioProcessorEditor::resized()
     constexpr int headerHeight = 60;
     header.setBounds(bounds.removeFromTop(headerHeight));
 
-    // ===== Main Area =====
+    // ===== Split left / right =====
     constexpr int leftPanelWidth = 260;
     auto leftArea = bounds.removeFromLeft(leftPanelWidth);
-
-    constexpr int controlHeight = 250;
-
-    controlSection.setBounds(leftArea.removeFromBottom(controlHeight));
-    envelopeListSection.setBounds(leftArea);
-
     auto rightArea = bounds;
 
+    // ===== Left Panel =====
+    constexpr int controlHeight = 250;
+
+    controlSection.setBounds(
+        leftArea.removeFromBottom(controlHeight));
+
+    envelopeListSection.setBounds(leftArea);
+
+    // ===== Right Side =====
     constexpr int meterHeight = 70;
+
     auto meterArea = rightArea.removeFromBottom(meterHeight);
 
     envelopeGraph.setBounds(rightArea);
+    meterSection.setBounds(meterArea);
 }
 
 

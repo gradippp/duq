@@ -14,6 +14,7 @@
 #include "ui/sections/ControlSection.h"
 #include "ui/utils/FlatKnobLookAndFeel.h"
 #include "ui/components/EnvelopeGraphComponent.h"
+#include "ui/sections/MeterSection.h"
 
 //==============================================================================
 /**
@@ -38,6 +39,8 @@ private:
     EnvelopeListSection envelopeListSection;
     ControlSection controlSection;
     EnvelopeGraphComponent envelopeGraph;
+    MeterSection meterSection;
+
     juce::TooltipWindow tooltipWindow{ this };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessorEditor)
