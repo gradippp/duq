@@ -31,6 +31,7 @@ private:
     DuqAudioProcessor& audioProcessor;
     HeaderSection header;
     EnvelopeListSection envelopeListSection;
+    juce::TooltipWindow tooltipWindow{ this };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessorEditor)
 };

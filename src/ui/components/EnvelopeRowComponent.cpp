@@ -26,12 +26,16 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
             button.setTooltip(iconName);
         };
 
-    setupIconButton(duplicateButton, "save_icon");
-    setupIconButton(editButton, "replace_icon");
-    setupIconButton(deleteButton, "delete_icon");
+    setupIconButton(saveButton, "save");
+    setupIconButton(replaceButton, "replace");
+    setupIconButton(deleteButton, "delete");
 
-    addAndMakeVisible(duplicateButton);
-    addAndMakeVisible(editButton);
+    saveButton.setTooltip("Save this envelope as a preset, including the controls.");
+    replaceButton.setTooltip("Replace this envelope from a preset");
+    deleteButton.setTooltip("Delete this envelope");
+
+    addAndMakeVisible(saveButton);
+    addAndMakeVisible(replaceButton);
     addAndMakeVisible(deleteButton);
 }
 
@@ -101,7 +105,7 @@ void EnvelopeRowComponent::resized()
 
     constexpr int buttonWidth = 24;
 
-    duplicateButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
-    editButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
+    saveButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
+    replaceButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
     deleteButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
 }

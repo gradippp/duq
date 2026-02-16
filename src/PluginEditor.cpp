@@ -18,6 +18,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
     setSize(600, 400);
     setResizable(true, true);
 
+    tooltipWindow.setMillisecondsBeforeTipAppears(500);
+
     addAndMakeVisible(header);
     addAndMakeVisible(envelopeListSection);
 }

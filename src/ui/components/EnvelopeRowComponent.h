@@ -16,8 +16,8 @@ private:
     bool isActive = false;
     bool isHovered = false;
 
-    juce::DrawableButton duplicateButton{ "duplicate", juce::DrawableButton::ImageFitted };
-    juce::DrawableButton editButton{ "replace", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton replaceButton{ "replace", juce::DrawableButton::ImageFitted };
     juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
 
     void mouseEnter(const juce::MouseEvent&) override;
