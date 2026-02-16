@@ -22,16 +22,20 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     envelopeListSection.onEnvelopeSelected =
-        [this](const EnvelopeData& data)
+        [this](EnvelopeData& data)
         {
             controlSection.loadEnvelope(data);
+            envelopeGraph.setEnvelope(&data);
         };
+
     controlSection.onEnvelopeChanged =
         [this](const EnvelopeData& data)
         {
             envelopeListSection.updateSelectedEnvelope(data);
+            envelopeGraph.repaint();
         };
 
+    addAndMakeVisible(envelopeGraph);
 
     setSize(900, 600);
     setResizable(true, true);
@@ -74,6 +78,12 @@ void DuqAudioProcessorEditor::resized()
     controlSection.setBounds(leftArea.removeFromBottom(controlHeight));
     envelopeListSection.setBounds(leftArea);
 
+    auto rightArea = bounds;
+
+    constexpr int meterHeight = 70;
+    auto meterArea = rightArea.removeFromBottom(meterHeight);
+
+    envelopeGraph.setBounds(rightArea);
 }
 
 
