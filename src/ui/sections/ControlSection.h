@@ -17,9 +17,9 @@ public:
 private:
     bool rateIsFrequencyMode = true;
     void applyRateMode();
-    ControlKnobComponent rateKnob{ "RATE", "Hz" };
-    ControlKnobComponent depthKnob{ "Depth", "%" };
-    ControlKnobComponent smoothKnob{ "Smooth", "%" };
+    ControlKnobComponent rateKnob{ "RATE", 20.0f, "Hz" };
+    ControlKnobComponent depthKnob{ "Depth", 100.0f, "%" };
+    ControlKnobComponent smoothKnob{ "Smooth", 0.0f, "%" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ControlSection)
 };

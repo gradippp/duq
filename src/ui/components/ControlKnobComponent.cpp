@@ -1,6 +1,6 @@
 #include "ControlKnobComponent.h"
 
-ControlKnobComponent::ControlKnobComponent(const juce::String& name,
+ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float initialValue,
     const juce::String& unitSuffix)
     : labelText(name), unit(unitSuffix)
 {
@@ -14,7 +14,7 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name,
     );
 
     knob.setRange(0.0, 100.0, 0.01);
-    knob.setValue(50.0);
+    knob.setValue(initialValue);
 
     knob.onValueChange = [this]()
         {

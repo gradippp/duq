@@ -21,7 +21,7 @@ public:
 class ControlKnobComponent : public juce::Component
 {
 public:
-    ControlKnobComponent(const juce::String& name,
+    ControlKnobComponent(const juce::String& name, const float initialValue,
         const juce::String& unitSuffix);
 
     std::function<void(juce::PopupMenu&)> extendContextMenu;
