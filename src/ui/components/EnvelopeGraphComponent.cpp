@@ -1,8 +1,11 @@
 #include "EnvelopeGraphComponent.h"
+#include <cmath>
 
-EnvelopeGraphComponent::EnvelopeGraphComponent()
-{
-}
+
+static constexpr float curveStrength = 0.25f;
+static constexpr float curveSensitivity = 0.0025f;
+
+EnvelopeGraphComponent::EnvelopeGraphComponent() {}
 
 void EnvelopeGraphComponent::setEnvelope(EnvelopeData* data)
 {
@@ -28,20 +31,14 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
     auto area = getLocalBounds();
     auto& points = currentEnvelope->points;
 
-    // ---- 1. Right-click curve handle to reset ----
+    // ---- Right click: reset curve ----
     if (e.mods.isRightButtonDown())
     {
         for (size_t i = 0; i < points.size() - 1; ++i)
         {
-            auto& a = points[i];
-            auto& b = points[i + 1];
+            auto handle = getHandlePosition(i, area);
 
-            float midX = (a.x + b.x) * 0.5f;
-            float midY = (a.y + b.y) * 0.5f;
-
-            auto pixel = toPixel({ midX, midY }, area);
-
-            if (pixel.getDistanceFrom(e.position) < 6.0f)
+            if (handle.getDistanceFrom(e.position) < 8.0f)
             {
                 points[i].curve = 0.0f;
                 repaint();
@@ -50,7 +47,7 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
         }
     }
 
-    // ---- 2. Anchor hit test ----
+    // ---- Anchor hit test ----
     for (size_t i = 0; i < points.size(); ++i)
     {
         auto pos = toPixel(points[i], area);
@@ -63,29 +60,22 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
         }
     }
 
-    // ---- 3. Curve handle hit test ----
+    // ---- Curve handle hit test ----
     for (size_t i = 0; i < points.size() - 1; ++i)
     {
-        auto& a = points[i];
-        auto& b = points[i + 1];
+        auto handle = getHandlePosition(i, area);
 
-        float midX = (a.x + b.x) * 0.5f;
-        float midY = (a.y + b.y) * 0.5f;
-
-        auto pixel = toPixel({ midX, midY }, area);
-
-        if (pixel.getDistanceFrom(e.position) < 6.0f)
+        if (handle.getDistanceFrom(e.position) < 8.0f)
         {
             draggedCurveIndex = (int)i;
             draggedPointIndex = -1;
+            dragStartCurveValue = points[i].curve;
             return;
         }
     }
 }
 
-
-void EnvelopeGraphComponent::mouseDoubleClick(
-    const juce::MouseEvent& e)
+void EnvelopeGraphComponent::mouseDoubleClick(const juce::MouseEvent& e)
 {
     if (!currentEnvelope)
         return;
@@ -93,7 +83,7 @@ void EnvelopeGraphComponent::mouseDoubleClick(
     auto area = getLocalBounds();
     auto& points = currentEnvelope->points;
 
-    // Check anchor hit
+    // Remove anchor (except first/last)
     for (size_t i = 1; i < points.size() - 1; ++i)
     {
         auto pos = toPixel(points[i], area);
@@ -106,7 +96,7 @@ void EnvelopeGraphComponent::mouseDoubleClick(
         }
     }
 
-    // Otherwise insert
+    // Insert new point
     auto newPoint = toNormalized(e.position, area);
 
     auto it = std::lower_bound(
@@ -122,7 +112,6 @@ void EnvelopeGraphComponent::mouseDoubleClick(
 
     repaint();
 }
-
 
 void EnvelopeGraphComponent::mouseDrag(const juce::MouseEvent& e)
 {
@@ -145,7 +134,6 @@ void EnvelopeGraphComponent::mouseDrag(const juce::MouseEvent& e)
         {
             float left = points[draggedPointIndex - 1].x + 0.001f;
             float right = points[draggedPointIndex + 1].x - 0.001f;
-
             newPoint.x = juce::jlimit(left, right, newPoint.x);
         }
 
@@ -159,24 +147,59 @@ void EnvelopeGraphComponent::mouseDrag(const juce::MouseEvent& e)
     // ---- Drag curve handle ----
     if (draggedCurveIndex >= 0)
     {
-        auto normalized = toNormalized(e.position, area);
+        const auto& a = points[draggedCurveIndex];
+        const auto& b = points[draggedCurveIndex + 1];
 
-        float delta =
-            normalized.y - points[draggedCurveIndex].y;
+        juce::Point<float> p0 = toPixel(a, area);
+        juce::Point<float> p3 = toPixel(b, area);
+
+        juce::Point<float> direction
+        {
+            p3.x - p0.x,
+            p3.y - p0.y
+        };
+
+        juce::Point<float> normal(-direction.y, direction.x);
+
+        float len = std::sqrt(normal.x * normal.x + normal.y * normal.y);
+        if (len > 0.0001f)
+        {
+            normal.x /= len;
+            normal.y /= len;
+        }
+
+        auto mouseDownInt = e.getMouseDownPosition();
+
+        juce::Point<float> mouseDown
+        {
+            (float)mouseDownInt.x,
+            (float)mouseDownInt.y
+        };
+
+        juce::Point<float> dragVec
+        {
+            e.position.x - mouseDown.x,
+            e.position.y - mouseDown.y
+        };
+
+
+        float projected =
+            dragVec.x * normal.x +
+            dragVec.y * normal.y;
 
         points[draggedCurveIndex].curve =
-            juce::jlimit(-1.0f, 1.0f, delta * 2.0f);
+            juce::jlimit(-1.0f, 1.0f,
+                dragStartCurveValue + projected * curveSensitivity);
 
         repaint();
         return;
     }
 }
 
-
-void EnvelopeGraphComponent::mouseUp(
-    const juce::MouseEvent&)
+void EnvelopeGraphComponent::mouseUp(const juce::MouseEvent&)
 {
     draggedPointIndex = -1;
+    draggedCurveIndex = -1;
 }
 
 void EnvelopeGraphComponent::drawGrid(
@@ -188,33 +211,24 @@ void EnvelopeGraphComponent::drawGrid(
 
     g.setColour(juce::Colours::darkgrey.withAlpha(0.4f));
 
-    // Vertical
     for (int i = 1; i < verticalLines; ++i)
     {
         float x = area.getX() +
-            area.getWidth() *
-            (float)i / verticalLines;
+            area.getWidth() * (float)i / verticalLines;
 
-        g.drawLine(x,
-            (float)area.getY(),
-            x,
-            (float)area.getBottom());
+        g.drawLine(x, (float)area.getY(),
+            x, (float)area.getBottom());
     }
 
-    // Horizontal
     for (int i = 1; i < horizontalLines; ++i)
     {
         float y = area.getY() +
-            area.getHeight() *
-            (float)i / horizontalLines;
+            area.getHeight() * (float)i / horizontalLines;
 
-        g.drawLine((float)area.getX(),
-            y,
-            (float)area.getRight(),
-            y);
+        g.drawLine((float)area.getX(), y,
+            (float)area.getRight(), y);
     }
 
-    // Border
     g.setColour(juce::Colours::grey);
     g.drawRect(area, 1);
 }
@@ -233,71 +247,126 @@ void EnvelopeGraphComponent::drawEnvelope(
 
     juce::Path path;
 
-    const int resolutionPerSegment = 32;
-
     for (size_t i = 0; i < points.size() - 1; ++i)
     {
-        auto& a = points[i];
-        auto& b = points[i + 1];
+        const auto& a = points[i];
+        const auto& b = points[i + 1];
 
-        for (int step = 0; step <= resolutionPerSegment; ++step)
+        juce::Point<float> p0 = toPixel(a, area);
+        juce::Point<float> p3 = toPixel(b, area);
+
+        juce::Point<float> direction
         {
-            float t = (float)step / resolutionPerSegment;
+            p3.x - p0.x,
+            p3.y - p0.y
+        };
 
-            float shapedT = std::pow(
-                t,
-                1.0f + a.curve * 4.0f
-            );
 
-            float x = juce::jmap(
-                t,
-                0.0f, 1.0f,
-                a.x, b.x
-            );
 
-            float y = juce::jmap(
-                shapedT,
-                0.0f, 1.0f,
-                a.y, b.y
-            );
+        juce::Point<float> p1
+        {
+            p0.x + direction.x * 0.33f,
+            p0.y + direction.y * 0.33f
+        };
 
-            auto pixel = toPixel({ x, y }, area);
+        juce::Point<float> p2
+        {
+            p0.x + direction.x * 0.66f,
+            p0.y + direction.y * 0.66f
+        };
 
-            if (i == 0 && step == 0)
-                path.startNewSubPath(pixel);
-            else
-                path.lineTo(pixel);
+        juce::Point<float> normal(-direction.y, direction.x);
+
+        float len = std::sqrt(normal.x * normal.x + normal.y * normal.y);
+        if (len > 0.0001f)
+        {
+            normal.x /= len;
+            normal.y /= len;
         }
+
+        float segmentLength = direction.getDistanceFromOrigin();
+        float strength = segmentLength * curveStrength;
+
+        p1.x += normal.x * a.curve * strength;
+        p1.y += normal.y * a.curve * strength;
+
+        p2.x -= normal.x * a.curve * strength;
+        p2.y -= normal.y * a.curve * strength;
+
+        if (i == 0)
+            path.startNewSubPath(p0);
+
+        path.cubicTo(p1, p2, p3);
     }
 
     g.setColour(juce::Colours::blue);
     g.strokePath(path, juce::PathStrokeType(2.0f));
 
-    // Draw anchors
-    for (size_t i = 0; i < points.size(); ++i)
+    // Anchors
+    for (const auto& p : points)
     {
-        auto pos = toPixel(points[i], area);
-
+        auto pos = toPixel(p, area);
         g.setColour(juce::Colours::white);
-        g.fillEllipse(pos.x - 5, pos.y - 5, 10, 10);
+        g.fillEllipse(pos.x - 5.0f,
+            pos.y - 5.0f,
+            10.0f,
+            10.0f);
     }
 
-    // Draw mini curve handles
+    // Handles
     for (size_t i = 0; i < points.size() - 1; ++i)
     {
-        auto& a = points[i];
-        auto& b = points[i + 1];
-
-        float midX = (a.x + b.x) * 0.5f;
-        float midY = (a.y + b.y) * 0.5f;
-
-        auto pixel = toPixel({ midX, midY }, area);
+        auto handle = getHandlePosition(i, area);
 
         g.setColour(juce::Colours::orange);
-        g.fillEllipse(pixel.x - 4, pixel.y - 4, 8, 8);
+        g.fillEllipse(handle.x - 4.0f,
+            handle.y - 4.0f,
+            8.0f,
+            8.0f);
     }
 }
 
+juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
+    size_t index,
+    juce::Rectangle<int> area) const
+{
+    const auto& a = currentEnvelope->points[index];
+    const auto& b = currentEnvelope->points[index + 1];
+
+    juce::Point<float> p0 = toPixel(a, area);
+    juce::Point<float> p3 = toPixel(b, area);
+
+    juce::Point<float> direction
+    {
+        p3.x - p0.x,
+        p3.y - p0.y
+    };
+
+    juce::Point<float> mid
+    {
+        p0.x + direction.x * 0.5f,
+        p0.y + direction.y * 0.5f
+    };
+
+
+    juce::Point<float> normal(-direction.y, direction.x);
+
+    float len = std::sqrt(normal.x * normal.x + normal.y * normal.y);
+    if (len > 0.0001f)
+    {
+        normal.x /= len;
+        normal.y /= len;
+    }
+
+
+    float segmentLength = direction.getDistanceFromOrigin();
+    float strength = segmentLength * curveStrength;
+
+    return {
+        mid.x + normal.x * a.curve * strength,
+        mid.y + normal.y * a.curve * strength
+    };
+}
 
 juce::Point<float> EnvelopeGraphComponent::toPixel(
     const EnvelopePoint& p,
@@ -320,4 +389,3 @@ EnvelopePoint EnvelopeGraphComponent::toNormalized(
         juce::jlimit(0.0f, 1.0f, y)
     };
 }
-
