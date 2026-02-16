@@ -1,19 +1,38 @@
 #include "EnvelopeRowComponent.h"
+#include "../utils/IconFactory.h"
+
 
 EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
     : envelopeName(name)
 {
-    for (auto* b : { &duplicateButton, &editButton, &deleteButton })
-    {
-        b->setColour(juce::TextButton::buttonColourId,
-            juce::Colours::darkgrey.withAlpha(0.4f));
+    auto setupIconButton = [](juce::DrawableButton& button,
+        const juce::String& iconName)
+        {
+            button.setClickingTogglesState(false);
 
-        b->setColour(juce::TextButton::textColourOffId,
-            juce::Colours::white);
+            button.setColour(juce::DrawableButton::backgroundColourId,
+                juce::Colours::transparentBlack);
 
-        b->setClickingTogglesState(false);
-        addAndMakeVisible(*b);
-    }
+            button.setColour(juce::DrawableButton::backgroundOnColourId,
+                juce::Colours::darkgrey.withAlpha(0.2f));
+
+            auto normal = Icons::load(iconName, juce::Colours::white);
+            auto over = Icons::load(iconName, juce::Colours::white.withAlpha(0.85f));
+            auto down = Icons::load(iconName, juce::Colours::white.withAlpha(0.6f));
+
+            if (normal != nullptr)
+                button.setImages(normal.get(), over.get(), down.get(), nullptr);
+
+            button.setTooltip(iconName);
+        };
+
+    setupIconButton(duplicateButton, "save_icon");
+    setupIconButton(editButton, "replace_icon");
+    setupIconButton(deleteButton, "delete_icon");
+
+    addAndMakeVisible(duplicateButton);
+    addAndMakeVisible(editButton);
+    addAndMakeVisible(deleteButton);
 }
 
 void EnvelopeRowComponent::setActive(bool shouldBeActive)

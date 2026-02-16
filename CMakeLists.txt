@@ -55,8 +55,9 @@ juce_add_plugin(${PROJECT_NAME}
 )
 
 file(GLOB_RECURSE src
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp"
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
 target_sources(${PROJECT_NAME}
@@ -67,17 +68,28 @@ target_sources(${PROJECT_NAME}
 
 source_group(Source
     FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/PluginProcessor.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/PluginProcessor.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/PluginEditor.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/PluginEditor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PluginProcessor.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PluginProcessor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PluginEditor.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PluginEditor.cpp
 )
 
 file(GLOB UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Source/ui/*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Source/ui/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/*.cpp
 )
 source_group(Source\\ui FILES ${UI_SOURCES})
+
+file(GLOB_RECURSE DUQ_RESOURCES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/*
+)
+
+juce_add_binary_data(DuqBinaryData
+    SOURCES ${DUQ_RESOURCES}
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE DuqBinaryData)
 
 # These are some toggleable options from the JUCE CMake API
 target_compile_definitions(${PROJECT_NAME}

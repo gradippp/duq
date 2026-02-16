@@ -1,6 +1,6 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "EnvelopeRowComponent.h"
+#include "../components/EnvelopeRowComponent.h"
 
 class EnvelopeListComponent;
 

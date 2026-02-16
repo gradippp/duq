@@ -9,8 +9,8 @@
 #pragma once
 
 #include "PluginProcessor.h"
-#include "ui/HeaderComponent.h"
-#include "ui/EnvelopeListSection.h"
+#include "ui/sections/HeaderComponent.h"
+#include "ui/sections/EnvelopeListSection.h"
 
 //==============================================================================
 /**

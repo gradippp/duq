@@ -2,6 +2,8 @@
 
 EnvelopeListSection::EnvelopeListSection()
 {
+    addButton.setButtonText("+");
+
     addAndMakeVisible(addButton);
 
     // Setup viewport
@@ -10,9 +12,6 @@ EnvelopeListSection::EnvelopeListSection()
     addAndMakeVisible(viewport);
 
     rows.add(new EnvelopeRowComponent("Default"));
-    rows.add(new EnvelopeRowComponent("C"));
-    rows.add(new EnvelopeRowComponent("C#"));
-    rows.add(new EnvelopeRowComponent("D"));
 
     for (auto* row : rows)
         rowContainer.addAndMakeVisible(row);
