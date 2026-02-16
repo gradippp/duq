@@ -290,8 +290,8 @@ void EnvelopeGraphComponent::drawEnvelope(
         p1.x += normal.x * a.curve * strength;
         p1.y += normal.y * a.curve * strength;
 
-        p2.x -= normal.x * a.curve * strength;
-        p2.y -= normal.y * a.curve * strength;
+        p2.x += normal.x * a.curve * strength;
+        p2.y += normal.y * a.curve * strength;
 
         if (i == 0)
             path.startNewSubPath(p0);
