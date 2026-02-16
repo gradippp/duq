@@ -21,6 +21,11 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name,
             updateValueLabel();
         };
 
+    knob.rightClickHandler = [this](const juce::MouseEvent&)
+        {
+            showContextMenu();
+        };
+
     addAndMakeVisible(knob);
     addAndMakeVisible(valueLabel);
 
@@ -45,6 +50,69 @@ void ControlKnobComponent::updateValueLabel()
 
     valueLabel.setText("[" + text + "]",
         juce::dontSendNotification);
+}
+
+void ControlKnobComponent::showContextMenu()
+{
+    juce::PopupMenu menu;
+
+    menu.addItem(1, "Enter value");
+
+    if (extendContextMenu)
+    {
+        menu.addSeparator();
+        extendContextMenu(menu);
+    }
+
+    menu.showMenuAsync(
+        juce::PopupMenu::Options().withTargetComponent(this),
+        [this](int result)
+        {
+            if (result == 1)
+                showValueEntryDialog();
+            else
+                handleCustomMenuResult(result);
+        });
+}
+
+void ControlKnobComponent::showValueEntryDialog()
+{
+    auto* window = new juce::AlertWindow(
+        "Enter Value",
+        "Type a new value:",
+        juce::AlertWindow::NoIcon);
+
+    window->addTextEditor("value",
+        juce::String(knob.getValue()));
+
+    window->addButton("OK", 1);
+    window->addButton("Cancel", 0);
+
+    window->enterModalState(
+        true,
+        juce::ModalCallbackFunction::create(
+            [this, window](int result)
+            {
+                if (result == 1)
+                {
+                    auto text =
+                        window->getTextEditor("value")->getText();
+
+                    auto newValue = text.getDoubleValue();
+
+                    knob.setValue(newValue,
+                        juce::sendNotification);
+                }
+
+                delete window;
+            }),
+        true);
+}
+
+void ControlKnobComponent::handleCustomMenuResult(int result)
+{
+    if (onCustomMenuResult)
+        onCustomMenuResult(result);
 }
 
 void ControlKnobComponent::resized()

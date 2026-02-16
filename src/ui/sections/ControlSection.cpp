@@ -2,6 +2,18 @@
 
 ControlSection::ControlSection()
 {
+    rateKnob.onCustomMenuResult =
+        [this](int result)
+        {
+            if (result == 100)
+            {
+
+                //rateIsFrequencyMode = !rateIsFrequencyMode;
+                //DBG("Frequency mode: " << rateIsFrequencyMode);
+            }
+        };
+
+
     addAndMakeVisible(smoothKnob);
     addAndMakeVisible(rateKnob);
     addAndMakeVisible(depthKnob);

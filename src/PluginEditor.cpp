@@ -24,7 +24,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor (DuqAudioProcessor& p)
 
     setSize(900, 600);
     setResizable(true, true);
-    setResizeLimits(600, 400, 900, 600);
+    setResizeLimits(900, 600, 1200, 900);
 
     tooltipWindow.setMillisecondsBeforeTipAppears(500);
 
