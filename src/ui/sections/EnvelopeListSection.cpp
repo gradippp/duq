@@ -57,6 +57,7 @@ EnvelopeListSection::EnvelopeListSection()
 
             rowContainer.addAndMakeVisible(newRow);
             selectEnvelope(newIndex);
+            viewport.setViewPosition(0, newIndex * 28); // automatic scrolling
 
             resized();
         };
