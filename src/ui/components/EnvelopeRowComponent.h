@@ -21,7 +21,7 @@ private:
     bool isActive = false;
     bool isHovered = false;
 
-    juce::TextButton noteButton{ "C4" };
+    juce::TextButton noteButton{ "-" };
     juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };
     juce::DrawableButton replaceButton{ "replace", juce::DrawableButton::ImageFitted };
     juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
