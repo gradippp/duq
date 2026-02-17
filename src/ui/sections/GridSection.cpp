@@ -25,6 +25,27 @@ void GridSection::setEnvelope(EnvelopeData* newEnvelope)
     repaint();
 }
 
+void GridSection::deletePoint(int index)
+{
+    if (!envelope)
+        return;
+
+    auto& points = envelope->points;
+
+    const int lastIndex = (int)points.size() - 1;
+
+    // Protect endpoints
+    if (index == 0 || index == lastIndex)
+        return;
+
+    if (index >= 0 && index < points.size())
+    {
+        points.erase(points.begin() + index);
+        rebuildPointComponents();
+        repaint();
+    }
+}
+
 void GridSection::resized()
 {
     viewArea = getLocalBounds().reduced(20);
@@ -36,6 +57,41 @@ float GridSection::getCurveForSegment(int index) const
     return envelope->points[index].curve;
 }
 
+void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
+{
+    if (!envelope)
+        return;
+
+    if (!e.mods.isLeftButtonDown())
+        return;
+
+    // If double click landed on a child component, ignore
+    if (e.eventComponent != this)
+        return;
+
+    auto normalized = pixelToNormalized(e.position);
+
+    auto& points = envelope->points;
+
+    if (normalized.x <= 0.0f || normalized.x >= 1.0f)
+        return;
+
+    EnvelopePoint newPoint;
+    newPoint.x = normalized.x;
+    newPoint.y = normalized.y;
+    newPoint.curve = 0.0f;
+
+    auto it = std::lower_bound(points.begin(), points.end(), newPoint.x,
+        [](const EnvelopePoint& p, float value)
+        {
+            return p.x < value;
+        });
+
+    points.insert(it, newPoint);
+
+    rebuildPointComponents();
+    repaint();
+}
 
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
 {
@@ -232,5 +288,4 @@ void GridSection::updatePointPositions()
 
         anchorComponents[i]->setNormalizedPosition({ midX, controlY });
     }
-
 }

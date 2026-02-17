@@ -35,3 +35,12 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
     dragStartY = e.getMouseDownY();
     startCurve = grid.getCurveForSegment(segmentIndex);
 }
+
+void AnchorComponent::mouseUp(const juce::MouseEvent& e)
+{
+    if (e.mods.isRightButtonDown())
+    {
+        if (onCurveChanged)
+            onCurveChanged(segmentIndex, 0.0f);
+    }
+}

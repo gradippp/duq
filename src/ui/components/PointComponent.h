@@ -17,6 +17,7 @@ public:
 
     void paint(juce::Graphics&) override;
     void mouseDrag(const juce::MouseEvent&) override;
+    void mouseDoubleClick(const juce::MouseEvent&) override;
 
 private:
     GridSection& grid;

@@ -10,6 +10,7 @@ public:
     GridSection();
 
     void setEnvelope(EnvelopeData*);
+    void deletePoint(int index);
 
     juce::Point<float> normalizedToPixel(juce::Point<float>) const;
     juce::Point<float> pixelToNormalized(juce::Point<float>) const;
@@ -17,6 +18,8 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
     float getCurveForSegment(int index) const;
+
+    void mouseDoubleClick(const juce::MouseEvent&) override;
 
 private:
     void drawGrid(juce::Graphics&);

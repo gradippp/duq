@@ -33,3 +33,17 @@ void PointComponent::mouseDrag(const juce::MouseEvent& e)
     if (onDrag)
         onDrag(pointIndex, pos);
 }
+
+void PointComponent::mouseDoubleClick(const juce::MouseEvent& e)
+{
+    if (!onDrag)
+        return;
+
+    if (e.mods.isLeftButtonDown())
+    {
+        if (auto* parent = dynamic_cast<GridSection*>(getParentComponent()))
+        {
+            parent->deletePoint(pointIndex);
+        }
+    }
+}
