@@ -33,6 +33,12 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
     nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
     nameLabel.setJustificationType(juce::Justification::centredLeft);
 
+    nameLabel.onSingleClick = [this]
+        {
+            if (onSelected)
+                onSelected();
+        };
+
     nameLabel.onEditorHide = [this]
         {
             auto newName = nameLabel.getText().trim();

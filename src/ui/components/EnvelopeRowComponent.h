@@ -2,6 +2,20 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../../model/EnvelopeData.h"
 
+class SelectableLabel : public juce::Label
+{
+public:
+    std::function<void()> onSingleClick;
+
+    void mouseDown(const juce::MouseEvent& e) override
+    {
+        if (onSingleClick)
+            onSingleClick();
+
+        juce::Label::mouseDown(e);
+    }
+};
+
 class EnvelopeRowComponent : public juce::Component
 {
 public:
@@ -23,7 +37,7 @@ public:
 
 
 private:
-    juce::Label nameLabel;
+    SelectableLabel nameLabel;
 
     EnvelopeData& data;
 
