@@ -9,7 +9,7 @@ public:
 
     bool perform() override
     {
-        if (!created) // first time perform
+        if (!created) // first perform only
         {
             created = std::make_unique<EnvelopeData>();
 

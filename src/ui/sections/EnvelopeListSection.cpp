@@ -45,8 +45,8 @@ EnvelopeListSection::EnvelopeListSection()
 
             int index = rows.size();
 
-            undoManager->perform(
-                new AddEnvelopeAction(*this, index));
+            undoManager->beginNewTransaction("Add Envelope");
+            undoManager->perform(new AddEnvelopeAction(*this, index));
         };
 
     isInitialising = false;
@@ -60,23 +60,20 @@ void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
 
 void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData> env)
 {
-    const bool isNewEnvelope = (env == nullptr);
-
-    if (isNewEnvelope)
-    {
-        env = std::make_unique<EnvelopeData>();
-
-        int freeNote = getNextFreeNote(36);
-        if (freeNote >= 0)
-            env->triggerNote = freeNote;
-    }
-
     envelopes.insert(envelopes.begin() + index, std::move(env));
 
     auto* newRow = rows.insert(index,
         new EnvelopeRowComponent("Env " + juce::String(index + 1)));
 
     newRow->setTriggerNote(envelopes[index]->triggerNote);
+
+    newRow->onNoteChanged = [this, newRow](int newNote)
+        {
+            int rowIndex = rows.indexOf(newRow);
+
+            if (trySetEnvelopeNote(rowIndex, newNote))
+                newRow->setTriggerNote(newNote);
+        };
 
     newRow->onDeleteRequested = [this, newRow]()
         {
@@ -163,6 +160,7 @@ void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
 
     if (index >= 0)
     {
+        undoManager->beginNewTransaction("Remove Envelope");
         undoManager->perform(
             new RemoveEnvelopeAction(*this, index));
     }

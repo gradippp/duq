@@ -13,13 +13,15 @@ public:
     std::function<void()> onDeleteRequested;
     std::function<void()> onSelected;
 
-    void setTriggerNote(int i);
+    void setTriggerNote(int note);
+    std::function<void(int)> onNoteChanged;
 
 
 private:
     juce::String envelopeName;
     bool isActive = false;
     bool isHovered = false;
+    int triggerNote = 60;
 
     juce::TextButton noteButton{ "-" };
     juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };

@@ -1,6 +1,7 @@
 #include "EnvelopeRowComponent.h"
 #include "../utils/IconFactory.h"
 #include "../utils/MidiUtils.h"
+#include "../components/PianoModal.h"
 
 
 EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
@@ -36,6 +37,23 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
     noteButton.setColour(juce::TextButton::buttonOnColourId,
         juce::Colours::darkgrey.withAlpha(0.5f));
 
+    noteButton.onClick = [this]
+        {
+            auto modal = std::make_unique<PianoModal>(triggerNote);
+
+            modal->onNoteSelected = [this](int note)
+                {
+                    if (onNoteChanged)
+                        onNoteChanged(note);
+                };
+
+            juce::CallOutBox::launchAsynchronously(
+                std::move(modal),
+                noteButton.getScreenBounds(),
+                nullptr);
+        };
+
+
     setupIconButton(saveButton, "save");
     setupIconButton(replaceButton, "replace");
     setupIconButton(deleteButton, "delete");
@@ -59,6 +77,7 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
 
 void EnvelopeRowComponent::setTriggerNote(int note)
 {
+    triggerNote = note;
     noteButton.setButtonText(midiNoteNumberToName(note));
 }
 
