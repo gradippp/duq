@@ -1,14 +1,16 @@
 #include "MeterComponent.h"
 
 MeterComponent::MeterComponent(std::atomic<float>& source,
-    Direction dir)
+    Direction dir,
+    const juce::String& label)
     : inputLevel(source),
     meterDirection(dir),
+    labelText(label),
     gradient(juce::Colours::green, 0.0f, 0.0f,
         juce::Colours::red, 100.0f, 0.0f,
         false)
 {
-    startTimerHz(60); // 60 FPS repaint
+    startTimerHz(60);
 }
 
 void MeterComponent::setGradient(const juce::ColourGradient& newGradient)
@@ -17,14 +19,16 @@ void MeterComponent::setGradient(const juce::ColourGradient& newGradient)
     repaint();
 }
 
+void MeterComponent::setLabel(const juce::String& newLabel)
+{
+    labelText = newLabel;
+    repaint();
+}
+
 void MeterComponent::timerCallback()
 {
-    float target = inputLevel.load();
+    float target = juce::jlimit(0.0f, 1.0f, inputLevel.load());
 
-    // clamp
-    target = juce::jlimit(0.0f, 1.0f, target);
-
-    // simple smoothing
     smoothedLevel += (target - smoothedLevel) * 0.15f;
 
     repaint();
@@ -34,35 +38,52 @@ void MeterComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    g.setColour(juce::Colours::black);
-    g.fillRect(bounds);
+    g.fillAll(juce::Colours::black);
 
-    float width = bounds.getWidth();
+    // ----- Layout -----
+    const float labelWidth = 90.0f; // adjust to taste
+
+    auto labelArea = bounds.removeFromLeft(labelWidth);
+    auto meterBounds = bounds;
+
+    // ----- Draw Label -----
+    if (labelText.isNotEmpty())
+    {
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(14.0f, juce::Font::bold));
+        g.drawFittedText(labelText,
+            labelArea.toNearestInt(),
+            juce::Justification::centredLeft,
+            1);
+    }
+
+    // ----- Draw Meter -----
+    float width = meterBounds.getWidth();
     float fillWidth = width * smoothedLevel;
 
     juce::Rectangle<float> meterArea;
 
     if (meterDirection == Direction::LeftToRight)
     {
-        meterArea = { bounds.getX(),
-                      bounds.getY(),
+        meterArea = { meterBounds.getX(),
+                      meterBounds.getY(),
                       fillWidth,
-                      bounds.getHeight() };
+                      meterBounds.getHeight() };
     }
     else
     {
-        meterArea = { bounds.getRight() - fillWidth,
-                      bounds.getY(),
+        meterArea = { meterBounds.getRight() - fillWidth,
+                      meterBounds.getY(),
                       fillWidth,
-                      bounds.getHeight() };
+                      meterBounds.getHeight() };
     }
 
-    gradient.point1 = { meterArea.getX(), 0.0f };
-    gradient.point2 = { meterArea.getRight(), 0.0f };
+    gradient.point1 = { meterBounds.getX(), 0.0f };
+    gradient.point2 = { meterBounds.getRight(), 0.0f };
 
     g.setGradientFill(gradient);
     g.fillRect(meterArea);
 
     g.setColour(juce::Colours::grey);
-    g.drawRect(bounds, 1.0f);
+    g.drawRect(meterBounds, 1.0f);
 }

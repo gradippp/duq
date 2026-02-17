@@ -1,9 +1,19 @@
 #include "MeterSection.h"
 
+#include "MeterSection.h"
+
 MeterSection::MeterSection()
-    : inputMeter(inputLevel, MeterComponent::Direction::LeftToRight),
-    reductionMeter(reductionLevel, MeterComponent::Direction::RightToLeft),
-    outputMeter(outputLevel, MeterComponent::Direction::LeftToRight)
+    : inputMeter(inputLevel,
+        MeterComponent::Direction::LeftToRight,
+        "Input Gain"),
+
+    reductionMeter(reductionLevel,
+        MeterComponent::Direction::RightToLeft,
+        "Reduction"),
+
+    outputMeter(outputLevel,
+        MeterComponent::Direction::LeftToRight,
+        "Output Gain")
 {
     addAndMakeVisible(inputMeter);
     addAndMakeVisible(reductionMeter);
@@ -30,7 +40,7 @@ void MeterSection::resized()
 {
     auto area = getLocalBounds().reduced(6);
 
-    int meterHeight = area.getHeight() / 3;
+    const int meterHeight = area.getHeight() / 3;
 
     inputMeter.setBounds(area.removeFromTop(meterHeight).reduced(0, 4));
     reductionMeter.setBounds(area.removeFromTop(meterHeight).reduced(0, 4));

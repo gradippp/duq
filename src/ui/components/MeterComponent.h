@@ -14,9 +14,11 @@ public:
     };
 
     MeterComponent(std::atomic<float>& source,
-        Direction dir = Direction::LeftToRight);
+        Direction dir = Direction::LeftToRight,
+        const juce::String& label = {});
 
     void setGradient(const juce::ColourGradient& newGradient);
+    void setLabel(const juce::String& newLabel);
 
     void paint(juce::Graphics& g) override;
 
@@ -30,4 +32,6 @@ private:
     Direction meterDirection;
 
     juce::ColourGradient gradient;
+
+    juce::String labelText;
 };

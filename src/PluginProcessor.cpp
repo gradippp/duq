@@ -28,6 +28,11 @@ DuqAudioProcessor::~DuqAudioProcessor()
 {
 }
 
+juce::UndoManager& DuqAudioProcessor::getUndoManager()
+{
+    return undoManager;
+}
+
 //==============================================================================
 const juce::String DuqAudioProcessor::getName() const
 {
