@@ -249,6 +249,7 @@ void GridSection::rebuildPointComponents()
                 envelope->points[segmentIndex].curve =
                     juce::jlimit(-1.0f, 1.0f, newCurve);
 
+                updatePointPositions();
                 repaint();
             };
 
@@ -277,15 +278,13 @@ void GridSection::updatePointPositions()
         auto& p1 = envelope->points[i];
         auto& p2 = envelope->points[i + 1];
 
-        // Midpoint in normalized space
-        float midX = (p1.x + p2.x) * 0.5f;
-        float midY = (p1.y + p2.y) * 0.5f;
+        float t = 0.5f;
 
-        // Apply curve offset in normalized Y space
-        float curveOffset = p1.curve * 0.25f;  // normalized strength
+        float shapedT = applyCurve(t, p1.curve);
 
-        float controlY = midY + curveOffset;
+        float x = juce::jmap(t, p1.x, p2.x);
+        float y = juce::jmap(shapedT, p1.y, p2.y);
 
-        anchorComponents[i]->setNormalizedPosition({ midX, controlY });
+        anchorComponents[i]->setNormalizedPosition({ x, y });
     }
 }
