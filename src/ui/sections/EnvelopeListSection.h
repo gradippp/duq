@@ -4,6 +4,7 @@
 #include "../../model/EnvelopeData.h"
 
 class EnvelopeListComponent;
+class ChangeEnvelopeNoteAction;
 
 class EnvelopeListSection : public juce::Component
 {
@@ -27,7 +28,12 @@ public:
     bool trySetEnvelopeNote(int index, int newNote);
     int getNextFreeNote(int startFrom = 36) const;
 
+    // For Undo actions only. Does not create transactions.
+    bool applyEnvelopeNoteDirect(int index, int newNote);
+
 private:
+    friend class ChangeEnvelopeNoteAction;
+
     bool isInitialising = true;
 
     juce::Viewport viewport;

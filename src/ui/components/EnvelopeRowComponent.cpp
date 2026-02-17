@@ -46,9 +46,6 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef,
 
             modal->onNoteSelected = [this](int note)
                 {
-                    data.triggerNote = note;   // update model
-                    setTriggerNote(note);      // update UI
-
                     if (onNoteChanged)
                         onNoteChanged(note);
                 };

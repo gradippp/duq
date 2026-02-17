@@ -58,3 +58,36 @@ private:
     int removeIndex;
     std::unique_ptr<EnvelopeData> removed;
 };
+
+class ChangeEnvelopeNoteAction : public juce::UndoableAction
+{
+public:
+    ChangeEnvelopeNoteAction(EnvelopeListSection& sectionRef,
+        int indexToChange,
+        int oldValue,
+        int newValue)
+        : section(sectionRef),
+        index(indexToChange),
+        oldNote(oldValue),
+        newNote(newValue)
+    {
+    }
+
+    bool perform() override
+    {
+        DBG("Perform note change at index: " + juce::String(index));
+        return section.applyEnvelopeNoteDirect(index, newNote);
+    }
+
+    bool undo() override
+    {
+        DBG("Undo note change at index: " + juce::String(index));
+        return section.applyEnvelopeNoteDirect(index, oldNote);
+    }
+
+private:
+    EnvelopeListSection& section;
+    int index;
+    int oldNote;
+    int newNote;
+};

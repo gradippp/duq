@@ -12,30 +12,11 @@ EnvelopeListSection::EnvelopeListSection()
     viewport.setScrollBarsShown(true, false);
     addAndMakeVisible(viewport);
 
-    // ---- Create default model first ----
+    // ---- Create default envelope first ----
     auto defaultEnv = std::make_unique<EnvelopeData>();
-    defaultEnv->triggerNote = 36; // C2
-    envelopes.emplace_back(std::move(defaultEnv));
+    defaultEnv->triggerNote = 36;
 
-    // ---- Create default row ----
-    auto* row = rows.add(
-        new EnvelopeRowComponent(*envelopes[0], "Default"));
-
-    row->onDeleteRequested = [this, row]()
-        {
-            removeRow(row);
-        };
-
-    row->onSelected = [this, row]()
-        {
-            int index = rows.indexOf(row);
-            selectEnvelope(index);
-        };
-
-    rowContainer.addAndMakeVisible(row);
-
-    // ---- Select first envelope ----
-    selectEnvelope(0);
+    addEnvelopeAt(0, std::move(defaultEnv));
 
     // ---- Add button logic ----
     addButton.onClick = [this]()
@@ -69,9 +50,7 @@ void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData>
     newRow->onNoteChanged = [this, newRow](int newNote)
         {
             int rowIndex = rows.indexOf(newRow);
-
-            if (trySetEnvelopeNote(rowIndex, newNote))
-                newRow->setTriggerNote(newNote);
+            trySetEnvelopeNote(rowIndex, newNote);
         };
 
     newRow->onDeleteRequested = [this, newRow]()
@@ -244,7 +223,35 @@ bool EnvelopeListSection::trySetEnvelopeNote(int index, int newNote)
     if (isNoteAlreadyUsed(newNote, index))
         return false;
 
+    int oldNote = envelopes[index]->triggerNote;
+
+    if (oldNote == newNote)
+        return false;
+
+    if (!undoManager)
+        return applyEnvelopeNoteDirect(index, newNote);
+
+    undoManager->beginNewTransaction("Change Envelope Note");
+
+    undoManager->perform(
+        new ChangeEnvelopeNoteAction(*this,
+            index,
+            oldNote,
+            newNote));
+
+    return true;
+}
+
+bool EnvelopeListSection::applyEnvelopeNoteDirect(int index, int newNote)
+{
+    if (index < 0 || index >= envelopes.size())
+        return false;
+
     envelopes[index]->triggerNote = newNote;
+
+    if (index < rows.size())
+        rows[index]->setTriggerNote(newNote);
+
     return true;
 }
 
