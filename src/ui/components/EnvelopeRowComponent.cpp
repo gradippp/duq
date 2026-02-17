@@ -43,6 +43,8 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
 
             modal->onNoteSelected = [this](int note)
                 {
+                    setTriggerNote(note);
+
                     if (onNoteChanged)
                         onNoteChanged(note);
                 };
