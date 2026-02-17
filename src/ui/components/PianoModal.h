@@ -16,17 +16,20 @@ public:
     void resized() override;
 
 private:
-    // Midi keyboard
+    // ===== MIDI Keyboard =====
     juce::MidiKeyboardState keyboardState;
     juce::MidiKeyboardComponent keyboard;
 
-    // Octave selector
-    juce::Slider octaveSlider;
+    // ===== Octave Controls =====
+    juce::TextButton octaveMinus{ "-" };
+    juce::TextButton octavePlus{ "+" };
 
-    // Current selected note
     int currentNote = 60;
+    int currentOctave = 0;
 
-    // MidiKeyboardStateListener overrides
+    void updateOctaveView();
+
+    // ===== MidiKeyboardStateListener =====
     void handleNoteOn(juce::MidiKeyboardState*,
         int midiChannel,
         int midiNoteNumber,

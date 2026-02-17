@@ -6,51 +6,64 @@ PianoModal::PianoModal(int initialNote)
 {
     currentNote = juce::jlimit(0, 127, initialNote);
 
-    // ---- Keyboard Setup ----
-    keyboard.setKeyWidth(20.0f);
+    // ===== Keyboard =====
+    keyboard.setAvailableRange(0, 127);
     keyboard.setScrollButtonsVisible(false);
-
     addAndMakeVisible(keyboard);
 
-    // ---- Octave Slider ----
-    octaveSlider.setRange(-1, 8, 1); // MIDI supports C-1 to G9
-    octaveSlider.setValue((currentNote / 12) - 1);
+    // ===== Octave =====
+    currentOctave = (currentNote / 12) - 2;
+    currentOctave = juce::jlimit(-1, 8, currentOctave);
 
-    octaveSlider.setSliderStyle(juce::Slider::IncDecButtons);
-    octaveSlider.setTextBoxStyle(juce::Slider::TextBoxRight,
-        false, 50, 20);
+    addAndMakeVisible(octavePlus);
+    addAndMakeVisible(octaveMinus);
 
-    octaveSlider.onValueChange = [this]
+    octavePlus.onClick = [this]
         {
-            const int octave = (int)octaveSlider.getValue();
-            const int baseNote = (octave + 1) * 12;
-
-            keyboard.setAvailableRange(
-                juce::jlimit(0, 127, baseNote),
-                juce::jlimit(0, 127, baseNote + 11));
+            currentOctave = juce::jlimit(-1, 8, currentOctave + 1);
+            updateOctaveView();
         };
 
-    addAndMakeVisible(octaveSlider);
+    octaveMinus.onClick = [this]
+        {
+            currentOctave = juce::jlimit(-1, 8, currentOctave - 1);
+            updateOctaveView();
+        };
 
-    // ---- Set Initial Visible Octave ----
-    {
-        const int octave = (currentNote / 12) - 1;
-        const int baseNote = (octave + 1) * 12;
-
-        keyboard.setAvailableRange(
-            juce::jlimit(0, 127, baseNote),
-            juce::jlimit(0, 127, baseNote + 11));
-    }
-
-    // ---- Keyboard Listener ----
     keyboardState.addListener(this);
 
-    setSize(400, 140);
+    updateOctaveView();
+
+    const float keyWidth = 16.0f;
+    const int whiteKeysPerOctave = 7;
+    const int buttonWidth = 26;
+    const int padding = 6;
+
+    int keyboardWidth = (int)(whiteKeysPerOctave * keyWidth);
+
+    int totalWidth = padding * 2 + keyboardWidth + buttonWidth;
+    int totalHeight = 80;
+
+    setSize(totalWidth, totalHeight);
 }
 
 PianoModal::~PianoModal()
 {
     keyboardState.removeListener(this);
+}
+
+void PianoModal::updateOctaveView()
+{
+    const float keyWidth = 16.0f;
+
+    keyboard.setKeyWidth(keyWidth);
+
+    int baseNote = (currentOctave + 2) * 12;
+    baseNote = juce::jlimit(0, 116, baseNote);
+
+    keyboard.setAvailableRange(baseNote, baseNote + 11);
+
+    keyboard.repaint();
 }
 
 void PianoModal::paint(juce::Graphics& g)
@@ -63,25 +76,34 @@ void PianoModal::paint(juce::Graphics& g)
 
 void PianoModal::resized()
 {
-    auto area = getLocalBounds().reduced(8);
+    const int padding = 6;
+    const int buttonWidth = 26;
 
-    octaveSlider.setBounds(area.removeFromTop(30));
-    area.removeFromTop(8);
+    auto area = getLocalBounds().reduced(padding);
 
+    // Right column for buttons
+    auto buttonArea = area.removeFromRight(buttonWidth);
+
+    octavePlus.setBounds(
+        buttonArea.removeFromTop(buttonArea.getHeight() / 2).reduced(2));
+
+    octaveMinus.setBounds(
+        buttonArea.reduced(2));
+
+    // Remaining area is exactly keyboard width
     keyboard.setBounds(area);
 }
 
 void PianoModal::handleNoteOn(juce::MidiKeyboardState*,
-    int /*midiChannel*/,
+    int,
     int midiNoteNumber,
-    float /*velocity*/)
+    float)
 {
     currentNote = midiNoteNumber;
 
     if (onNoteSelected)
         onNoteSelected(currentNote);
 
-    // Close CallOutBox if shown inside one
     if (auto* callout =
         findParentComponentOfClass<juce::CallOutBox>())
     {
@@ -94,5 +116,4 @@ void PianoModal::handleNoteOff(juce::MidiKeyboardState*,
     int,
     float)
 {
-    // Not needed
 }
