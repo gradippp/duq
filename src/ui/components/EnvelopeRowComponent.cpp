@@ -3,10 +3,8 @@
 #include "../utils/MidiUtils.h"
 #include "../components/PianoModal.h"
 
-EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef,
-    const juce::String& name)
-    : data(dataRef),
-    envelopeName(name)
+EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
+    : data(dataRef)
 {
     auto setupIconButton = [](juce::DrawableButton& button,
         const juce::String& iconName)
@@ -27,6 +25,34 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef,
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
 
             button.setTooltip(iconName);
+        };
+
+    nameLabel.setText(data.name, juce::dontSendNotification);
+    nameLabel.setEditable(false, true, false);
+    nameLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+    nameLabel.setJustificationType(juce::Justification::centredLeft);
+
+    nameLabel.onEditorHide = [this]
+        {
+            auto newName = nameLabel.getText().trim();
+
+            if (newName.isEmpty())
+                newName = "Envelope";
+
+            nameLabel.setText(newName, juce::dontSendNotification);
+            data.name = newName;
+
+            if (onNameChanged)
+                onNameChanged(newName);
+        };
+
+    nameLabel.onTextChange = [this]
+        {
+            data.name = nameLabel.getText();
+
+            if (onNameChanged)
+                onNameChanged(data.name);
         };
 
     noteButton.setClickingTogglesState(false);
@@ -76,6 +102,7 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef,
     addAndMakeVisible(replaceButton);
     addAndMakeVisible(deleteButton);
     addAndMakeVisible(noteButton);
+    addAndMakeVisible(nameLabel);
 }
 
 void EnvelopeRowComponent::setTriggerNote(int note)
@@ -145,11 +172,6 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     nameArea.removeFromLeft(noteButton.getRight());
     nameArea.removeFromRight(90);
 
-    g.drawText(envelopeName,
-        nameArea.reduced(10, 0),
-        juce::Justification::centredLeft,
-        true);
-
     // ===============================
     // MIDI Trigger Indicator (green dot)
     // ===============================
@@ -181,18 +203,16 @@ void EnvelopeRowComponent::resized()
 {
     auto bounds = getLocalBounds().reduced(4);
 
-    // Reserve right side for icon buttons
     auto buttonArea = bounds.removeFromRight(90);
 
     constexpr int buttonWidth = 24;
-
     saveButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
     replaceButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
     deleteButton.setBounds(buttonArea.removeFromLeft(buttonWidth));
 
-    // Reserve left for note button
     constexpr int noteButtonWidth = 50;
     noteButton.setBounds(bounds.removeFromLeft(noteButtonWidth).reduced(2));
 
-    // Remaining space is label area (painted in paint())
+    // Name label fills remaining area
+    nameLabel.setBounds(bounds.reduced(6, 0));
 }

@@ -5,8 +5,7 @@
 class EnvelopeRowComponent : public juce::Component
 {
 public:
-    EnvelopeRowComponent(EnvelopeData& dataRef,
-        const juce::String& name);
+    EnvelopeRowComponent(EnvelopeData& dataRef);
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -18,10 +17,11 @@ public:
 
     void setTriggerNote(int note);
     std::function<void(int)> onNoteChanged;
+    std::function<void(const juce::String&)> onNameChanged;
 
 
 private:
-    juce::String envelopeName;
+    juce::Label nameLabel;
 
     EnvelopeData& data;
 

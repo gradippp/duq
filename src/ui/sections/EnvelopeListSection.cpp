@@ -52,8 +52,7 @@ void EnvelopeListSection::rebuildRowsFromModel()
     for (int i = 0; i < envelopes.size(); ++i)
     {
         auto* row = rows.insert(i,
-            new EnvelopeRowComponent(*envelopes[i],
-                "Env " + juce::String(i + 1)));
+            new EnvelopeRowComponent(*envelopes[i]));
 
         row->onNoteChanged = [this, row](int newNote)
             {

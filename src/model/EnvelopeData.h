@@ -11,6 +11,7 @@ struct EnvelopePoint
 
 struct EnvelopeData
 {
+    juce::String name;
     int triggerNote = 60;
 
     double rate = 20.0;
