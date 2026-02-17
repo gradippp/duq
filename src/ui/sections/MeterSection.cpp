@@ -15,25 +15,30 @@ MeterSection::MeterSection()
         MeterComponent::Direction::LeftToRight,
         "Output Gain")
 {
+    inputMeter.setMode(MeterComponent::MeterMode::AudioLevel);
+    outputMeter.setMode(MeterComponent::MeterMode::AudioLevel);
+
+    reductionMeter.setMode(MeterComponent::MeterMode::Envelope);
+
     addAndMakeVisible(inputMeter);
     addAndMakeVisible(reductionMeter);
     addAndMakeVisible(outputMeter);
 
     // Optional gradient setup
-    inputMeter.setGradient(
-        juce::ColourGradient(juce::Colours::green, 0, 0,
-            juce::Colours::red, 100, 0,
-            false));
+    //inputMeter.setGradient(
+    //    juce::ColourGradient(juce::Colours::green, 0, 0,
+    //        juce::Colours::red, 100, 0,
+    //        false));
 
-    reductionMeter.setGradient(
-        juce::ColourGradient(juce::Colours::cyan, 0, 0,
-            juce::Colours::blue, 100, 0,
-            false));
+    //reductionMeter.setGradient(
+    //    juce::ColourGradient(juce::Colours::cyan, 0, 0,
+    //        juce::Colours::blue, 100, 0,
+    //        false));
 
-    outputMeter.setGradient(
-        juce::ColourGradient(juce::Colours::green, 0, 0,
-            juce::Colours::red, 100, 0,
-            false));
+    //outputMeter.setGradient(
+    //    juce::ColourGradient(juce::Colours::green, 0, 0,
+    //        juce::Colours::red, 100, 0,
+    //        false));
 }
 
 void MeterSection::resized()

@@ -5,18 +5,14 @@ MeterComponent::MeterComponent(std::atomic<float>& source,
     const juce::String& label)
     : inputLevel(source),
     meterDirection(dir),
-    labelText(label),
-    gradient(juce::Colours::green, 0.0f, 0.0f,
-        juce::Colours::red, 100.0f, 0.0f,
-        false)
+    labelText(label)
 {
     startTimerHz(60);
 }
 
-void MeterComponent::setGradient(const juce::ColourGradient& newGradient)
+void MeterComponent::setMode(MeterMode newMode)
 {
-    gradient = newGradient;
-    repaint();
+    mode = newMode;
 }
 
 void MeterComponent::setLabel(const juce::String& newLabel)
@@ -27,9 +23,20 @@ void MeterComponent::setLabel(const juce::String& newLabel)
 
 void MeterComponent::timerCallback()
 {
-    float target = juce::jlimit(0.0f, 1.0f, inputLevel.load());
+    float value = juce::jlimit(0.0f, 1.0f, inputLevel.load());
 
-    smoothedLevel += (target - smoothedLevel) * 0.15f;
+    float normalized = value;
+
+    if (mode == MeterMode::AudioLevel)
+    {
+        float linear = juce::jlimit(0.000001f, 1.0f, value);
+        float db = juce::Decibels::gainToDecibels(linear, -60.0f);
+        normalized = juce::jmap(db, -60.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+    normalized = juce::jlimit(0.0f, 1.0f, normalized);
+
+    smoothedLevel += (normalized - smoothedLevel) * 0.15f;
 
     repaint();
 }
@@ -37,14 +44,13 @@ void MeterComponent::timerCallback()
 void MeterComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-
     g.fillAll(juce::Colours::black);
 
     // ----- Layout -----
-    const float labelWidth = 90.0f; // adjust to taste
+    const float labelWidth = 90.0f;
 
     auto labelArea = bounds.removeFromLeft(labelWidth);
-    auto meterBounds = bounds;
+    auto meterBounds = bounds.reduced(4.0f);
 
     // ----- Draw Label -----
     if (labelText.isNotEmpty())
@@ -57,33 +63,60 @@ void MeterComponent::paint(juce::Graphics& g)
             1);
     }
 
-    // ----- Draw Meter -----
-    float width = meterBounds.getWidth();
-    float fillWidth = width * smoothedLevel;
+    // ----- LED Meter -----
+    constexpr int ledCount = 20;
+    constexpr float ledGap = 2.0f;
 
-    juce::Rectangle<float> meterArea;
+    float meterWidth = meterBounds.getWidth();
+    float meterHeight = meterBounds.getHeight();
 
-    if (meterDirection == Direction::LeftToRight)
+    float ledWidth =
+        (meterWidth - (ledGap * (ledCount - 1))) / ledCount;
+
+    for (int i = 0; i < ledCount; ++i)
     {
-        meterArea = { meterBounds.getX(),
-                      meterBounds.getY(),
-                      fillWidth,
-                      meterBounds.getHeight() };
+        float ledStartX =
+            meterBounds.getX() +
+            i * (ledWidth + ledGap);
+
+        float ledThreshold =
+            (float)(i + 1) / ledCount;
+
+        bool isLit = smoothedLevel >= ledThreshold;
+
+        juce::Colour ledColour;
+
+        // Envelope mode = single colour
+        if (mode == MeterMode::Envelope)
+        {
+            ledColour = juce::Colours::orange;
+        }
+        else
+        {
+            // Audio level zones
+            if (ledThreshold > 0.8f)
+                ledColour = juce::Colours::red;
+            else if (ledThreshold > 0.6f)
+                ledColour = juce::Colours::yellow;
+            else
+                ledColour = juce::Colours::green;
+        }
+
+        if (!isLit)
+            ledColour = ledColour.darker(0.8f);
+
+        g.setColour(ledColour);
+
+        g.fillRoundedRectangle(
+            ledStartX,
+            meterBounds.getY(),
+            ledWidth,
+            meterHeight,
+            2.0f);
     }
-    else
-    {
-        meterArea = { meterBounds.getRight() - fillWidth,
-                      meterBounds.getY(),
-                      fillWidth,
-                      meterBounds.getHeight() };
-    }
 
-    gradient.point1 = { meterBounds.getX(), 0.0f };
-    gradient.point2 = { meterBounds.getRight(), 0.0f };
-
-    g.setGradientFill(gradient);
-    g.fillRect(meterArea);
-
+    // ----- Border -----
     g.setColour(juce::Colours::grey);
     g.drawRect(meterBounds, 1.0f);
 }
+
