@@ -234,6 +234,21 @@ void EnvelopeListSection::resized()
         row->setBounds(rowBounds.removeFromTop(rowHeight));
 }
 
+void EnvelopeListSection::setSelectedIndex(int index)
+{
+    selectedIndex = index;
+}
+
+int EnvelopeListSection::getSelectedIndex() const
+{
+    return selectedIndex;
+}
+
+int EnvelopeListSection::getEnvelopeCount() const
+{
+    return static_cast<int>(envelopes.size());
+}
+
 bool EnvelopeListSection::isNoteAlreadyUsed(int note, int ignoreIndex) const
 {
     for (int i = 0; i < static_cast<int>(envelopes.size()); ++i)

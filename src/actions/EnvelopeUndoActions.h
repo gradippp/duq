@@ -4,12 +4,15 @@ class AddEnvelopeAction : public juce::UndoableAction
 {
 public:
     AddEnvelopeAction(EnvelopeListSection& section, int index)
-        : list(section), insertIndex(index) {
+        : list(section),
+        insertIndex(index),
+        previousSelectedIndex(section.getSelectedIndex())
+    {
     }
 
     bool perform() override
     {
-        if (!created) // first perform only
+        if (!created)
         {
             created = std::make_unique<EnvelopeData>();
 
@@ -19,18 +22,21 @@ public:
         }
 
         list.addEnvelopeAt(insertIndex, std::move(created));
+        list.setSelectedIndex(insertIndex);
         return true;
     }
 
     bool undo() override
     {
         created = list.removeEnvelopeAt(insertIndex);
+        list.setSelectedIndex(previousSelectedIndex);
         return true;
     }
 
 private:
     EnvelopeListSection& list;
     int insertIndex;
+    int previousSelectedIndex;
     std::unique_ptr<EnvelopeData> created;
 };
 
@@ -38,24 +44,38 @@ class RemoveEnvelopeAction : public juce::UndoableAction
 {
 public:
     RemoveEnvelopeAction(EnvelopeListSection& section, int index)
-        : list(section), removeIndex(index) {
+        : list(section),
+        removeIndex(index),
+        previousSelectedIndex(section.getSelectedIndex())
+    {
     }
 
     bool perform() override
     {
         removed = list.removeEnvelopeAt(removeIndex);
+
+        // Select neighbor if possible
+        int newSelection =
+            juce::jlimit(0,
+                list.getEnvelopeCount() - 1,
+                removeIndex);
+
+        list.setSelectedIndex(newSelection);
+
         return true;
     }
 
     bool undo() override
     {
         list.addEnvelopeAt(removeIndex, std::move(removed));
+        list.setSelectedIndex(previousSelectedIndex);
         return true;
     }
 
 private:
     EnvelopeListSection& list;
     int removeIndex;
+    int previousSelectedIndex;
     std::unique_ptr<EnvelopeData> removed;
 };
 
