@@ -15,6 +15,7 @@ EnvelopeListSection::EnvelopeListSection()
     // ---- Create default envelope first ----
     auto defaultEnv = std::make_unique<EnvelopeData>();
     defaultEnv->triggerNote = 36;
+    defaultEnv->name = generateDefaultName();
 
     addEnvelopeAt(0, std::move(defaultEnv));
 
@@ -53,6 +54,12 @@ void EnvelopeListSection::rebuildRowsFromModel()
     {
         auto* row = rows.insert(i,
             new EnvelopeRowComponent(*envelopes[i]));
+
+        row->onNameChanged = [this, row](const juce::String& newName)
+            {
+                int rowIndex = rows.indexOf(row);
+                trySetEnvelopeName(rowIndex, newName);
+            };
 
         row->onNoteChanged = [this, row](int newNote)
             {
@@ -98,6 +105,53 @@ void EnvelopeListSection::rebuildRowsFromModel()
     resized();
 
 }
+
+
+bool EnvelopeListSection::trySetEnvelopeName(int index,
+    const juce::String& newName)
+{
+    if (index < 0 || index >= static_cast<int>(envelopes.size()))
+        return false;
+
+    auto trimmed = newName.trim();
+
+    if (trimmed.isEmpty())
+        return false;
+
+    auto& env = envelopes[index];
+
+    if (env->name == trimmed)
+        return false; // no change
+
+    if (!undoManager)
+        return applyEnvelopeNameDirect(index, trimmed);
+
+    undoManager->beginNewTransaction("Rename Envelope");
+
+    undoManager->perform(
+        new ChangeEnvelopeNameAction(*this,
+            index,
+            env->name,
+            trimmed));
+
+    return true;
+}
+
+bool EnvelopeListSection::applyEnvelopeNameDirect(int index,
+    const juce::String& newName)
+{
+    if (index < 0 || index >= static_cast<int>(envelopes.size()))
+        return false;
+
+    envelopes[index]->name = newName;
+
+    // Update visible row immediately (no full rebuild needed)
+    if (index < rows.size())
+        rows[index]->setName(newName);
+
+    return true;
+}
+
 
 
 void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
@@ -290,6 +344,33 @@ bool EnvelopeListSection::trySetEnvelopeNote(int index, int newNote)
 
     return true;
 }
+
+juce::String EnvelopeListSection::generateDefaultName() const
+{
+    int counter = 1;
+
+    while (true)
+    {
+        juce::String candidate = "Env " + juce::String(counter);
+
+        bool exists = false;
+
+        for (const auto& env : envelopes)
+        {
+            if (env->name == candidate)
+            {
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists)
+            return candidate;
+
+        ++counter;
+    }
+}
+
 
 bool EnvelopeListSection::applyEnvelopeNoteDirect(int index, int newNote)
 {

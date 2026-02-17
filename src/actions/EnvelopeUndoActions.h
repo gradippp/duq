@@ -19,6 +19,7 @@ public:
             int freeNote = list.getNextFreeNote(36);
             if (freeNote >= 0)
                 created->triggerNote = freeNote;
+            created->name = list.generateDefaultName();
         }
 
         list.addEnvelopeAt(insertIndex, std::move(created));
@@ -108,4 +109,36 @@ private:
     int index;
     int oldNote;
     int newNote;
+};
+
+
+class ChangeEnvelopeNameAction : public juce::UndoableAction
+{
+public:
+    ChangeEnvelopeNameAction(EnvelopeListSection& sectionRef,
+        int indexToChange,
+        juce::String oldValue,
+        juce::String newValue)
+        : section(sectionRef),
+        index(indexToChange),
+        oldName(std::move(oldValue)),
+        newName(std::move(newValue))
+    {
+    }
+
+    bool perform() override
+    {
+        return section.applyEnvelopeNameDirect(index, newName);
+    }
+
+    bool undo() override
+    {
+        return section.applyEnvelopeNameDirect(index, oldName);
+    }
+
+private:
+    EnvelopeListSection& section;
+    int index;
+    juce::String oldName;
+    juce::String newName;
 };

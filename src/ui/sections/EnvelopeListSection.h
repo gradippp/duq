@@ -35,6 +35,10 @@ public:
 
     // For Undo actions only. Does not create transactions.
     bool applyEnvelopeNoteDirect(int index, int newNote);
+    bool trySetEnvelopeName(int index, const juce::String& newName);
+    bool applyEnvelopeNameDirect(int index, const juce::String& newName);
+
+    juce::String generateDefaultName() const;
 
 private:
     //friend class ChangeEnvelopeNoteAction;

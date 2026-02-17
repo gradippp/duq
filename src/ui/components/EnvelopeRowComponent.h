@@ -18,6 +18,8 @@ public:
     void setTriggerNote(int note);
     std::function<void(int)> onNoteChanged;
     std::function<void(const juce::String&)> onNameChanged;
+    
+    void setName(const juce::String& name);
 
 
 private:

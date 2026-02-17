@@ -41,7 +41,6 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
                 newName = "Envelope";
 
             nameLabel.setText(newName, juce::dontSendNotification);
-            data.name = newName;
 
             if (onNameChanged)
                 onNameChanged(newName);
@@ -103,6 +102,12 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
     addAndMakeVisible(deleteButton);
     addAndMakeVisible(noteButton);
     addAndMakeVisible(nameLabel);
+}
+
+
+void EnvelopeRowComponent::setName(const juce::String& name)
+{
+    nameLabel.setText(name, juce::dontSendNotification);
 }
 
 void EnvelopeRowComponent::setTriggerNote(int note)
