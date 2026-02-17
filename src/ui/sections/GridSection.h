@@ -33,7 +33,10 @@ public:
 private:
     juce::UndoManager* undoManager = nullptr;
 
-    int gridLines = 16;
+    int gridPower = 4; // 2^4 = 16 → default 1/16 grid
+
+    const int minGridPower = 2;  // 2^2 = 4   → 1/4
+    const int maxGridPower = 6;  // 2^6 = 64  → 1/64
 
     float zoomX = 1.0f;
     float zoomY = 1.0f;

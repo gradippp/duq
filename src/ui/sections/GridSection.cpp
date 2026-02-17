@@ -159,6 +159,22 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     if (!envelope)
         return;
 
+    // --- CTRL + Scroll -> change grid resolution ---
+    bool ctrlDown =
+        juce::ModifierKeys::getCurrentModifiersRealtime().isCtrlDown();
+    
+    if (ctrlDown && !wheel.isSmooth)
+    {
+        if (wheel.deltaY > 0)
+            gridPower = juce::jlimit(minGridPower, maxGridPower, gridPower + 1);
+        else if (wheel.deltaY < 0)
+            gridPower = juce::jlimit(minGridPower, maxGridPower, gridPower - 1);
+
+        repaint();
+        return;
+    }
+
+    // --- Normal scroll -> zoom ---
     float zoomFactor = 1.0f + wheel.deltaY * 0.2f;
 
     float oldZoomX = zoomX;
@@ -167,7 +183,6 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     zoomX = juce::jlimit(minZoom, maxZoom, zoomX * zoomFactor);
     zoomY = juce::jlimit(minZoom, maxZoom, zoomY * zoomFactor);
 
-    // Zoom around mouse position
     auto mouseNorm = pixelToNormalized(e.position);
 
     float visibleWidthOld = 1.0f / oldZoomX;
@@ -239,7 +254,8 @@ void GridSection::paint(juce::Graphics& g)
 
 void GridSection::drawGrid(juce::Graphics& g)
 {
-    g.setColour(juce::Colours::white.withAlpha(0.05f));
+    int divisions = 1 << gridPower;      // 2^gridPower
+    float baseStep = 1.0f / divisions;
 
     float visibleWidth = 1.0f / zoomX;
     float visibleHeight = 1.0f / zoomY;
@@ -250,39 +266,38 @@ void GridSection::drawGrid(juce::Graphics& g)
     float startY = offsetY;
     float endY = offsetY + visibleHeight;
 
-    float baseStepX = 1.0f / gridLines;
-    float baseStepY = 1.0f / gridLines;
-
-    // --- Adaptive density X ---
-    float pixelsPerGridX = viewArea.getWidth() * (baseStepX / visibleWidth);
-
-    while (pixelsPerGridX < 8.0f)
+    // Adaptive density
+    float pxPerGridX = viewArea.getWidth() * (baseStep / visibleWidth);
+    while (pxPerGridX < 8.0f)
     {
-        baseStepX *= 2.0f;
-        pixelsPerGridX *= 2.0f;
+        baseStep *= 2.0f;
+        pxPerGridX *= 2.0f;
     }
 
-    // --- Adaptive density Y ---
-    float pixelsPerGridY = viewArea.getHeight() * (baseStepY / visibleHeight);
-
-    while (pixelsPerGridY < 8.0f)
+    float pxPerGridY = viewArea.getHeight() * (baseStep / visibleHeight);
+    while (pxPerGridY < 8.0f)
     {
-        baseStepY *= 2.0f;
-        pixelsPerGridY *= 2.0f;
+        baseStep *= 2.0f;
+        pxPerGridY *= 2.0f;
     }
 
-    // --- Vertical lines ---
-    int firstLineX = std::floor(startX / baseStepX);
-    int lastLineX = std::ceil(endX / baseStepX);
+    int firstX = std::floor(startX / baseStep);
+    int lastX = std::ceil(endX / baseStep);
 
-    for (int i = firstLineX; i <= lastLineX; ++i)
+    for (int i = firstX; i <= lastX; ++i)
     {
-        float normX = i * baseStepX;
+        float normX = i * baseStep;
 
         if (normX < 0.0f || normX > 1.0f)
             continue;
 
         auto p = normalizedToPixel({ normX, 0.0f });
+
+        bool isMajor = (i % 4 == 0);
+
+        g.setColour(isMajor
+            ? juce::Colours::white.withAlpha(0.15f)
+            : juce::Colours::white.withAlpha(0.05f));
 
         g.drawLine(p.x,
             viewArea.getY(),
@@ -290,18 +305,23 @@ void GridSection::drawGrid(juce::Graphics& g)
             viewArea.getBottom());
     }
 
-    // --- Horizontal lines ---
-    int firstLineY = std::floor(startY / baseStepY);
-    int lastLineY = std::ceil(endY / baseStepY);
+    int firstY = std::floor(startY / baseStep);
+    int lastY = std::ceil(endY / baseStep);
 
-    for (int i = firstLineY; i <= lastLineY; ++i)
+    for (int i = firstY; i <= lastY; ++i)
     {
-        float normY = i * baseStepY;
+        float normY = i * baseStep;
 
         if (normY < 0.0f || normY > 1.0f)
             continue;
 
         auto p = normalizedToPixel({ 0.0f, normY });
+
+        bool isMajor = (i % 4 == 0);
+
+        g.setColour(isMajor
+            ? juce::Colours::white.withAlpha(0.15f)
+            : juce::Colours::white.withAlpha(0.05f));
 
         g.drawLine(viewArea.getX(),
             p.y,
@@ -348,7 +368,7 @@ void GridSection::rebuildPointComponents()
 
                 if (snapMode)
                 {
-                    float snapStep = 1.0f / gridLines;
+                    float snapStep = 1.0f / (1 << gridPower);
                     pos.x = snapValue(pos.x, snapStep);
                     pos.y = snapValue(pos.y, snapStep);
                 }
