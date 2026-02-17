@@ -105,22 +105,41 @@ void GridSection::rebuildPointComponents()
                 if (!envelope)
                     return;
 
+                auto& points = envelope->points;
+
                 pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
                 pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
 
-                envelope->points[index].x = pos.x;
-                envelope->points[index].y = pos.y;
+                const int lastIndex = (int)points.size() - 1;
 
-                std::sort(envelope->points.begin(),
-                    envelope->points.end(),
-                    [](auto& a, auto& b)
-                    {
-                        return a.x < b.x;
-                    });
+                if (index == 0)
+                {
+                    // First point: lock X
+                    points[index].x = 0.0f;
+                    points[index].y = pos.y;
+                }
+                else if (index == lastIndex)
+                {
+                    // Last point: lock X
+                    points[index].x = 1.0f;
+                    points[index].y = pos.y;
+                }
+                else
+                {
+                    // Middle points: prevent crossing neighbors
+                    float leftLimit = points[index - 1].x + 0.001f;
+                    float rightLimit = points[index + 1].x - 0.001f;
+
+                    pos.x = juce::jlimit(leftLimit, rightLimit, pos.x);
+
+                    points[index].x = pos.x;
+                    points[index].y = pos.y;
+                }
 
                 updatePointPositions();
                 repaint();
             };
+
 
         addAndMakeVisible(comp.get());
         pointComponents.push_back(std::move(comp));
