@@ -75,13 +75,11 @@ public:
 
     bool perform() override
     {
-        DBG("Perform note change at index: " + juce::String(index));
         return section.applyEnvelopeNoteDirect(index, newNote);
     }
 
     bool undo() override
     {
-        DBG("Undo note change at index: " + juce::String(index));
         return section.applyEnvelopeNoteDirect(index, oldNote);
     }
 
