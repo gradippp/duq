@@ -10,7 +10,9 @@ public:
 
     void setNormalizedPosition(juce::Point<float> p);
 
-    std::function<void(int, float)> onCurveChanged;
+    std::function<void(int)> onDragStart;
+    std::function<void(int, float)> onDragMove;
+    std::function<void(int)> onDragEnd;
 
     void paint(juce::Graphics&) override;
     void mouseDrag(const juce::MouseEvent&) override;

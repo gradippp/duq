@@ -84,3 +84,38 @@ private:
     EnvelopePoint point;
     int index;
 };
+
+
+class MoveCurveAction : public juce::UndoableAction
+{
+public:
+    MoveCurveAction(EnvelopeData& env,
+        int segmentIdx,
+        float before,
+        float after)
+        : envelope(env),
+        index(segmentIdx),
+        oldCurve(before),
+        newCurve(after) {
+    }
+
+    bool perform() override
+    {
+        envelope.points[index].curve = newCurve;
+        return true;
+    }
+
+    bool undo() override
+    {
+        envelope.points[index].curve = oldCurve;
+        return true;
+    }
+
+    int getSizeInUnits() override { return 1; }
+
+private:
+    EnvelopeData& envelope;
+    int index;
+    float oldCurve;
+    float newCurve;
+};

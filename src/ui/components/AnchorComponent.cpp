@@ -24,23 +24,25 @@ void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
     int dy = e.getDistanceFromDragStartY();
 
     float sensitivity = 0.005f;
-    float newCurve = juce::jlimit(-1.0f, 1.0f, startCurve - dy * sensitivity);
+    float newCurve =
+        juce::jlimit(-1.0f, 1.0f,
+            startCurve - dy * sensitivity);
 
-    if (onCurveChanged)
-        onCurveChanged(segmentIndex, newCurve);
+    if (onDragMove)
+        onDragMove(segmentIndex, newCurve);
 }
 
-void AnchorComponent::mouseDown(const juce::MouseEvent& e)
+void AnchorComponent::mouseDown(const juce::MouseEvent&)
 {
-    dragStartY = e.getMouseDownY();
+    if (onDragStart)
+        onDragStart(segmentIndex);
+
     startCurve = grid.getCurveForSegment(segmentIndex);
 }
 
-void AnchorComponent::mouseUp(const juce::MouseEvent& e)
+void AnchorComponent::mouseUp(const juce::MouseEvent&)
 {
-    if (e.mods.isRightButtonDown())
-    {
-        if (onCurveChanged)
-            onCurveChanged(segmentIndex, 0.0f);
-    }
+    if (onDragEnd)
+        onDragEnd(segmentIndex);
 }
+

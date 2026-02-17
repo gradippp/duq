@@ -47,6 +47,7 @@ private:
     std::vector<std::unique_ptr<PointComponent>> pointComponents;
     std::vector<std::unique_ptr<AnchorComponent>> anchorComponents;
     std::unordered_map<int, EnvelopePoint> dragStartStates;
+    std::unordered_map<int, float> curveDragStartStates;
 
     void changeListenerCallback(juce::ChangeBroadcaster*);
 };

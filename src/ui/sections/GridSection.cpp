@@ -306,16 +306,49 @@ void GridSection::rebuildPointComponents()
     {
         auto anchor = std::make_unique<AnchorComponent>(*this, i);
 
-        anchor->onCurveChanged = [this](int segmentIndex, float newCurve)
+        anchor->onDragStart = [this](int segmentIndex)
             {
-                if (!envelope)
-                    return;
+                if (!envelope) return;
+
+                curveDragStartStates[segmentIndex] =
+                    envelope->points[segmentIndex].curve;
+
+                if (undoManager)
+                    undoManager->beginNewTransaction("Move Curve");
+            };
+
+        anchor->onDragMove = [this](int segmentIndex, float newCurve)
+            {
+                if (!envelope) return;
 
                 envelope->points[segmentIndex].curve =
                     juce::jlimit(-1.0f, 1.0f, newCurve);
 
                 updatePointPositions();
                 repaint();
+            };
+
+        anchor->onDragEnd = [this](int segmentIndex)
+            {
+                if (!envelope || !undoManager) return;
+
+                auto it = curveDragStartStates.find(segmentIndex);
+                if (it == curveDragStartStates.end())
+                    return;
+
+                float oldCurve = it->second;
+                float newCurve = envelope->points[segmentIndex].curve;
+
+                if (!juce::approximatelyEqual(oldCurve, newCurve))
+                {
+                    undoManager->perform(
+                        new MoveCurveAction(*envelope,
+                            segmentIndex,
+                            oldCurve,
+                            newCurve));
+                }
+
+                curveDragStartStates.erase(segmentIndex);
             };
 
         addAndMakeVisible(anchor.get());
