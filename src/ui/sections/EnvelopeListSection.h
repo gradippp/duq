@@ -14,6 +14,7 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    EnvelopeData* getSelectedEnvelope();
     void selectEnvelope(int i);
     std::function<void(EnvelopeData&)> onEnvelopeSelected;
     void updateSelectedEnvelope(const EnvelopeData& data);

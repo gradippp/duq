@@ -20,6 +20,9 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
 
+
+    controlSection.setUndoManager(undoManager);
+
     controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
@@ -73,6 +76,39 @@ void DuqAudioProcessorEditor::resized()
     // ===== Header =====
     constexpr int headerHeight = 60;
     header.setBounds(bounds.removeFromTop(headerHeight));
+
+    header.setUndoCallback([this]
+        {
+            if (undoManager.canUndo())
+            {
+                undoManager.undo();
+
+                if (auto* env = envelopeListSection.getSelectedEnvelope())
+                {
+                    controlSection.loadEnvelope(*env);
+                    envelopeGraph.setEnvelope(env);
+                }
+
+                envelopeGraph.repaint();
+            }
+        });
+
+    header.setRedoCallback([this]
+        {
+            if (undoManager.canRedo())
+            {
+                undoManager.redo();
+
+                if (auto* env = envelopeListSection.getSelectedEnvelope())
+                {
+                    controlSection.loadEnvelope(*env);
+                    envelopeGraph.setEnvelope(env);
+                }
+
+                envelopeGraph.repaint();
+            }
+        });
+
 
     // ===== Split left / right =====
     constexpr int leftPanelWidth = 260;

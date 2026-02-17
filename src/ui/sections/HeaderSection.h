@@ -13,9 +13,18 @@ public:
     void setVersionString(const juce::String& version);
     void setProjectURI(const juce::String& uri);
 
+    void setUndoCallback(std::function<void()> cb);
+    void setRedoCallback(std::function<void()> cb);
+
 private:
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
+
+    juce::TextButton undoButton{ "Undo" };
+    juce::TextButton redoButton{ "Redo" };
+
+    std::function<void()> undoCallback;
+    std::function<void()> redoCallback;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderSection)
 };

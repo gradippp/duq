@@ -72,6 +72,17 @@ void EnvelopeListSection::updateSelectedEnvelope(const EnvelopeData& data)
     }
 }
 
+EnvelopeData* EnvelopeListSection::getSelectedEnvelope()
+{
+    if (selectedIndex >= 0 &&
+        selectedIndex < static_cast<int>(envelopes.size()))
+    {
+        return &envelopes[selectedIndex];
+    }
+
+    return nullptr;
+}
+
 void EnvelopeListSection::selectEnvelope(int index)
 {
     if (index < 0 || index >= envelopes.size())

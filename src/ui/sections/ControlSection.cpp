@@ -1,4 +1,5 @@
 #include "ControlSection.h"
+#include "../../actions/UndoActions.h"
 
 static const std::vector<juce::String> rateDivisions =
 {
@@ -14,9 +15,17 @@ ControlSection::ControlSection()
 {
     knobList = { &rateKnob, &depthKnob, &smoothKnob };
 
+    for (auto* knob : knobList)
+    {
+        knob->getSlider().onDragStart = [this]
+            {
+                if (undoManager)
+                    undoManager->beginNewTransaction("Change Control");
+            };
+    }
+
     // ===== Default local state =====
-    currentData = EnvelopeData();  // default initialize
-    rateIsFrequencyMode = currentData.rateIsFrequencyMode;
+    rateIsFrequencyMode = true;
 
     // ===== Rate Context Menu =====
     rateKnob.extendContextMenu =
@@ -31,17 +40,24 @@ ControlSection::ControlSection()
     rateKnob.onCustomMenuResult =
         [this](int result)
         {
-            if (result == 100)
+            if (result == 100 && currentData && undoManager)
             {
-                rateIsFrequencyMode = !rateIsFrequencyMode;
-                currentData.rateIsFrequencyMode = rateIsFrequencyMode;
+                bool newValue = !currentData->rateIsFrequencyMode;
 
+                undoManager->perform(
+                    new ChangeBoolMemberAction(
+                        *currentData,
+                        &EnvelopeData::rateIsFrequencyMode,
+                        newValue));
+
+                rateIsFrequencyMode = currentData->rateIsFrequencyMode;
                 applyRateMode();
 
                 if (onEnvelopeChanged)
-                    onEnvelopeChanged(currentData);
+                    onEnvelopeChanged(*currentData);
             }
         };
+
 
     // ===== Rate Formatter =====
     rateKnob.valueFormatter =
@@ -64,10 +80,22 @@ ControlSection::ControlSection()
         knobList[i]->onValueChanged =
             [this, i](double value)
             {
-                currentData.*(dataMembers[i]) = value;
+                if (isInitialising)
+                    return;
+
+                if (!currentData || !undoManager)
+                    return;
+
+                auto member = dataMembers[i];
+
+                undoManager->perform(
+                    new ChangeDoubleMemberAction(
+                        *currentData,
+                        member,
+                        value));
 
                 if (onEnvelopeChanged)
-                    onEnvelopeChanged(currentData);
+                    onEnvelopeChanged(*currentData);
             };
     }
 
@@ -81,9 +109,16 @@ ControlSection::ControlSection()
     applyRateMode();
 }
 
-void ControlSection::loadEnvelope(const EnvelopeData& data)
+void ControlSection::setUndoManager(juce::UndoManager& um)
 {
-    currentData = data;   // VERY IMPORTANT
+    undoManager = &um;
+}
+
+void ControlSection::loadEnvelope(EnvelopeData& data)
+{
+    isInitialising = true;
+
+    currentData = &data;
 
     rateIsFrequencyMode = data.rateIsFrequencyMode;
     applyRateMode();
@@ -95,6 +130,8 @@ void ControlSection::loadEnvelope(const EnvelopeData& data)
     rateKnob.refreshValueLabel();
     depthKnob.refreshValueLabel();
     smoothKnob.refreshValueLabel();
+
+    isInitialising = false;
 }
 
 void ControlSection::paint(juce::Graphics& g)
@@ -122,7 +159,10 @@ void ControlSection::paint(juce::Graphics& g)
 
 void ControlSection::applyRateMode()
 {
-    if (rateIsFrequencyMode)
+    if (!currentData)
+        return;
+
+    if (currentData->rateIsFrequencyMode)
     {
         rateKnob.getSlider().setRange(0.1, 100.0f, 0.01);
         rateKnob.setLabel("Frequency");

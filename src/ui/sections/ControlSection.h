@@ -1,4 +1,5 @@
 #pragma once
+#include <juce_core/juce_core.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../components/ControlKnobComponent.h"
 #include "../../model/EnvelopeData.h"
@@ -11,7 +12,7 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
-    void loadEnvelope(const EnvelopeData& data);
+    void loadEnvelope(EnvelopeData& data);
 
     ControlKnobComponent& getRateKnob() { return rateKnob; }
     ControlKnobComponent& getDepthKnob() { return depthKnob; }
@@ -19,8 +20,13 @@ public:
 
     std::function<void(const EnvelopeData&)> onEnvelopeChanged;
 
+    void setUndoManager(juce::UndoManager& um);
+
 private:
-    EnvelopeData currentData;
+    bool isInitialising = true;
+
+    EnvelopeData* currentData = nullptr;
+    juce::UndoManager* undoManager = nullptr;
 
     bool rateIsFrequencyMode = true;
     void applyRateMode();

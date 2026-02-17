@@ -2,6 +2,30 @@
 
 HeaderSection::HeaderSection()
 {
+    addAndMakeVisible(undoButton);
+    addAndMakeVisible(redoButton);
+
+    undoButton.onClick = [this]
+        {
+            if (undoCallback)
+                undoCallback();
+        };
+
+    redoButton.onClick = [this]
+        {
+            if (redoCallback)
+                redoCallback();
+        };
+}
+
+void HeaderSection::setUndoCallback(std::function<void()> cb)
+{
+    undoCallback = std::move(cb);
+}
+
+void HeaderSection::setRedoCallback(std::function<void()> cb)
+{
+    redoCallback = std::move(cb);
 }
 
 void HeaderSection::setVersionString(const juce::String& version)
@@ -72,4 +96,22 @@ void HeaderSection::paint(juce::Graphics& g)
 
 void HeaderSection::resized()
 {
+    auto area = getLocalBounds();
+
+    const int buttonWidth = 70;
+    const int buttonHeight = 24;
+    const int padding = 20;
+
+    auto rightArea = area.removeFromRight(180);
+
+    undoButton.setBounds(
+        rightArea.removeFromLeft(buttonWidth)
+        .withSizeKeepingCentre(buttonWidth, buttonHeight));
+
+    rightArea.removeFromLeft(10);
+
+    redoButton.setBounds(
+        rightArea.removeFromLeft(buttonWidth)
+        .withSizeKeepingCentre(buttonWidth, buttonHeight));
 }
+
