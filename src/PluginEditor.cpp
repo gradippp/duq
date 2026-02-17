@@ -32,10 +32,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                 if (auto* env = envelopeListSection.getSelectedEnvelope())
                 {
                     controlSection.loadEnvelope(*env);
-                    envelopeGraph.setEnvelope(env);
+                    gridSection.setEnvelope(env);
                 }
 
-                envelopeGraph.repaint();
+                gridSection.repaint();
             }
         });
 
@@ -48,10 +48,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                 if (auto* env = envelopeListSection.getSelectedEnvelope())
                 {
                     controlSection.loadEnvelope(*env);
-                    envelopeGraph.setEnvelope(env);
+                    gridSection.setEnvelope(env);
                 }
 
-                envelopeGraph.repaint();
+                gridSection.repaint();
             }
         });
 
@@ -64,18 +64,18 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         [this](EnvelopeData& data)
         {
             controlSection.loadEnvelope(data);
-            envelopeGraph.setEnvelope(&data);
+            gridSection.setEnvelope(&data);
         };
 
     controlSection.onEnvelopeChanged =
         [this](const EnvelopeData& data)
         {
             envelopeListSection.updateSelectedEnvelope(data);
-            envelopeGraph.repaint();
+            gridSection.repaint();
         };
     envelopeListSection.selectEnvelope(0);
 
-    addAndMakeVisible(envelopeGraph);
+    addAndMakeVisible(gridSection);
 
     setSize(900, 600);
     setResizable(true, true);
@@ -139,7 +139,7 @@ void DuqAudioProcessorEditor::resized()
 
     auto meterArea = rightArea.removeFromBottom(meterHeight);
 
-    envelopeGraph.setBounds(rightArea);
+    gridSection.setBounds(rightArea);
     meterSection.setBounds(meterArea);
 }
 

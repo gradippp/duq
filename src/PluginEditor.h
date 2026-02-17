@@ -13,7 +13,7 @@
 #include "ui/sections/EnvelopeListSection.h"
 #include "ui/sections/ControlSection.h"
 #include "ui/utils/FlatKnobLookAndFeel.h"
-#include "ui/components/EnvelopeGraphComponent.h"
+#include "ui/sections/GridSection.h"
 #include "ui/sections/MeterSection.h"
 
 //==============================================================================
@@ -40,7 +40,7 @@ private:
     HeaderSection header;
     EnvelopeListSection envelopeListSection;
     ControlSection controlSection;
-    EnvelopeGraphComponent envelopeGraph;
+    GridSection gridSection;
     MeterSection meterSection;
 
     juce::TooltipWindow tooltipWindow{ this };
