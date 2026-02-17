@@ -7,21 +7,13 @@
 class MeterSection : public juce::Component
 {
 public:
-    MeterSection();
+    MeterSection(std::atomic<float>& inputSource,
+        std::atomic<float>& reductionSource,
+        std::atomic<float>& outputSource);
 
     void resized() override;
 
-    // expose level setters (temporary until processor wiring)
-    void setInputLevel(float value);
-    void setReductionLevel(float value);
-    void setOutputLevel(float value);
-
 private:
-    // ===== Atomic Level Sources =====
-    std::atomic<float> inputLevel{ 0.0f };
-    std::atomic<float> reductionLevel{ 0.0f };
-    std::atomic<float> outputLevel{ 0.0f };
-
     // ===== Meter Components =====
     MeterComponent inputMeter;
     MeterComponent reductionMeter;

@@ -57,8 +57,16 @@ public:
     //==============================================================================
     juce::UndoManager& getUndoManager();
 
+    std::atomic<float>& getInputMeterLevel() { return inputMeterLevel; }
+    std::atomic<float>& getReductionMeterLevel() { return reductionMeterLevel; }
+    std::atomic<float>& getOutputMeterLevel() { return outputMeterLevel; }
+
 private:
     juce::UndoManager undoManager { 200 };
+
+    std::atomic<float> inputMeterLevel{ 0.0f };
+    std::atomic<float> reductionMeterLevel{ 0.0f };
+    std::atomic<float> outputMeterLevel{ 0.0f };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessor)

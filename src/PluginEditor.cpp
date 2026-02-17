@@ -13,7 +13,11 @@
 DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     : AudioProcessorEditor(&p),
     audioProcessor(p),
-    undoManager(p.getUndoManager())
+    undoManager(p.getUndoManager()),
+    meterSection(
+        audioProcessor.getInputMeterLevel(),
+        audioProcessor.getReductionMeterLevel(),
+        audioProcessor.getOutputMeterLevel())
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -97,6 +101,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     addAndMakeVisible(controlSection);
 
     addAndMakeVisible(meterSection);
+
     undoManager.clearUndoHistory();
 }
 
