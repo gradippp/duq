@@ -32,7 +32,7 @@ public:
 private:
     juce::UndoManager* undoManager = nullptr;
 
-    int gridLines = 8;
+    int gridLines = 16;
 
     void drawGrid(juce::Graphics&);
     void rebuildPointComponents();
