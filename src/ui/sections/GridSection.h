@@ -22,11 +22,17 @@ public:
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
 private:
+    int gridLines = 8;
+
     void drawGrid(juce::Graphics&);
     void rebuildPointComponents();
     void updatePointPositions();
 
     juce::Rectangle<int> viewArea;
+
+    static float snapValue(float value, float step);
+    float snapStepX = 0.05f;  // 5% horizontal grid
+    float snapStepY = 0.05f;  // 5% vertical grid
 
     EnvelopeData* envelope = nullptr;
 

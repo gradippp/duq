@@ -28,10 +28,14 @@ void PointComponent::paint(juce::Graphics& g)
 
 void PointComponent::mouseDrag(const juce::MouseEvent& e)
 {
-    auto pos = grid.pixelToNormalized(e.getEventRelativeTo(&grid).position);
+    auto pos = grid.pixelToNormalized(
+        e.getEventRelativeTo(&grid).position
+    );
+
+    bool snapMode = e.mods.isShiftDown();
 
     if (onDrag)
-        onDrag(pointIndex, pos);
+        onDrag(pointIndex, pos, snapMode);
 }
 
 void PointComponent::mouseDoubleClick(const juce::MouseEvent& e)

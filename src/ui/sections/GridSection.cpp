@@ -13,9 +13,15 @@ float applyCurve(float t, float curve)
         return std::pow(t, 1.0f - k);
 }
 
+
 GridSection::GridSection()
 {
     setOpaque(true);
+}
+
+float GridSection::snapValue(float value, float step)
+{
+    return std::round(value / step) * step;
 }
 
 void GridSection::setEnvelope(EnvelopeData* newEnvelope)
@@ -162,8 +168,6 @@ void GridSection::paint(juce::Graphics& g)
 
 void GridSection::drawGrid(juce::Graphics& g)
 {
-    const int gridLines = 8; // simple fixed grid for now
-
     float dx = (float)viewArea.getWidth() / gridLines;
     float dy = (float)viewArea.getHeight() / gridLines;
 
@@ -195,7 +199,7 @@ void GridSection::rebuildPointComponents()
     {
         auto comp = std::make_unique<PointComponent>(*this, i);
 
-        comp->onDrag = [this](int index, juce::Point<float> pos)
+        comp->onDrag = [this](int index, juce::Point<float> pos, bool snapMode)
             {
                 if (!envelope)
                     return;
@@ -204,6 +208,14 @@ void GridSection::rebuildPointComponents()
 
                 pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
                 pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
+
+                if (snapMode)
+                {
+                    float snapStep = 1.0f / gridLines;
+
+                    pos.x = snapValue(pos.x, snapStep);
+                    pos.y = snapValue(pos.y, snapStep);
+                }
 
                 const int lastIndex = (int)pts.size() - 1;
 

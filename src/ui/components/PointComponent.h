@@ -13,7 +13,7 @@ public:
 
     int getIndex() const noexcept { return pointIndex; }
 
-    std::function<void(int, juce::Point<float>)> onDrag;
+    std::function<void(int, juce::Point<float>, bool)> onDrag;
 
     void paint(juce::Graphics&) override;
     void mouseDrag(const juce::MouseEvent&) override;
