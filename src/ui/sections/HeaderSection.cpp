@@ -1,7 +1,33 @@
 #include "HeaderSection.h"
+#include "../utils/IconFactory.h"
 
 HeaderSection::HeaderSection()
 {
+    auto setupIconButton = [](juce::DrawableButton& button,
+        const juce::String& iconName)
+        {
+            button.setClickingTogglesState(false);
+
+            button.setColour(juce::DrawableButton::backgroundColourId,
+                juce::Colours::transparentBlack);
+
+            button.setColour(juce::DrawableButton::backgroundOnColourId,
+                juce::Colours::darkgrey.withAlpha(0.2f));
+
+            auto normal = Icons::load(iconName, juce::Colours::white);
+            auto over = Icons::load(iconName, juce::Colours::white.withAlpha(0.8f));
+            auto down = Icons::load(iconName, juce::Colours::white.withAlpha(0.6f));
+
+            if (normal != nullptr)
+                button.setImages(normal.get(), over.get(), down.get(), nullptr);
+        };
+
+    setupIconButton(undoButton, "undo");
+    setupIconButton(redoButton, "redo");
+
+    undoButton.setTooltip("Undo");
+    redoButton.setTooltip("Redo");
+
     addAndMakeVisible(undoButton);
     addAndMakeVisible(redoButton);
 
@@ -104,20 +130,19 @@ void HeaderSection::resized()
 {
     auto area = getLocalBounds();
 
-    const int buttonWidth = 70;
-    const int buttonHeight = 24;
+    const int buttonSize = 28;
     const int padding = 20;
 
-    auto rightArea = area.removeFromRight(180);
+    auto rightArea = area.removeFromRight(120);
 
     undoButton.setBounds(
-        rightArea.removeFromLeft(buttonWidth)
-        .withSizeKeepingCentre(buttonWidth, buttonHeight));
+        rightArea.removeFromLeft(buttonSize)
+        .withSizeKeepingCentre(buttonSize, buttonSize));
 
-    rightArea.removeFromLeft(10);
+    rightArea.removeFromLeft(12);
 
     redoButton.setBounds(
-        rightArea.removeFromLeft(buttonWidth)
-        .withSizeKeepingCentre(buttonWidth, buttonHeight));
+        rightArea.removeFromLeft(buttonSize)
+        .withSizeKeepingCentre(buttonSize, buttonSize));
 }
 

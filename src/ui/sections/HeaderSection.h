@@ -21,8 +21,8 @@ private:
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
 
-    juce::TextButton undoButton{ "Undo" };
-    juce::TextButton redoButton{ "Redo" };
+    juce::DrawableButton undoButton{ "undo", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton redoButton{ "redo", juce::DrawableButton::ImageFitted };
 
     std::function<void()> undoCallback;
     std::function<void()> redoCallback;
