@@ -1,5 +1,18 @@
 #include "GridSection.h"
 
+float applyCurve(float t, float curve)
+{
+    if (curve == 0.0f)
+        return t;
+
+    float k = curve * 4.0f; // scale aggression
+
+    if (curve > 0)
+        return 1.0f - std::pow(1.0f - t, 1.0f + k);
+    else
+        return std::pow(t, 1.0f - k);
+}
+
 GridSection::GridSection()
 {
     setOpaque(true);
@@ -67,22 +80,24 @@ void GridSection::paint(juce::Graphics& g)
         auto& p1 = points[i];
         auto& p2 = points[i + 1];
 
-        auto start = normalizedToPixel({ p1.x, p1.y });
-        auto end = normalizedToPixel({ p2.x, p2.y });
+        const int resolution = 40;
 
-        float midX = (start.x + end.x) * 0.5f;
-        float midY = (start.y + end.y) * 0.5f;
+        for (int s = 0; s <= resolution; ++s)
+        {
+            float t = (float)s / resolution;
 
-        // midpoint in normalized space
-        float midXn = (p1.x + p2.x) * 0.5f;
-        float midYn = (p1.y + p2.y) * 0.5f;
+            float shapedT = applyCurve(t, p1.curve);
 
-        // curve in normalized Y
-        float controlYn = midYn + p1.curve * 0.25f;
+            float x = juce::jmap(t, p1.x, p2.x);
+            float y = juce::jmap(shapedT, p1.y, p2.y);
 
-        auto control = normalizedToPixel({ midXn, controlYn });
+            auto pixel = normalizedToPixel({ x, y });
 
-        path.quadraticTo(control, end);
+            if (i == 0 && s == 0)
+                path.startNewSubPath(pixel);
+            else
+                path.lineTo(pixel);
+        }
     }
 
     g.setColour(juce::Colours::white);
