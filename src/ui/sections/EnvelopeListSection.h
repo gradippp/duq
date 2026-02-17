@@ -30,19 +30,15 @@ public:
     std::unique_ptr<EnvelopeData> removeEnvelopeAt(int index);
 
     bool isNoteAlreadyUsed(int note, int ignoreIndex = -1) const;
-    bool trySetEnvelopeNote(int index, int newNote);
     int getNextFreeNote(int startFrom = 36) const;
 
     // For Undo actions only. Does not create transactions.
     bool applyEnvelopeNoteDirect(int index, int newNote);
-    bool trySetEnvelopeName(int index, const juce::String& newName);
     bool applyEnvelopeNameDirect(int index, const juce::String& newName);
 
     juce::String generateDefaultName() const;
 
 private:
-    //friend class ChangeEnvelopeNoteAction;
-
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void rebuildRowsFromModel();
 
@@ -53,6 +49,9 @@ private:
     juce::TextButton addButton;
     juce::OwnedArray<EnvelopeRowComponent> rows;
     void removeRow(EnvelopeRowComponent* row);
+
+    bool trySetEnvelopeNote(int index, int newNote);
+    bool trySetEnvelopeName(int index, const juce::String& newName);
 
     juce::UndoManager* undoManager = nullptr;
 
