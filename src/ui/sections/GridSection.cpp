@@ -96,6 +96,85 @@ float GridSection::getCurveForSegment(int index) const
     return envelope->points[index].curve;
 }
 
+void GridSection::mouseMove(const juce::MouseEvent&)
+{
+    updatePanCursor();
+}
+
+void GridSection::mouseDown(const juce::MouseEvent& e)
+{
+    if (!envelope)
+        return;
+
+    bool altDown =
+        juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
+
+    bool canPan = (zoomX > 1.0f || zoomY > 1.0f);
+
+    if (altDown && canPan)
+    {
+        isPanning = true;
+        panStartMouse = e.getPosition();
+
+        panStartOffsetX = offsetX;
+        panStartOffsetY = offsetY;
+
+        updatePanCursor();
+    }
+}
+
+void GridSection::mouseDrag(const juce::MouseEvent& e)
+{
+    if (!isPanning || !envelope || zoomX <= 1.0f && zoomY <= 1.0f)
+        return;
+
+    auto delta = e.getPosition() - panStartMouse;
+
+    float visibleWidth = 1.0f / zoomX;
+    float visibleHeight = 1.0f / zoomY;
+
+    float dx = (float)delta.x / viewArea.getWidth() * visibleWidth;
+    float dy = (float)delta.y / viewArea.getHeight() * visibleHeight;
+
+    offsetX = panStartOffsetX - dx;
+    offsetY = panStartOffsetY + dy;
+
+    offsetX = juce::jlimit(0.0f, 1.0f - visibleWidth, offsetX);
+    offsetY = juce::jlimit(0.0f, 1.0f - visibleHeight, offsetY);
+
+    envelope->viewState.offsetX = offsetX;
+    envelope->viewState.offsetY = offsetY;
+
+    updatePanCursor();
+    updatePointPositions();
+    repaint();
+}
+
+void GridSection::mouseUp(const juce::MouseEvent&)
+{
+    isPanning = false;
+    updatePanCursor();
+}
+
+void GridSection::updatePanCursor()
+{
+    bool altDown =
+        juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
+
+    bool canPan = (zoomX > 1.0f || zoomY > 1.0f);
+
+    if (!altDown || !canPan)
+    {
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+        return;
+    }
+
+    if (isPanning)
+        setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+    else
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+}
+
 void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
 {
     if (!envelope)
