@@ -1,5 +1,5 @@
 #include "ControlSection.h"
-#include "../../actions/UndoActions.h"
+#include "../../actions/ControlUndoActions.h"
 
 static const std::vector<juce::String> rateDivisions =
 {

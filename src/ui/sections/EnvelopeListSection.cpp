@@ -1,4 +1,5 @@
 #include "EnvelopeListSection.h"
+#include "../../actions/EnvelopeUndoActions.h"
 
 EnvelopeListSection::EnvelopeListSection()
 {
@@ -36,31 +37,63 @@ EnvelopeListSection::EnvelopeListSection()
     // ---- Add button logic ----
     addButton.onClick = [this]()
         {
-            const int newIndex = rows.size();
+            if (!undoManager)
+                return;
 
-            envelopes.emplace_back(std::make_unique<EnvelopeData>());
+            int index = rows.size();
 
-            auto* newRow = rows.add(
-                new EnvelopeRowComponent("Env " + juce::String(newIndex + 1))
-            );
-
-            newRow->onDeleteRequested = [this, newRow]()
-                {
-                    removeRow(newRow);
-                };
-
-            newRow->onSelected = [this, newRow]()
-                {
-                    int index = rows.indexOf(newRow);
-                    selectEnvelope(index);
-                };
-
-            rowContainer.addAndMakeVisible(newRow);
-            selectEnvelope(newIndex);
-            viewport.setViewPosition(0, newIndex * 28); // automatic scrolling
-
-            resized();
+            undoManager->perform(
+                new AddEnvelopeAction(*this, index));
         };
+}
+
+void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
+{
+    undoManager = &um;
+}
+
+
+void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData> env)
+{
+    envelopes.insert(envelopes.begin() + index, std::move(env));
+
+    auto* newRow = rows.insert(index,
+        new EnvelopeRowComponent("Env " + juce::String(index + 1)));
+
+    newRow->onDeleteRequested = [this, newRow]()
+        {
+            removeRow(newRow);
+        };
+
+    newRow->onSelected = [this, newRow]()
+        {
+            int i = rows.indexOf(newRow);
+            selectEnvelope(i);
+        };
+
+    rowContainer.addAndMakeVisible(newRow);
+
+    selectEnvelope(index);
+    resized();
+}
+
+std::unique_ptr<EnvelopeData> EnvelopeListSection::removeEnvelopeAt(int index)
+{
+    if (index < 0 || index >= envelopes.size())
+        return nullptr;
+
+    auto removed = std::move(envelopes[index]);
+    envelopes.erase(envelopes.begin() + index);
+
+    rows.remove(index);
+    resized();
+
+    if (!rows.isEmpty())
+        selectEnvelope(juce::jlimit(0, rows.size() - 1, index));
+    else
+        selectedIndex = -1;
+
+    return removed;
 }
 
 void EnvelopeListSection::updateSelectedEnvelope(const EnvelopeData& data)
@@ -101,27 +134,16 @@ void EnvelopeListSection::selectEnvelope(int index)
 
 void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
 {
+    if (!undoManager)
+        return;
+
     int index = rows.indexOf(row);
 
-    if (index >= 0 && index < envelopes.size())
-        envelopes.erase(envelopes.begin() + index);
-
-    rows.removeObject(row, true);
-
-    if (selectedIndex == index)
+    if (index >= 0)
     {
-        if (!rows.isEmpty())
-            selectEnvelope(juce::jlimit(0, rows.size() - 1, index - 1));
-        else
-            selectedIndex = -1;
+        undoManager->perform(
+            new RemoveEnvelopeAction(*this, index));
     }
-    else if (selectedIndex > index)
-    {
-        selectEnvelope(selectedIndex - 1);
-    }
-
-    resized();
-    repaint();
 }
 
 

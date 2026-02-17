@@ -19,12 +19,18 @@ public:
     std::function<void(EnvelopeData&)> onEnvelopeSelected;
     void updateSelectedEnvelope(const EnvelopeData& data);
 
+    void setUndoManager(juce::UndoManager& um);
+    void addEnvelopeAt(int index, std::unique_ptr<EnvelopeData> env);
+    std::unique_ptr<EnvelopeData> removeEnvelopeAt(int index);
+
 private:
     juce::Viewport viewport;
     juce::Component rowContainer;
     juce::TextButton addButton;
     juce::OwnedArray<EnvelopeRowComponent> rows;
     void removeRow(EnvelopeRowComponent* row);
+
+    juce::UndoManager* undoManager = nullptr;
 
     std::vector<std::unique_ptr<EnvelopeData>> envelopes;
     int selectedIndex = -1;

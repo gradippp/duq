@@ -20,7 +20,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
 
-
+    envelopeListSection.setUndoManager(undoManager);
     controlSection.setUndoManager(undoManager);
 
     controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
