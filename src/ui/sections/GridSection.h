@@ -3,14 +3,19 @@
 #include "../../model/EnvelopeData.h"
 #include "../components/PointComponent.h"
 #include "../components/AnchorComponent.h"
+#include "../../actions/GridUndoActions.h"
 
-class GridSection : public juce::Component
+class GridSection : public juce::Component,
+    private juce::ChangeListener
 {
 public:
     GridSection();
+    ~GridSection();
 
     void setEnvelope(EnvelopeData*);
     void deletePoint(int index);
+
+    void setUndoManager(juce::UndoManager& um);
 
     juce::Point<float> normalizedToPixel(juce::Point<float>) const;
     juce::Point<float> pixelToNormalized(juce::Point<float>) const;
@@ -21,7 +26,12 @@ public:
 
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
+    EnvelopeData* getEnvelope() { return envelope; }
+    juce::UndoManager& getUndoManager();
+
 private:
+    juce::UndoManager* undoManager = nullptr;
+
     int gridLines = 8;
 
     void drawGrid(juce::Graphics&);
@@ -31,11 +41,12 @@ private:
     juce::Rectangle<int> viewArea;
 
     static float snapValue(float value, float step);
-    float snapStepX = 0.05f;  // 5% horizontal grid
-    float snapStepY = 0.05f;  // 5% vertical grid
 
     EnvelopeData* envelope = nullptr;
 
     std::vector<std::unique_ptr<PointComponent>> pointComponents;
     std::vector<std::unique_ptr<AnchorComponent>> anchorComponents;
+    std::unordered_map<int, EnvelopePoint> dragStartStates;
+
+    void changeListenerCallback(juce::ChangeBroadcaster*);
 };

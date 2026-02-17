@@ -16,8 +16,16 @@ public:
     std::function<void(int, juce::Point<float>, bool)> onDrag;
 
     void paint(juce::Graphics&) override;
+
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
+
+    std::function<void(int)> onDragStart;
+    std::function<void(int, juce::Point<float>, bool)> onDragMove;
+    std::function<void(int)> onDragEnd;
+
 
 private:
     GridSection& grid;

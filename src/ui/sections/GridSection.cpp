@@ -19,6 +19,26 @@ GridSection::GridSection()
     setOpaque(true);
 }
 
+GridSection::~GridSection()
+{
+    if (undoManager)
+        undoManager->removeChangeListener(this);
+}
+
+
+void GridSection::setUndoManager(juce::UndoManager& um)
+{
+    undoManager = &um;
+    undoManager->addChangeListener(this);
+}
+
+juce::UndoManager& GridSection::getUndoManager()
+{
+    jassert(undoManager != nullptr);
+    return *undoManager;
+}
+
+
 float GridSection::snapValue(float value, float step)
 {
     return std::round(value / step) * step;
@@ -46,9 +66,11 @@ void GridSection::deletePoint(int index)
 
     if (index >= 0 && index < points.size())
     {
-        points.erase(points.begin() + index);
-        rebuildPointComponents();
-        repaint();
+        EnvelopePoint removed = points[index];
+
+        undoManager->beginNewTransaction("Delete Envelope Point");
+        undoManager->perform(
+            new DeletePointAction(*envelope, removed, index));
     }
 }
 
@@ -93,7 +115,11 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
             return p.x < value;
         });
 
-    points.insert(it, newPoint);
+    int index = std::distance(points.begin(), it);
+
+    undoManager->beginNewTransaction("Add Envelope Point");
+    undoManager->perform(
+        new AddPointAction(*envelope, newPoint, index));
 
     rebuildPointComponents();
     repaint();
@@ -199,10 +225,20 @@ void GridSection::rebuildPointComponents()
     {
         auto comp = std::make_unique<PointComponent>(*this, i);
 
-        comp->onDrag = [this](int index, juce::Point<float> pos, bool snapMode)
+        comp->onDragStart = [this](int index)
             {
-                if (!envelope)
-                    return;
+                if (!envelope) return;
+
+                dragStartStates[index] = envelope->points[index];
+
+                undoManager->beginNewTransaction("Move Envelope Point");
+            };
+
+        comp->onDragMove = [this](int index,
+            juce::Point<float> pos,
+            bool snapMode)
+            {
+                if (!envelope) return;
 
                 auto& pts = envelope->points;
 
@@ -212,7 +248,6 @@ void GridSection::rebuildPointComponents()
                 if (snapMode)
                 {
                     float snapStep = 1.0f / gridLines;
-
                     pos.x = snapValue(pos.x, snapStep);
                     pos.y = snapValue(pos.y, snapStep);
                 }
@@ -243,6 +278,27 @@ void GridSection::rebuildPointComponents()
                 updatePointPositions();
                 repaint();
             };
+
+        comp->onDragEnd = [this](int index)
+            {
+                if (!envelope) return;
+
+                auto newState = envelope->points[index];
+                auto oldState = dragStartStates[index];
+
+                if (!juce::approximatelyEqual(oldState.x, newState.x) ||
+                    !juce::approximatelyEqual(oldState.y, newState.y))
+                {
+                    undoManager->perform(
+                        new MovePointAction(*envelope,
+                            index,
+                            oldState,
+                            newState));
+                }
+
+                dragStartStates.erase(index);
+            };
+
 
         addAndMakeVisible(comp.get());
         pointComponents.push_back(std::move(comp));
@@ -299,4 +355,10 @@ void GridSection::updatePointPositions()
 
         anchorComponents[i]->setNormalizedPosition({ x, y });
     }
+}
+
+void GridSection::changeListenerCallback(juce::ChangeBroadcaster*)
+{
+    rebuildPointComponents();
+    repaint();
 }

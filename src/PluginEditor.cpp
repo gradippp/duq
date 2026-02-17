@@ -22,6 +22,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     envelopeListSection.setUndoManager(undoManager);
     controlSection.setUndoManager(undoManager);
+    gridSection.setUndoManager(undoManager);
 
     header.setUndoCallback([this]
         {
