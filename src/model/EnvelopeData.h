@@ -8,6 +8,15 @@ struct EnvelopePoint
     float curve = 0.0f;
 };
 
+struct EnvelopeViewState
+{
+    float zoomX = 1.0f;
+    float zoomY = 1.0f;
+    float offsetX = 0.0f;
+    float offsetY = 0.0f;
+
+    int gridPower = 4; // 1/16
+};
 
 struct EnvelopeData
 {
@@ -19,6 +28,8 @@ struct EnvelopeData
     double smooth = 0.0;
 
     bool rateIsFrequencyMode = true;
+
+    EnvelopeViewState viewState;
 
     std::vector<EnvelopePoint> points =
     {

@@ -47,6 +47,17 @@ float GridSection::snapValue(float value, float step)
 void GridSection::setEnvelope(EnvelopeData* newEnvelope)
 {
     envelope = newEnvelope;
+
+    if (envelope)
+    {
+        zoomX = envelope->viewState.zoomX;
+        zoomY = envelope->viewState.zoomY;
+        offsetX = envelope->viewState.offsetX;
+        offsetY = envelope->viewState.offsetY;
+
+        gridPower = envelope->viewState.gridPower;
+    }
+
     rebuildPointComponents();
     repaint();
 }
@@ -170,6 +181,9 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
         else if (wheel.deltaY < 0)
             gridPower = juce::jlimit(minGridPower, maxGridPower, gridPower - 1);
 
+        if (envelope)
+            envelope->viewState.gridPower = gridPower;
+
         repaint();
         return;
     }
@@ -199,6 +213,14 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
 
     offsetX = juce::jlimit(0.0f, 1.0f - visibleWidthNew, offsetX);
     offsetY = juce::jlimit(0.0f, 1.0f - visibleHeightNew, offsetY);
+
+    if (envelope)
+    {
+        envelope->viewState.zoomX = zoomX;
+        envelope->viewState.zoomY = zoomY;
+        envelope->viewState.offsetX = offsetX;
+        envelope->viewState.offsetY = offsetY;
+    }
 
     updatePointPositions();
     repaint();
