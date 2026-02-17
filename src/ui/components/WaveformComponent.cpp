@@ -31,43 +31,50 @@ void WaveformComponent::timerCallback()
 
 void WaveformComponent::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colours::black);
+    g.fillAll(juce::Colour(0xff111111));
 
-    if (!samples || bufferLength == 0)
+    if (!samples || bufferLength <= 0)
         return;
 
     const int width = getWidth();
     const int height = getHeight();
+    const float centerY = height * 0.5f;
 
-    const int writeIndex = writePosition->load();
+    const float samplesPerPixel =
+        (float)bufferLength / (float)width;
 
-    // Visible range mapping
-    const float visibleWidth = 1.0f / zoomX;
-    const int startIndex =
-        int(offsetX * bufferLength);
-
-    const int samplesPerPixel =
-        juce::jmax(1, int(bufferLength * visibleWidth / width));
-
-    g.setColour(juce::Colours::white.withAlpha(0.25f));
+    g.setColour(juce::Colours::white.withAlpha(0.20f));
 
     for (int x = 0; x < width; ++x)
     {
-        int bufferIndex =
-            (writeIndex + startIndex +
-                x * samplesPerPixel) % bufferLength;
+        int start = (int)(x * samplesPerPixel);
+        int end = (int)((x + 1) * samplesPerPixel);
 
-        float sample = samples[bufferIndex];
-        sample = juce::jlimit(-1.0f, 1.0f, sample);
+        start = juce::jlimit(0, bufferLength - 1, start);
+        end = juce::jlimit(start + 1, bufferLength, end);
 
-        float y =
-            juce::jmap(sample,
-                -1.0f, 1.0f,
-                (float)height, 0.0f);
+        float minVal = 1.0f;
+        float maxVal = -1.0f;
 
-        g.drawLine((float)x,
-            (float)height / 2.0f,
-            (float)x,
-            y);
+        for (int i = start; i < end; ++i)
+        {
+            float v = samples[i];
+            minVal = std::min(minVal, v);
+            maxVal = std::max(maxVal, v);
+        }
+
+        float yTop = juce::jmap(maxVal, -1.0f, 1.0f,
+            (float)height, 0.0f);
+
+        float yBottom = juce::jmap(minVal, -1.0f, 1.0f,
+            (float)height, 0.0f);
+
+        g.drawLine((float)x, yTop,
+            (float)x, yBottom, 1.0f);
     }
+
+    // subtle center line
+    g.setColour(juce::Colours::white.withAlpha(0.06f));
+    g.drawLine(0, centerY, width, centerY);
 }
+
