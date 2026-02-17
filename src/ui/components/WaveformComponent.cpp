@@ -43,7 +43,7 @@ void WaveformComponent::paint(juce::Graphics& g)
     const float samplesPerPixel =
         (float)bufferLength / (float)width;
 
-    g.setColour(juce::Colours::white.withAlpha(0.20f));
+    g.setColour(juce::Colours::azure);
 
     for (int x = 0; x < width; ++x)
     {
