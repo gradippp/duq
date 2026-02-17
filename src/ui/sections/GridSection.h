@@ -25,6 +25,7 @@ public:
     float getCurveForSegment(int index) const;
 
     void mouseDoubleClick(const juce::MouseEvent&) override;
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
     EnvelopeData* getEnvelope() { return envelope; }
     juce::UndoManager& getUndoManager();
@@ -33,6 +34,15 @@ private:
     juce::UndoManager* undoManager = nullptr;
 
     int gridLines = 16;
+
+    float zoomX = 1.0f;
+    float zoomY = 1.0f;
+
+    float offsetX = 0.0f; // 0..1 visible window start
+    float offsetY = 0.0f;
+
+    const float minZoom = 1.0f;
+    const float maxZoom = 10.0f;
 
     void drawGrid(juce::Graphics&);
     void rebuildPointComponents();

@@ -124,21 +124,69 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
 
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
 {
+    float visibleWidth = 1.0f / zoomX;
+    float visibleHeight = 1.0f / zoomY;
+
+    float nx = (p.x - offsetX) / visibleWidth;
+    float ny = (p.y - offsetY) / visibleHeight;
+
     return {
-        viewArea.getX() + p.x * viewArea.getWidth(),
-        viewArea.getY() + (1.0f - p.y) * viewArea.getHeight()
+        viewArea.getX() + nx * viewArea.getWidth(),
+        viewArea.getY() + (1.0f - ny) * viewArea.getHeight()
     };
 }
 
 juce::Point<float> GridSection::pixelToNormalized(juce::Point<float> p) const
 {
+    float visibleWidth = 1.0f / zoomX;
+    float visibleHeight = 1.0f / zoomY;
+
     float nx = (p.x - viewArea.getX()) / viewArea.getWidth();
     float ny = 1.0f - ((p.y - viewArea.getY()) / viewArea.getHeight());
 
+    float realX = offsetX + nx * visibleWidth;
+    float realY = offsetY + ny * visibleHeight;
+
     return {
-        juce::jlimit(0.0f, 1.0f, nx),
-        juce::jlimit(0.0f, 1.0f, ny)
+        juce::jlimit(0.0f, 1.0f, realX),
+        juce::jlimit(0.0f, 1.0f, realY)
     };
+}
+
+void GridSection::mouseWheelMove(const juce::MouseEvent& e,
+    const juce::MouseWheelDetails& wheel)
+{
+    if (!envelope)
+        return;
+
+    float zoomFactor = 1.0f + wheel.deltaY * 0.2f;
+
+    float oldZoomX = zoomX;
+    float oldZoomY = zoomY;
+
+    zoomX = juce::jlimit(minZoom, maxZoom, zoomX * zoomFactor);
+    zoomY = juce::jlimit(minZoom, maxZoom, zoomY * zoomFactor);
+
+    // Zoom around mouse position
+    auto mouseNorm = pixelToNormalized(e.position);
+
+    float visibleWidthOld = 1.0f / oldZoomX;
+    float visibleHeightOld = 1.0f / oldZoomY;
+
+    float visibleWidthNew = 1.0f / zoomX;
+    float visibleHeightNew = 1.0f / zoomY;
+
+    offsetX = mouseNorm.x -
+        ((mouseNorm.x - offsetX) / visibleWidthOld) * visibleWidthNew;
+
+    offsetY = mouseNorm.y -
+        ((mouseNorm.y - offsetY) / visibleHeightOld) * visibleHeightNew;
+
+    offsetX = juce::jlimit(0.0f, 1.0f - visibleWidthNew, offsetX);
+    offsetY = juce::jlimit(0.0f, 1.0f - visibleHeightNew, offsetY);
+
+    updatePointPositions();
+    repaint();
 }
 
 void GridSection::paint(juce::Graphics& g)
@@ -191,18 +239,51 @@ void GridSection::paint(juce::Graphics& g)
 
 void GridSection::drawGrid(juce::Graphics& g)
 {
-    float dx = (float)viewArea.getWidth() / gridLines;
-    float dy = (float)viewArea.getHeight() / gridLines;
-
     g.setColour(juce::Colours::white.withAlpha(0.05f));
 
-    for (int i = 0; i <= gridLines; ++i)
-    {
-        float x = viewArea.getX() + dx * i;
-        float y = viewArea.getY() + dy * i;
+    float visibleWidth = 1.0f / zoomX;
+    float visibleHeight = 1.0f / zoomY;
 
-        g.drawLine(x, viewArea.getY(), x, viewArea.getBottom());
-        g.drawLine(viewArea.getX(), y, viewArea.getRight(), y);
+    float startX = offsetX;
+    float endX = offsetX + visibleWidth;
+
+    float startY = offsetY;
+    float endY = offsetY + visibleHeight;
+
+    float baseStep = 1.0f / gridLines;
+
+    // --- Vertical lines ---
+    int firstLineX = std::floor(startX / baseStep);
+    int lastLineX = std::ceil(endX / baseStep);
+
+    for (int i = firstLineX; i <= lastLineX; ++i)
+    {
+        float normX = i * baseStep;
+
+        if (normX < 0.0f || normX > 1.0f)
+            continue;
+
+        auto p = normalizedToPixel({ normX, 0.0f });
+
+        g.drawLine(p.x, viewArea.getY(),
+            p.x, viewArea.getBottom());
+    }
+
+    // --- Horizontal lines ---
+    int firstLineY = std::floor(startY / baseStep);
+    int lastLineY = std::ceil(endY / baseStep);
+
+    for (int i = firstLineY; i <= lastLineY; ++i)
+    {
+        float normY = i * baseStep;
+
+        if (normY < 0.0f || normY > 1.0f)
+            continue;
+
+        auto p = normalizedToPixel({ 0.0f, normY });
+
+        g.drawLine(viewArea.getX(), p.y,
+            viewArea.getRight(), p.y);
     }
 }
 
