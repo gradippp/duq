@@ -141,7 +141,7 @@ void EnvelopeListSection::selectEnvelope(int index)
 
     for (int i = 0; i < rows.size(); ++i)
     {
-        rows[i]->setActive(i == index);
+        rows[i]->setSelected(i == index);
         rows[i]->setTriggerNote(envelopes[i]->triggerNote);
     }
 

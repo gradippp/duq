@@ -86,6 +86,12 @@ void EnvelopeRowComponent::setTriggerNote(int note)
     noteButton.setButtonText(midiNoteNumberToName(note));
 }
 
+void EnvelopeRowComponent::setSelected(bool shouldBeSelected)
+{
+    isSelected = shouldBeSelected;
+    repaint();
+}
+
 void EnvelopeRowComponent::setActive(bool shouldBeActive)
 {
     isActive = shouldBeActive;
@@ -117,26 +123,30 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
 
-    // Background strip
-    auto bgColour = juce::Colours::darkgrey.withAlpha(0.2f);
+    // ===============================
+    // Background
+    // ===============================
 
-    if (isHovered)
+    juce::Colour bgColour = juce::Colours::darkgrey.withAlpha(0.2f);
+
+    if (isSelected)
+        bgColour = juce::Colours::darkgrey.withAlpha(0.5f);  // lighter when selected
+    else if (isHovered)
         bgColour = juce::Colours::darkgrey.withAlpha(0.35f);
 
     g.setColour(bgColour);
     g.fillRect(bounds);
 
     // ===============================
-    // Envelope name (after note button)
+    // Envelope name
     // ===============================
 
     g.setColour(juce::Colours::white);
     g.setFont(juce::Font(13.0f));
 
-    // Leave space for note button
     auto nameArea = bounds;
     nameArea.removeFromLeft(noteButton.getRight());
-    nameArea.removeFromRight(90); // space reserved for icon buttons
+    nameArea.removeFromRight(90);
 
     g.drawText(envelopeName,
         nameArea.reduced(10, 0),
@@ -144,10 +154,10 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
         true);
 
     // ===============================
-    // Active indicator dot (right side)
+    // MIDI Trigger Indicator (green dot)
     // ===============================
 
-    if (isActive)
+    if (isActive)   // <-- ONLY for MIDI trigger now
     {
         const int dotSize = 6;
 
@@ -160,7 +170,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     }
 
     // ===============================
-    // Bottom separator line
+    // Bottom separator
     // ===============================
 
     g.setColour(juce::Colours::grey.withAlpha(0.3f));

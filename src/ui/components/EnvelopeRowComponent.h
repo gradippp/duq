@@ -14,6 +14,7 @@ public:
     void setActive(bool shouldBeActive);
     std::function<void()> onDeleteRequested;
     std::function<void()> onSelected;
+    void setSelected(bool shouldBeSelected);
 
     void setTriggerNote(int note);
     std::function<void(int)> onNoteChanged;
@@ -26,6 +27,7 @@ private:
 
     bool isActive = false;
     bool isHovered = false;
+    bool isSelected = false;
 
     juce::TextButton noteButton{ "-" };
     juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };
