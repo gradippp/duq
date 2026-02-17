@@ -33,41 +33,72 @@ EnvelopeListSection::EnvelopeListSection()
     isInitialising = false;
 }
 
-void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
+EnvelopeListSection::~EnvelopeListSection()
 {
-    undoManager = &um;
+    if (undoManager)
+        undoManager->removeChangeListener(this);
+}
+
+void EnvelopeListSection::changeListenerCallback(juce::ChangeBroadcaster*)
+{
+    rebuildRowsFromModel();
+}
+
+void EnvelopeListSection::rebuildRowsFromModel()
+{
+    rowContainer.removeAllChildren();
+    rows.clear();
+
+    for (int i = 0; i < envelopes.size(); ++i)
+    {
+        auto* row = rows.insert(i,
+            new EnvelopeRowComponent(*envelopes[i],
+                "Env " + juce::String(i + 1)));
+
+        row->onNoteChanged = [this, row](int newNote)
+            {
+                int rowIndex = rows.indexOf(row);
+                trySetEnvelopeNote(rowIndex, newNote);
+            };
+
+        row->onDeleteRequested = [this, row]()
+            {
+                removeRow(row);
+            };
+
+        row->onSelected = [this, row]()
+            {
+                int idx = rows.indexOf(row);
+                selectEnvelope(idx);
+            };
+
+        rowContainer.addAndMakeVisible(row);
+    }
+
+    // Fix selection bounds
+    if (selectedIndex >= envelopes.size())
+        selectedIndex = envelopes.size() - 1;
+
+    if (selectedIndex >= 0)
+        selectEnvelope(selectedIndex);
+
+    resized();
 }
 
 
-void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData> env)
+void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
 {
-    envelopes.insert(envelopes.begin() + index, std::move(env));
+    undoManager = &um;
+    undoManager->addChangeListener(this);
+}
 
-    auto* newRow = rows.insert(index,
-        new EnvelopeRowComponent(*envelopes[index],
-            "Env " + juce::String(index + 1)));
 
-    newRow->onNoteChanged = [this, newRow](int newNote)
-        {
-            int rowIndex = rows.indexOf(newRow);
-            trySetEnvelopeNote(rowIndex, newNote);
-        };
-
-    newRow->onDeleteRequested = [this, newRow]()
-        {
-            removeRow(newRow);
-        };
-
-    newRow->onSelected = [this, newRow]()
-        {
-            int i = rows.indexOf(newRow);
-            selectEnvelope(i);
-        };
-
-    rowContainer.addAndMakeVisible(newRow);
-
-    selectEnvelope(index);
-    resized();
+void EnvelopeListSection::addEnvelopeAt(
+    int index,
+    std::unique_ptr<EnvelopeData> env)
+{
+    envelopes.insert(envelopes.begin() + index,
+        std::move(env));
 }
 
 
@@ -78,14 +109,6 @@ std::unique_ptr<EnvelopeData> EnvelopeListSection::removeEnvelopeAt(int index)
 
     auto removed = std::move(envelopes[index]);
     envelopes.erase(envelopes.begin() + index);
-
-    rows.remove(index);
-    resized();
-
-    if (!rows.isEmpty())
-        selectEnvelope(juce::jlimit(0, rows.size() - 1, index));
-    else
-        selectedIndex = -1;
 
     return removed;
 }

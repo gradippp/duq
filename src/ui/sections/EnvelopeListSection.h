@@ -6,11 +6,12 @@
 class EnvelopeListComponent;
 class ChangeEnvelopeNoteAction;
 
-class EnvelopeListSection : public juce::Component
+class EnvelopeListSection : public juce::Component,
+    private juce::ChangeListener
 {
 public:
     EnvelopeListSection();
-    ~EnvelopeListSection() override = default;
+    ~EnvelopeListSection();
 
     void resized() override;
     void paint(juce::Graphics& g) override;
@@ -32,7 +33,10 @@ public:
     bool applyEnvelopeNoteDirect(int index, int newNote);
 
 private:
-    friend class ChangeEnvelopeNoteAction;
+    //friend class ChangeEnvelopeNoteAction;
+
+    void changeListenerCallback(juce::ChangeBroadcaster*) override;
+    void rebuildRowsFromModel();
 
     bool isInitialising = true;
 
