@@ -120,9 +120,6 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
     undoManager->beginNewTransaction("Add Envelope Point");
     undoManager->perform(
         new AddPointAction(*envelope, newPoint, index));
-
-    rebuildPointComponents();
-    repaint();
 }
 
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
