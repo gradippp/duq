@@ -24,6 +24,8 @@ public:
     std::unique_ptr<EnvelopeData> removeEnvelopeAt(int index);
 
 private:
+    bool isInitialising = true;
+
     juce::Viewport viewport;
     juce::Component rowContainer;
     juce::TextButton addButton;

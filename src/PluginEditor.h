@@ -19,7 +19,7 @@
 //==============================================================================
 /**
 */
-class DuqAudioProcessorEditor  : public juce::AudioProcessorEditor
+class DuqAudioProcessorEditor  : public juce::AudioProcessorEditor, public juce::Timer
 {
 public:
     DuqAudioProcessorEditor (DuqAudioProcessor&);
@@ -44,6 +44,8 @@ private:
     MeterSection meterSection;
 
     juce::TooltipWindow tooltipWindow{ this };
+
+    void timerCallback() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessorEditor)
 };

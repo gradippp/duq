@@ -23,60 +23,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     envelopeListSection.setUndoManager(undoManager);
     controlSection.setUndoManager(undoManager);
 
-    controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-    controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-    controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-    envelopeListSection.onEnvelopeSelected =
-        [this](EnvelopeData& data)
-        {
-            controlSection.loadEnvelope(data);
-            envelopeGraph.setEnvelope(&data);
-        };
-
-    controlSection.onEnvelopeChanged =
-        [this](const EnvelopeData& data)
-        {
-            envelopeListSection.updateSelectedEnvelope(data);
-            envelopeGraph.repaint();
-        };
-    envelopeListSection.selectEnvelope(0);
-
-    addAndMakeVisible(envelopeGraph);
-
-    setSize(900, 600);
-    setResizable(true, true);
-    setResizeLimits(900, 600, 1200, 900);
-
-    tooltipWindow.setMillisecondsBeforeTipAppears(500);
-
-    addAndMakeVisible(header);
-    addAndMakeVisible(envelopeListSection);
-    addAndMakeVisible(controlSection);
-
-    addAndMakeVisible(meterSection);
-}
-
-DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
-{
-    controlSection.getRateKnob().getSlider().setLookAndFeel(nullptr);
-    controlSection.getDepthKnob().getSlider().setLookAndFeel(nullptr);
-    controlSection.getSmoothKnob().getSlider().setLookAndFeel(nullptr);
-}
-
-//==============================================================================
-void DuqAudioProcessorEditor::paint (juce::Graphics& g)
-{
-    g.fillAll(juce::Colours::black);
-}
-
-void DuqAudioProcessorEditor::resized()
-{
-    auto bounds = getLocalBounds();
-
-    // ===== Header =====
-    constexpr int headerHeight = 60;
-    header.setBounds(bounds.removeFromTop(headerHeight));
-
     header.setUndoCallback([this]
         {
             if (undoManager.canUndo())
@@ -109,6 +55,71 @@ void DuqAudioProcessorEditor::resized()
             }
         });
 
+    startTimerHz(10);
+
+    controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+    controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+    controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
+    envelopeListSection.onEnvelopeSelected =
+        [this](EnvelopeData& data)
+        {
+            controlSection.loadEnvelope(data);
+            envelopeGraph.setEnvelope(&data);
+        };
+
+    controlSection.onEnvelopeChanged =
+        [this](const EnvelopeData& data)
+        {
+            envelopeListSection.updateSelectedEnvelope(data);
+            envelopeGraph.repaint();
+        };
+    envelopeListSection.selectEnvelope(0);
+
+    addAndMakeVisible(envelopeGraph);
+
+    setSize(900, 600);
+    setResizable(true, true);
+    setResizeLimits(900, 600, 1200, 900);
+
+    tooltipWindow.setMillisecondsBeforeTipAppears(500);
+
+    addAndMakeVisible(header);
+    addAndMakeVisible(envelopeListSection);
+    addAndMakeVisible(controlSection);
+
+    addAndMakeVisible(meterSection);
+    undoManager.clearUndoHistory();
+}
+
+DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
+{
+    controlSection.getRateKnob().getSlider().setLookAndFeel(nullptr);
+    controlSection.getDepthKnob().getSlider().setLookAndFeel(nullptr);
+    controlSection.getSmoothKnob().getSlider().setLookAndFeel(nullptr);
+
+    stopTimer();
+}
+
+void DuqAudioProcessorEditor::timerCallback()
+{
+    header.updateUndoState(
+        undoManager.canUndo(),
+        undoManager.canRedo());
+}
+
+//==============================================================================
+void DuqAudioProcessorEditor::paint (juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::black);
+}
+
+void DuqAudioProcessorEditor::resized()
+{
+    auto bounds = getLocalBounds();
+
+    // ===== Header =====
+    constexpr int headerHeight = 60;
+    header.setBounds(bounds.removeFromTop(headerHeight));
 
     // ===== Split left / right =====
     constexpr int leftPanelWidth = 260;

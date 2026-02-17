@@ -58,7 +58,7 @@ public:
     juce::UndoManager& getUndoManager();
 
 private:
-    juce::UndoManager undoManager;
+    juce::UndoManager undoManager { 200 };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessor)

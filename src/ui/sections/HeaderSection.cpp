@@ -18,6 +18,12 @@ HeaderSection::HeaderSection()
         };
 }
 
+void HeaderSection::updateUndoState(bool canUndo, bool canRedo)
+{
+    undoButton.setEnabled(canUndo);
+    redoButton.setEnabled(canRedo);
+}
+
 void HeaderSection::setUndoCallback(std::function<void()> cb)
 {
     undoCallback = std::move(cb);

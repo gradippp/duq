@@ -37,7 +37,7 @@ EnvelopeListSection::EnvelopeListSection()
     // ---- Add button logic ----
     addButton.onClick = [this]()
         {
-            if (!undoManager)
+            if (!undoManager || isInitialising)
                 return;
 
             int index = rows.size();
@@ -45,6 +45,8 @@ EnvelopeListSection::EnvelopeListSection()
             undoManager->perform(
                 new AddEnvelopeAction(*this, index));
         };
+
+    isInitialising = false;
 }
 
 void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
@@ -134,7 +136,7 @@ void EnvelopeListSection::selectEnvelope(int index)
 
 void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
 {
-    if (!undoManager)
+    if (!undoManager || isInitialising)
         return;
 
     int index = rows.indexOf(row);

@@ -15,6 +15,7 @@ public:
 
     void setUndoCallback(std::function<void()> cb);
     void setRedoCallback(std::function<void()> cb);
+    void updateUndoState(bool canUndo, bool canRedo);
 
 private:
     juce::String versionString{ PROJECT_VERSION };
