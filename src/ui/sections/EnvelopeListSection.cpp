@@ -13,10 +13,13 @@ EnvelopeListSection::EnvelopeListSection()
     addAndMakeVisible(viewport);
 
     // ---- Create default model first ----
-    envelopes.emplace_back(std::make_unique<EnvelopeData>());
+    auto defaultEnv = std::make_unique<EnvelopeData>();
+    defaultEnv->triggerNote = 36; // C2
+    envelopes.emplace_back(std::move(defaultEnv));
 
     // ---- Create default row ----
     auto* row = rows.add(new EnvelopeRowComponent("Default"));
+    row->setTriggerNote(envelopes[0]->triggerNote);
 
     row->onDeleteRequested = [this, row]()
         {
@@ -57,10 +60,23 @@ void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
 
 void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData> env)
 {
+    const bool isNewEnvelope = (env == nullptr);
+
+    if (isNewEnvelope)
+    {
+        env = std::make_unique<EnvelopeData>();
+
+        int freeNote = getNextFreeNote(36);
+        if (freeNote >= 0)
+            env->triggerNote = freeNote;
+    }
+
     envelopes.insert(envelopes.begin() + index, std::move(env));
 
     auto* newRow = rows.insert(index,
         new EnvelopeRowComponent("Env " + juce::String(index + 1)));
+
+    newRow->setTriggerNote(envelopes[index]->triggerNote);
 
     newRow->onDeleteRequested = [this, newRow]()
         {
@@ -78,6 +94,7 @@ void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData>
     selectEnvelope(index);
     resized();
 }
+
 
 std::unique_ptr<EnvelopeData> EnvelopeListSection::removeEnvelopeAt(int index)
 {
@@ -127,7 +144,10 @@ void EnvelopeListSection::selectEnvelope(int index)
     selectedIndex = index;
 
     for (int i = 0; i < rows.size(); ++i)
+    {
         rows[i]->setActive(i == index);
+        rows[i]->setTriggerNote(envelopes[i]->triggerNote);
+    }
 
     if (onEnvelopeSelected)
         onEnvelopeSelected(*envelopes[index]);
@@ -202,4 +222,43 @@ void EnvelopeListSection::resized()
 
     for (auto* row : rows)
         row->setBounds(rowBounds.removeFromTop(rowHeight));
+}
+
+bool EnvelopeListSection::isNoteAlreadyUsed(int note, int ignoreIndex) const
+{
+    for (int i = 0; i < static_cast<int>(envelopes.size()); ++i)
+    {
+        if (i == ignoreIndex)
+            continue;
+
+        if (envelopes[i]->triggerNote == note)
+            return true;
+    }
+
+    return false;
+}
+
+bool EnvelopeListSection::trySetEnvelopeNote(int index, int newNote)
+{
+    if (index < 0 || index >= envelopes.size())
+        return false;
+
+    newNote = juce::jlimit(0, 127, newNote);
+
+    if (isNoteAlreadyUsed(newNote, index))
+        return false;
+
+    envelopes[index]->triggerNote = newNote;
+    return true;
+}
+
+int EnvelopeListSection::getNextFreeNote(int startFrom) const
+{
+    for (int note = startFrom; note <= 127; ++note)
+    {
+        if (!isNoteAlreadyUsed(note))
+            return note;
+    }
+
+    return -1; // no notes available
 }

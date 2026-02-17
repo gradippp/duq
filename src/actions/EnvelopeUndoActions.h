@@ -9,21 +9,29 @@ public:
 
     bool perform() override
     {
-        list.addEnvelopeAt(insertIndex,
-            std::make_unique<EnvelopeData>());
+        if (!created) // first time perform
+        {
+            created = std::make_unique<EnvelopeData>();
+
+            int freeNote = list.getNextFreeNote(36);
+            if (freeNote >= 0)
+                created->triggerNote = freeNote;
+        }
+
+        list.addEnvelopeAt(insertIndex, std::move(created));
         return true;
     }
 
     bool undo() override
     {
-        removed = list.removeEnvelopeAt(insertIndex);
+        created = list.removeEnvelopeAt(insertIndex);
         return true;
     }
 
 private:
     EnvelopeListSection& list;
     int insertIndex;
-    std::unique_ptr<EnvelopeData> removed;
+    std::unique_ptr<EnvelopeData> created;
 };
 
 class RemoveEnvelopeAction : public juce::UndoableAction

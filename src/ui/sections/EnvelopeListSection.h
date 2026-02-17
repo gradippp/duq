@@ -23,6 +23,10 @@ public:
     void addEnvelopeAt(int index, std::unique_ptr<EnvelopeData> env);
     std::unique_ptr<EnvelopeData> removeEnvelopeAt(int index);
 
+    bool isNoteAlreadyUsed(int note, int ignoreIndex = -1) const;
+    bool trySetEnvelopeNote(int index, int newNote);
+    int getNextFreeNote(int startFrom = 36) const;
+
 private:
     bool isInitialising = true;
 

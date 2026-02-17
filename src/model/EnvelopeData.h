@@ -11,6 +11,8 @@ struct EnvelopePoint
 
 struct EnvelopeData
 {
+    int triggerNote = 60;
+
     double rate = 20.0;
     double depth = 100.0;
     double smooth = 0.0;
