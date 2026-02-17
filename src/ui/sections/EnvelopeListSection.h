@@ -18,7 +18,7 @@ public:
 
     EnvelopeData* getSelectedEnvelope();
     void selectEnvelope(int i);
-    std::function<void(EnvelopeData&)> onEnvelopeSelected;
+    std::function<void(EnvelopeData*)> onEnvelopeSelected;
     void updateSelectedEnvelope(const EnvelopeData& data);
 
     void setUndoManager(juce::UndoManager& um);

@@ -14,6 +14,7 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    void clearEnvelope();
     void loadEnvelope(EnvelopeData& data);
 
     ControlKnobComponent& getRateKnob() { return rateKnob; }
@@ -30,6 +31,8 @@ private:
 
     EnvelopeData* currentData = nullptr;
     juce::UndoManager* undoManager = nullptr;
+
+    bool hasEnvelope = false;
 
     bool rateIsFrequencyMode = true;
     void applyRateMode();

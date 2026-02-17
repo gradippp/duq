@@ -129,11 +129,28 @@ void ControlSection::changeListenerCallback(juce::ChangeBroadcaster*)
         onEnvelopeChanged(*currentData);
 }
 
+void ControlSection::clearEnvelope()
+{
+    currentData = nullptr;
+    hasEnvelope = false;
+
+    rateKnob.setVisible(false);
+    depthKnob.setVisible(false);
+    smoothKnob.setVisible(false);
+
+    repaint();
+}
+
 void ControlSection::loadEnvelope(EnvelopeData& data)
 {
     isInitialising = true;
 
     currentData = &data;
+    hasEnvelope = true;
+
+    rateKnob.setVisible(true);
+    depthKnob.setVisible(true);
+    smoothKnob.setVisible(true);
 
     rateIsFrequencyMode = data.rateIsFrequencyMode;
     applyRateMode();
@@ -147,6 +164,8 @@ void ControlSection::loadEnvelope(EnvelopeData& data)
     smoothKnob.refreshValueLabel();
 
     isInitialising = false;
+
+    repaint();
 }
 
 void ControlSection::paint(juce::Graphics& g)
@@ -170,6 +189,18 @@ void ControlSection::paint(juce::Graphics& g)
     g.drawText("Controls",
         headerArea.reduced(10, 0),
         juce::Justification::centredLeft);
+
+    if (!hasEnvelope)
+    {
+        g.setColour(juce::Colours::white.withAlpha(0.5f));
+        g.setFont(juce::Font(14.0f));
+
+        g.drawText("Add an envelope",
+            bounds,
+            juce::Justification::centred);
+
+        return;
+    }
 }
 
 void ControlSection::applyRateMode()

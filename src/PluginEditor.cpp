@@ -61,11 +61,12 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-    envelopeListSection.onEnvelopeSelected =
-        [this](EnvelopeData& data)
+    envelopeListSection.onEnvelopeSelected = [this](EnvelopeData* env)
         {
-            controlSection.loadEnvelope(data);
-            gridSection.setEnvelope(&data);
+            if (env)
+                controlSection.loadEnvelope(*env);
+            else
+                controlSection.clearEnvelope();
         };
 
     controlSection.onEnvelopeChanged =
@@ -74,7 +75,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             envelopeListSection.updateSelectedEnvelope(data);
             gridSection.repaint();
         };
-    envelopeListSection.selectEnvelope(0);
 
     addAndMakeVisible(gridSection);
 

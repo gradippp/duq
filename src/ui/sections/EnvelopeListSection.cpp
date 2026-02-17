@@ -24,7 +24,7 @@ EnvelopeListSection::EnvelopeListSection()
             if (!undoManager || isInitialising)
                 return;
 
-            int index = rows.size();
+            int index = envelopes.size();
 
             undoManager->beginNewTransaction("Add Envelope");
             undoManager->perform(new AddEnvelopeAction(*this, index));
@@ -79,10 +79,25 @@ void EnvelopeListSection::rebuildRowsFromModel()
     if (selectedIndex >= envelopes.size())
         selectedIndex = envelopes.size() - 1;
 
-    if (selectedIndex >= 0)
-        selectEnvelope(selectedIndex);
+    if (envelopes.empty())
+    {
+        selectedIndex = -1;
+
+        if (onEnvelopeSelected)
+            onEnvelopeSelected(nullptr);
+
+        resized();
+        return;
+    }
+
+    // If nothing selected yet, select first
+    if (selectedIndex < 0)
+        selectedIndex = 0;
+
+    selectEnvelope(selectedIndex);
 
     resized();
+
 }
 
 
@@ -142,14 +157,11 @@ void EnvelopeListSection::selectEnvelope(int index)
     selectedIndex = index;
 
     for (int i = 0; i < rows.size(); ++i)
-    {
         rows[i]->setSelected(i == index);
-    }
 
     if (onEnvelopeSelected)
-        onEnvelopeSelected(*envelopes[index]);
+        onEnvelopeSelected(envelopes[index].get());
 }
-
 
 void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
 {
