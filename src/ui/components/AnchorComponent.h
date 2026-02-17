@@ -1,29 +1,25 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
 
+class GridSection;
+
 class AnchorComponent : public juce::Component
 {
 public:
-    AnchorComponent(GridSection& g)
-        : grid(g)
-    {
-        setSize(8, 8);
-    }
+    AnchorComponent(GridSection& owner, int segmentIndex);
 
-    void setNormalizedPosition(juce::Point<float> p)
-    {
-        normalized = p;
-        auto pixel = grid.normalizedToPixel(p);
-        setCentrePosition((int)pixel.x, (int)pixel.y);
-    }
+    void setNormalizedPosition(juce::Point<float> p);
 
-    void paint(juce::Graphics& g) override
-    {
-        g.setColour(juce::Colours::orange);
-        g.drawEllipse(getLocalBounds().toFloat(), 2.0f);
-    }
+    std::function<void(int, float)> onCurveChanged;
+
+    void paint(juce::Graphics&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseDown(const juce::MouseEvent& e);
 
 private:
     GridSection& grid;
-    juce::Point<float> normalized;
+    int segmentIndex;
+
+    float startCurve = 0.0f;
+    int dragStartY = 0;
 };

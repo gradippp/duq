@@ -18,6 +18,12 @@ void GridSection::resized()
     updatePointPositions();
 }
 
+float GridSection::getCurveForSegment(int index) const
+{
+    return envelope->points[index].curve;
+}
+
+
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
 {
     return {
@@ -49,20 +55,34 @@ void GridSection::paint(juce::Graphics& g)
     if (!envelope)
         return;
 
-    auto& points = envelope->points;
-
-    if (points.size() < 2)
-        return;
-
     juce::Path path;
+
+    auto& points = envelope->points;
 
     auto first = normalizedToPixel({ points[0].x, points[0].y });
     path.startNewSubPath(first);
 
-    for (size_t i = 1; i < points.size(); ++i)
+    for (int i = 0; i < (int)points.size() - 1; ++i)
     {
-        auto p = normalizedToPixel({ points[i].x, points[i].y });
-        path.lineTo(p);
+        auto& p1 = points[i];
+        auto& p2 = points[i + 1];
+
+        auto start = normalizedToPixel({ p1.x, p1.y });
+        auto end = normalizedToPixel({ p2.x, p2.y });
+
+        float midX = (start.x + end.x) * 0.5f;
+        float midY = (start.y + end.y) * 0.5f;
+
+        // midpoint in normalized space
+        float midXn = (p1.x + p2.x) * 0.5f;
+        float midYn = (p1.y + p2.y) * 0.5f;
+
+        // curve in normalized Y
+        float controlYn = midYn + p1.curve * 0.25f;
+
+        auto control = normalizedToPixel({ midXn, controlYn });
+
+        path.quadraticTo(control, end);
     }
 
     g.setColour(juce::Colours::white);
@@ -92,11 +112,15 @@ void GridSection::rebuildPointComponents()
 {
     removeAllChildren();
     pointComponents.clear();
+    anchorComponents.clear();
 
     if (!envelope)
         return;
 
-    for (int i = 0; i < (int)envelope->points.size(); ++i)
+    auto& points = envelope->points;
+
+    // === Build points ===
+    for (int i = 0; i < (int)points.size(); ++i)
     {
         auto comp = std::make_unique<PointComponent>(*this, i);
 
@@ -105,48 +129,65 @@ void GridSection::rebuildPointComponents()
                 if (!envelope)
                     return;
 
-                auto& points = envelope->points;
+                auto& pts = envelope->points;
 
                 pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
                 pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
 
-                const int lastIndex = (int)points.size() - 1;
+                const int lastIndex = (int)pts.size() - 1;
 
                 if (index == 0)
                 {
-                    // First point: lock X
-                    points[index].x = 0.0f;
-                    points[index].y = pos.y;
+                    pts[index].x = 0.0f;
+                    pts[index].y = pos.y;
                 }
                 else if (index == lastIndex)
                 {
-                    // Last point: lock X
-                    points[index].x = 1.0f;
-                    points[index].y = pos.y;
+                    pts[index].x = 1.0f;
+                    pts[index].y = pos.y;
                 }
                 else
                 {
-                    // Middle points: prevent crossing neighbors
-                    float leftLimit = points[index - 1].x + 0.001f;
-                    float rightLimit = points[index + 1].x - 0.001f;
+                    float leftLimit = pts[index - 1].x + 0.001f;
+                    float rightLimit = pts[index + 1].x - 0.001f;
 
                     pos.x = juce::jlimit(leftLimit, rightLimit, pos.x);
 
-                    points[index].x = pos.x;
-                    points[index].y = pos.y;
+                    pts[index].x = pos.x;
+                    pts[index].y = pos.y;
                 }
 
                 updatePointPositions();
                 repaint();
             };
 
-
         addAndMakeVisible(comp.get());
         pointComponents.push_back(std::move(comp));
     }
 
+    // === Build anchors (ONE PER SEGMENT) ===
+    for (int i = 0; i < (int)points.size() - 1; ++i)
+    {
+        auto anchor = std::make_unique<AnchorComponent>(*this, i);
+
+        anchor->onCurveChanged = [this](int segmentIndex, float newCurve)
+            {
+                if (!envelope)
+                    return;
+
+                envelope->points[segmentIndex].curve =
+                    juce::jlimit(-1.0f, 1.0f, newCurve);
+
+                repaint();
+            };
+
+        addAndMakeVisible(anchor.get());
+        anchorComponents.push_back(std::move(anchor));
+    }
+
     updatePointPositions();
 }
+
 
 void GridSection::updatePointPositions()
 {
@@ -158,4 +199,23 @@ void GridSection::updatePointPositions()
         auto& p = envelope->points[i];
         pointComponents[i]->setNormalizedPosition({ p.x, p.y });
     }
+
+    // Update anchors
+    for (int i = 0; i < (int)anchorComponents.size(); ++i)
+    {
+        auto& p1 = envelope->points[i];
+        auto& p2 = envelope->points[i + 1];
+
+        // Midpoint in normalized space
+        float midX = (p1.x + p2.x) * 0.5f;
+        float midY = (p1.y + p2.y) * 0.5f;
+
+        // Apply curve offset in normalized Y space
+        float curveOffset = p1.curve * 0.25f;  // normalized strength
+
+        float controlY = midY + curveOffset;
+
+        anchorComponents[i]->setNormalizedPosition({ midX, controlY });
+    }
+
 }
