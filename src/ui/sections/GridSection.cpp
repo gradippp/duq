@@ -16,7 +16,9 @@ float applyCurve(float t, float curve)
 
 GridSection::GridSection()
 {
-    setOpaque(true);
+    addAndMakeVisible(waveform);
+    waveform.toBack();
+    setOpaque(false);
 }
 
 GridSection::~GridSection()
@@ -25,6 +27,13 @@ GridSection::~GridSection()
         undoManager->removeChangeListener(this);
 }
 
+void GridSection::setSampleBuffer(
+    const std::atomic<int>* writePos,
+    const float* sampleData,
+    int bufferSize)
+{
+    waveform.setSampleBuffer(writePos, sampleData, bufferSize);
+}
 
 void GridSection::setUndoManager(juce::UndoManager& um)
 {
@@ -88,6 +97,7 @@ void GridSection::deletePoint(int index)
 void GridSection::resized()
 {
     viewArea = getLocalBounds().reduced(20);
+    waveform.setBounds(viewArea);
     updatePointPositions();
 }
 
@@ -144,6 +154,8 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
 
     envelope->viewState.offsetX = offsetX;
     envelope->viewState.offsetY = offsetY;
+
+    waveform.setViewState(zoomX, zoomY);
 
     updatePanCursor();
     updatePointPositions();
@@ -301,17 +313,18 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
         envelope->viewState.offsetY = offsetY;
     }
 
+    waveform.setViewState(zoomX, zoomY);
+
     updatePointPositions();
     repaint();
 }
 
 void GridSection::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colours::black);
+}
 
-    g.setColour(juce::Colours::darkgrey.withAlpha(0.2f));
-    g.fillRect(viewArea);
-
+void GridSection::paintOverChildren(juce::Graphics& g)
+{
     drawGrid(g);
 
     if (!envelope)
@@ -334,7 +347,6 @@ void GridSection::paint(juce::Graphics& g)
         for (int s = 0; s <= resolution; ++s)
         {
             float t = (float)s / resolution;
-
             float shapedT = applyCurve(t, p1.curve);
 
             float x = juce::jmap(t, p1.x, p2.x);
@@ -352,6 +364,7 @@ void GridSection::paint(juce::Graphics& g)
     g.setColour(juce::Colours::white);
     g.strokePath(path, juce::PathStrokeType(2.0f));
 }
+
 
 void GridSection::drawGrid(juce::Graphics& g)
 {
@@ -433,7 +446,12 @@ void GridSection::drawGrid(juce::Graphics& g)
 
 void GridSection::rebuildPointComponents()
 {
-    removeAllChildren();
+    for (auto& p : pointComponents)
+        removeChildComponent(p.get());
+
+    for (auto& a : anchorComponents)
+        removeChildComponent(a.get());
+
     pointComponents.clear();
     anchorComponents.clear();
 

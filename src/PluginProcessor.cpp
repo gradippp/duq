@@ -38,16 +38,34 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     float inputPeak = 0.0f;
 
-    // Measure peak across all channels
-    for (int ch = 0; ch < numChannels; ++ch)
-    {
-        const float* data = buffer.getReadPointer(ch);
+    // --- Get write position ---
+    int writeIndex = monpos.load(std::memory_order_relaxed);
 
-        for (int i = 0; i < numSamples; ++i)
-            inputPeak = std::max(inputPeak, std::abs(data[i]));
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float mixedSample = 0.0f;
+
+        // Mix all channels to mono
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            float s = buffer.getReadPointer(ch)[i];
+            mixedSample += s;
+            inputPeak = std::max(inputPeak, std::abs(s));
+        }
+
+        mixedSample /= (float)numChannels;
+
+        // Write into circular monitor buffer
+        monSamples[writeIndex] = mixedSample;
+
+        writeIndex++;
+        if (writeIndex >= monitorBufferSize)
+            writeIndex = 0;
     }
 
-    inputMeterLevel.store(inputPeak);
+    monpos.store(writeIndex, std::memory_order_relaxed);
+
+    inputMeterLevel.store(inputPeak, std::memory_order_relaxed);
 }
 
 juce::UndoManager& DuqAudioProcessor::getUndoManager()

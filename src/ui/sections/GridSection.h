@@ -4,6 +4,7 @@
 #include "../components/PointComponent.h"
 #include "../components/AnchorComponent.h"
 #include "../../actions/GridUndoActions.h"
+#include "../components/WaveformComponent.h"
 
 class GridSection : public juce::Component,
     private juce::ChangeListener
@@ -21,8 +22,13 @@ public:
     juce::Point<float> pixelToNormalized(juce::Point<float>) const;
 
     void paint(juce::Graphics&) override;
+    void paintOverChildren(juce::Graphics&) override;
     void resized() override;
     float getCurveForSegment(int index) const;
+
+    void setSampleBuffer(const std::atomic<int>* writePos,
+        const float* sampleData,
+        int bufferSize);
 
     void mouseMove(const juce::MouseEvent&) override;
     void mouseDown(const juce::MouseEvent&) override;
@@ -63,6 +69,7 @@ private:
     void updatePointPositions();
 
     juce::Rectangle<int> viewArea;
+    WaveformComponent waveform;
 
     static float snapValue(float value, float step);
 

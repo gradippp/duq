@@ -88,6 +88,11 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             gridSection.repaint();
         };
 
+    gridSection.setSampleBuffer(
+        &audioProcessor.getMonitorWritePosition(),
+        audioProcessor.getMonitorSamples(),
+        audioProcessor.getMonitorBufferSize());
+
     addAndMakeVisible(gridSection);
 
     setSize(900, 600);

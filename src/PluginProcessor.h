@@ -61,12 +61,20 @@ public:
     std::atomic<float>& getReductionMeterLevel() { return reductionMeterLevel; }
     std::atomic<float>& getOutputMeterLevel() { return outputMeterLevel; }
 
+    int getMonitorBufferSize() const noexcept { return monitorBufferSize; }
+    const float* getMonitorSamples() const noexcept { return monSamples; }
+    const std::atomic<int>& getMonitorWritePosition() const noexcept { return monpos; }
+
 private:
     juce::UndoManager undoManager { 200 };
 
     std::atomic<float> inputMeterLevel{ 0.0f };
     std::atomic<float> reductionMeterLevel{ 0.0f };
     std::atomic<float> outputMeterLevel{ 0.0f };
+
+    static constexpr int monitorBufferSize = 2048;
+    float monSamples[monitorBufferSize];
+    std::atomic<int> monpos{ 0 };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessor)
