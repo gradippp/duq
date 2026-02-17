@@ -4,10 +4,12 @@
 #include "../components/ControlKnobComponent.h"
 #include "../../model/EnvelopeData.h"
 
-class ControlSection : public juce::Component
+class ControlSection : public juce::Component,
+    private juce::ChangeListener
 {
 public:
     ControlSection();
+    ~ControlSection();
 
     void resized() override;
     void paint(juce::Graphics& g) override;
@@ -23,6 +25,7 @@ public:
     void setUndoManager(juce::UndoManager& um);
 
 private:
+    void changeListenerCallback(juce::ChangeBroadcaster*) override;
     bool isInitialising = true;
 
     EnvelopeData* currentData = nullptr;

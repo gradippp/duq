@@ -50,9 +50,6 @@ ControlSection::ControlSection()
                         &EnvelopeData::rateIsFrequencyMode,
                         newValue));
 
-                rateIsFrequencyMode = currentData->rateIsFrequencyMode;
-                applyRateMode();
-
                 if (onEnvelopeChanged)
                     onEnvelopeChanged(*currentData);
             }
@@ -109,9 +106,27 @@ ControlSection::ControlSection()
     applyRateMode();
 }
 
+ControlSection::~ControlSection()
+{
+    if (undoManager)
+        undoManager->removeChangeListener(this);
+}
+
 void ControlSection::setUndoManager(juce::UndoManager& um)
 {
     undoManager = &um;
+    undoManager->addChangeListener(this);
+}
+
+void ControlSection::changeListenerCallback(juce::ChangeBroadcaster*)
+{
+    if (!currentData)
+        return;
+
+    loadEnvelope(*currentData);
+
+    if (onEnvelopeChanged)
+        onEnvelopeChanged(*currentData);
 }
 
 void ControlSection::loadEnvelope(EnvelopeData& data)
