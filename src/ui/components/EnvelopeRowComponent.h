@@ -1,10 +1,12 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../../model/EnvelopeData.h"
 
 class EnvelopeRowComponent : public juce::Component
 {
 public:
-    EnvelopeRowComponent(const juce::String& name);
+    EnvelopeRowComponent(EnvelopeData& dataRef,
+        const juce::String& name);
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -19,9 +21,11 @@ public:
 
 private:
     juce::String envelopeName;
+
+    EnvelopeData& data;
+
     bool isActive = false;
     bool isHovered = false;
-    int triggerNote = 60;
 
     juce::TextButton noteButton{ "-" };
     juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };

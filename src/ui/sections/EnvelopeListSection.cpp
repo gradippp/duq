@@ -18,8 +18,8 @@ EnvelopeListSection::EnvelopeListSection()
     envelopes.emplace_back(std::move(defaultEnv));
 
     // ---- Create default row ----
-    auto* row = rows.add(new EnvelopeRowComponent("Default"));
-    row->setTriggerNote(envelopes[0]->triggerNote);
+    auto* row = rows.add(
+        new EnvelopeRowComponent(*envelopes[0], "Default"));
 
     row->onDeleteRequested = [this, row]()
         {
@@ -63,9 +63,8 @@ void EnvelopeListSection::addEnvelopeAt(int index, std::unique_ptr<EnvelopeData>
     envelopes.insert(envelopes.begin() + index, std::move(env));
 
     auto* newRow = rows.insert(index,
-        new EnvelopeRowComponent("Env " + juce::String(index + 1)));
-
-    newRow->setTriggerNote(envelopes[index]->triggerNote);
+        new EnvelopeRowComponent(*envelopes[index],
+            "Env " + juce::String(index + 1)));
 
     newRow->onNoteChanged = [this, newRow](int newNote)
         {

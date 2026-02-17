@@ -3,9 +3,10 @@
 #include "../utils/MidiUtils.h"
 #include "../components/PianoModal.h"
 
-
-EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
-    : envelopeName(name)
+EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef,
+    const juce::String& name)
+    : data(dataRef),
+    envelopeName(name)
 {
     auto setupIconButton = [](juce::DrawableButton& button,
         const juce::String& iconName)
@@ -37,13 +38,16 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
     noteButton.setColour(juce::TextButton::buttonOnColourId,
         juce::Colours::darkgrey.withAlpha(0.5f));
 
+    setTriggerNote(data.triggerNote);
+
     noteButton.onClick = [this]
         {
-            auto modal = std::make_unique<PianoModal>(triggerNote);
+            auto modal = std::make_unique<PianoModal>(data.triggerNote);
 
             modal->onNoteSelected = [this](int note)
                 {
-                    setTriggerNote(note);
+                    data.triggerNote = note;   // update model
+                    setTriggerNote(note);      // update UI
 
                     if (onNoteChanged)
                         onNoteChanged(note);
@@ -79,7 +83,6 @@ EnvelopeRowComponent::EnvelopeRowComponent(const juce::String& name)
 
 void EnvelopeRowComponent::setTriggerNote(int note)
 {
-    triggerNote = note;
     noteButton.setButtonText(midiNoteNumberToName(note));
 }
 
