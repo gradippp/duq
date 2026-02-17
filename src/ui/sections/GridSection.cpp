@@ -252,6 +252,11 @@ void GridSection::drawGrid(juce::Graphics& g)
 
     float baseStep = 1.0f / gridLines;
 
+    float pixelsPerGrid = viewArea.getWidth() * baseStep * zoomX;
+
+    if (pixelsPerGrid < 8.0f)
+        baseStep *= 2.0f;
+
     // --- Vertical lines ---
     int firstLineX = std::floor(startX / baseStep);
     int lastLineX = std::ceil(endX / baseStep);
