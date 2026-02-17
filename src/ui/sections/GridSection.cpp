@@ -250,45 +250,63 @@ void GridSection::drawGrid(juce::Graphics& g)
     float startY = offsetY;
     float endY = offsetY + visibleHeight;
 
-    float baseStep = 1.0f / gridLines;
+    float baseStepX = 1.0f / gridLines;
+    float baseStepY = 1.0f / gridLines;
 
-    float pixelsPerGrid = viewArea.getWidth() * baseStep * zoomX;
+    // --- Adaptive density X ---
+    float pixelsPerGridX = viewArea.getWidth() * (baseStepX / visibleWidth);
 
-    if (pixelsPerGrid < 8.0f)
-        baseStep *= 2.0f;
+    while (pixelsPerGridX < 8.0f)
+    {
+        baseStepX *= 2.0f;
+        pixelsPerGridX *= 2.0f;
+    }
+
+    // --- Adaptive density Y ---
+    float pixelsPerGridY = viewArea.getHeight() * (baseStepY / visibleHeight);
+
+    while (pixelsPerGridY < 8.0f)
+    {
+        baseStepY *= 2.0f;
+        pixelsPerGridY *= 2.0f;
+    }
 
     // --- Vertical lines ---
-    int firstLineX = std::floor(startX / baseStep);
-    int lastLineX = std::ceil(endX / baseStep);
+    int firstLineX = std::floor(startX / baseStepX);
+    int lastLineX = std::ceil(endX / baseStepX);
 
     for (int i = firstLineX; i <= lastLineX; ++i)
     {
-        float normX = i * baseStep;
+        float normX = i * baseStepX;
 
         if (normX < 0.0f || normX > 1.0f)
             continue;
 
         auto p = normalizedToPixel({ normX, 0.0f });
 
-        g.drawLine(p.x, viewArea.getY(),
-            p.x, viewArea.getBottom());
+        g.drawLine(p.x,
+            viewArea.getY(),
+            p.x,
+            viewArea.getBottom());
     }
 
     // --- Horizontal lines ---
-    int firstLineY = std::floor(startY / baseStep);
-    int lastLineY = std::ceil(endY / baseStep);
+    int firstLineY = std::floor(startY / baseStepY);
+    int lastLineY = std::ceil(endY / baseStepY);
 
     for (int i = firstLineY; i <= lastLineY; ++i)
     {
-        float normY = i * baseStep;
+        float normY = i * baseStepY;
 
         if (normY < 0.0f || normY > 1.0f)
             continue;
 
         auto p = normalizedToPixel({ 0.0f, normY });
 
-        g.drawLine(viewArea.getX(), p.y,
-            viewArea.getRight(), p.y);
+        g.drawLine(viewArea.getX(),
+            p.y,
+            viewArea.getRight(),
+            p.y);
     }
 }
 
