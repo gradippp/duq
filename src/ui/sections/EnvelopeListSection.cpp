@@ -12,7 +12,7 @@ EnvelopeListSection::EnvelopeListSection()
     addAndMakeVisible(viewport);
 
     // ---- Create default model first ----
-    envelopes.emplace_back();
+    envelopes.emplace_back(std::make_unique<EnvelopeData>());
 
     // ---- Create default row ----
     auto* row = rows.add(new EnvelopeRowComponent("Default"));
@@ -38,7 +38,7 @@ EnvelopeListSection::EnvelopeListSection()
         {
             const int newIndex = rows.size();
 
-            envelopes.emplace_back();
+            envelopes.emplace_back(std::make_unique<EnvelopeData>());
 
             auto* newRow = rows.add(
                 new EnvelopeRowComponent("Env " + juce::String(newIndex + 1))
@@ -66,9 +66,9 @@ EnvelopeListSection::EnvelopeListSection()
 void EnvelopeListSection::updateSelectedEnvelope(const EnvelopeData& data)
 {
     if (selectedIndex >= 0 &&
-        selectedIndex < envelopes.size())
+        selectedIndex < static_cast<int>(envelopes.size()))
     {
-        envelopes[selectedIndex] = data;
+        *envelopes[selectedIndex] = data;
     }
 }
 
@@ -77,11 +77,12 @@ EnvelopeData* EnvelopeListSection::getSelectedEnvelope()
     if (selectedIndex >= 0 &&
         selectedIndex < static_cast<int>(envelopes.size()))
     {
-        return &envelopes[selectedIndex];
+        return envelopes[selectedIndex].get();
     }
 
     return nullptr;
 }
+
 
 void EnvelopeListSection::selectEnvelope(int index)
 {
@@ -94,7 +95,7 @@ void EnvelopeListSection::selectEnvelope(int index)
         rows[i]->setActive(i == index);
 
     if (onEnvelopeSelected)
-        onEnvelopeSelected(envelopes[index]);
+        onEnvelopeSelected(*envelopes[index]);
 }
 
 

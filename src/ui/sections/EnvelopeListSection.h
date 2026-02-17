@@ -26,7 +26,7 @@ private:
     juce::OwnedArray<EnvelopeRowComponent> rows;
     void removeRow(EnvelopeRowComponent* row);
 
-    std::vector<EnvelopeData> envelopes;
+    std::vector<std::unique_ptr<EnvelopeData>> envelopes;
     int selectedIndex = -1;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EnvelopeListSection)
