@@ -28,9 +28,22 @@ void MeterSection::resized()
 {
     auto area = getLocalBounds().reduced(6);
 
-    const int meterHeight = area.getHeight() / 3;
+    constexpr int gap = 6; // space between meters
+    const int totalGap = gap * 2;
 
-    inputMeter.setBounds(area.removeFromTop(meterHeight).reduced(0, 4));
-    reductionMeter.setBounds(area.removeFromTop(meterHeight).reduced(0, 4));
-    outputMeter.setBounds(area.removeFromTop(meterHeight).reduced(0, 4));
+    const int meterHeight =
+        (area.getHeight() - totalGap) / 3;
+
+    inputMeter.setBounds(
+        area.removeFromTop(meterHeight));
+
+    area.removeFromTop(gap);
+
+    reductionMeter.setBounds(
+        area.removeFromTop(meterHeight));
+
+    area.removeFromTop(gap);
+
+    outputMeter.setBounds(
+        area.removeFromTop(meterHeight));
 }
