@@ -31,6 +31,12 @@ void GridSection::valueTreePropertyChanged(
     juce::ValueTree&,
     const juce::Identifier&)
 {
+    // If the user is actively zooming, ignore external property changes to
+    // avoid the rubber-banding feedback loop where tree writes overwrite
+    // the active UI change.
+    if (isUserZooming)
+        return;
+
     if (!isDraggingPoint && !isDraggingAnchor)
     {
         // A property change (e.g. curve) in the ValueTree should update
@@ -92,6 +98,7 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
         // Load view state from tree
         zoomX = (float)envelope.getProperty("zoomX", 1.0f);
         zoomY = (float)envelope.getProperty("zoomY", 1.0f);
+        uniformZoom = (float)envelope.getProperty("uniformZoom", 1.0f);
         offsetX = (float)envelope.getProperty("offsetX", 0.0f);
         offsetY = (float)envelope.getProperty("offsetY", 0.0f);
         gridPower = (int)envelope.getProperty("gridPower", 4);
@@ -158,7 +165,7 @@ void GridSection::mouseDown(const juce::MouseEvent& e)
     bool altDown =
         juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
 
-    bool canPan = (zoomX > 1.0f || zoomY > 1.0f);
+    bool canPan = (uniformZoom > 1.0f);
 
     if (altDown && canPan)
     {
@@ -323,17 +330,22 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     }
 
     // --- Normal scroll -> zoom ---
-    float zoomFactor = 1.0f + wheel.deltaY * 0.2f;
+    // Map wheel delta directly to an exponential scale factor for smooth
+    // pinch-like behaviour. Apply per-event to keep interaction responsive.
+    float sensitivity = 0.2f;
+    float zoomFactor = std::exp(wheel.deltaY * sensitivity);
 
     // Save old values
     float oldZoomX = zoomX;
     float oldZoomY = zoomY;
-    float oldOffsetX = offsetX;
-    float oldOffsetY = offsetY;
+    float oldOffsetX = offsetX; 
+    float oldOffsetY = offsetY; 
 
-    // Compute mouse normalized position using OLD zoom/offset
-    float visibleWidthOld = 1.0f / oldZoomX;
-    float visibleHeightOld = 1.0f / oldZoomY;
+    // Use the uniformZoom (base) to compute the mouse-normalized anchor
+    // so the zoom is anchored consistently when we switch to strict pinch.
+    float oldUniform = uniformZoom;
+    float visibleWidthOld = 1.0f / oldUniform;
+    float visibleHeightOld = 1.0f / oldUniform;
 
     auto localPos = e.getEventRelativeTo(this).position;
 
@@ -342,10 +354,15 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
 
     float mouseNormX = oldOffsetX + nx * visibleWidthOld;
     float mouseNormY = oldOffsetY + ny * visibleHeightOld;
+    // Strict pinch: compute a single base zoom. Use the larger of the two
+    // current zooms as the base so the dominant axis doesn't shrink when
+    // you start pinching — this prevents the "revert" behaviour you saw.
+    float baseZoom = uniformZoom;
+    float newBase = juce::jlimit(minZoom, maxZoom, baseZoom * zoomFactor);
 
-    // Apply new zoom
-    zoomX = juce::jlimit(minZoom, maxZoom, oldZoomX * zoomFactor);
-    zoomY = juce::jlimit(minZoom, maxZoom, oldZoomY * zoomFactor);
+    uniformZoom = newBase;
+    zoomX = uniformZoom;
+    zoomY = uniformZoom;
 
     float visibleWidthNew = 1.0f / zoomX;
     float visibleHeightNew = 1.0f / zoomY;
@@ -358,15 +375,36 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     offsetX = juce::jlimit(0.0f, 1.0f - visibleWidthNew, offsetX);
     offsetY = juce::jlimit(0.0f, 1.0f - visibleHeightNew, offsetY);
 
-    // Store to tree
-    envelope.setProperty("zoomX", zoomX, nullptr);
-    envelope.setProperty("zoomY", zoomY, nullptr);
-    envelope.setProperty("offsetX", offsetX, nullptr);
-    envelope.setProperty("offsetY", offsetY, nullptr);
-
-    waveform.setViewState(zoomX, zoomY);
+    // Update visuals immediately, but defer writing to the ValueTree to
+    // avoid feedback from other listeners that can cause rubber-banding.
+    waveform.setViewState(uniformZoom, offsetX);
     updatePointPositions();
     repaint();
+
+    // Debounce writing to the ValueTree to avoid rapid feedback loops.
+    // The actual properties will be committed by timerCallback().
+    pendingZoomWrite = true;
+    isUserZooming = true;
+    startTimer(100); // 100ms
+}
+
+void GridSection::timerCallback()
+{
+    stopTimer();
+
+    if (!pendingZoomWrite || !envelope.isValid())
+        return;
+    if (persistZoomToTree)
+    {
+        envelope.setProperty("zoomX", zoomX, nullptr);
+        envelope.setProperty("zoomY", zoomY, nullptr);
+        envelope.setProperty("uniformZoom", uniformZoom, nullptr);
+        envelope.setProperty("offsetX", offsetX, nullptr);
+        envelope.setProperty("offsetY", offsetY, nullptr);
+    }
+
+    pendingZoomWrite = false;
+    isUserZooming = false;
 }
 
 void GridSection::paint(juce::Graphics& g)

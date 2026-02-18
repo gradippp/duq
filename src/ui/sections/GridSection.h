@@ -6,7 +6,8 @@
 #include "../components/WaveformComponent.h"
 
 class GridSection : public juce::Component,
-    private juce::ValueTree::Listener
+    private juce::ValueTree::Listener,
+    private juce::Timer
 {
 public:
     GridSection();
@@ -80,14 +81,22 @@ private:
     float zoomX = 1.0f;
     float zoomY = 1.0f;
 
+    // When strict pinch is enabled we drive both axes from this uniform zoom
+    float uniformZoom = 1.0f;
+
     float offsetX = 0.0f;
     float offsetY = 0.0f;
 
     static constexpr float minZoom = 1.0f;
     static constexpr float maxZoom = 10.0f;
 
+    // (strict pinch uses `uniformZoom`) 
+
     // Panning
     void updatePanCursor();
+
+    // Timer for debounced writing to ValueTree
+    void timerCallback() override;
 
     bool isPanning = false;
     juce::Point<int> panStartMouse;
@@ -106,6 +115,10 @@ private:
 
     // Data
     juce::ValueTree envelope;
+
+    bool pendingZoomWrite = false;
+    bool isUserZooming = false;
+    bool persistZoomToTree = false; // set true to re-enable writing zoom to ValueTree
 
     std::vector<std::unique_ptr<PointComponent>> pointComponents;
     std::vector<std::unique_ptr<AnchorComponent>> anchorComponents;
