@@ -28,14 +28,21 @@ GridSection::~GridSection()
 }
 
 void GridSection::valueTreePropertyChanged(
-    juce::ValueTree&,
-    const juce::Identifier&)
+    juce::ValueTree& v,
+    const juce::Identifier& i)
 {
     // If the user is actively zooming, ignore external property changes to
     // avoid the rubber-banding feedback loop where tree writes overwrite
     // the active UI change.
     if (isUserZooming)
         return;
+
+    if (i == juce::Identifier("gridPower"))
+    {
+        gridPower = (int)v.getProperty("gridPower", 4);
+        repaint();
+        return;
+    }
 
     if (!isDraggingPoint && !isDraggingAnchor)
     {
@@ -86,6 +93,9 @@ float GridSection::snapValue(float value, float step)
 
 void GridSection::setEnvelope(juce::ValueTree newEnvelope)
 {
+    if (newEnvelope == envelope)
+        return;
+
     if (envelope.isValid())
         envelope.removeListener(this);
 
@@ -389,7 +399,7 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     float mouseNormY = oldOffsetY + ny * visibleHeightOld;
     // Strict pinch: compute a single base zoom. Use the larger of the two
     // current zooms as the base so the dominant axis doesn't shrink when
-    // you start pinching — this prevents the "revert" behaviour you saw.
+    // you start pinching ï¿½ this prevents the "revert" behaviour you saw.
     float baseZoom = uniformZoom;
     float newBase = juce::jlimit(minZoom, maxZoom, baseZoom * zoomFactor);
 

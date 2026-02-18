@@ -73,9 +73,10 @@ void EnvelopeListSection::valueTreeChildRemoved(juce::ValueTree&, juce::ValueTre
     rebuildRowsFromModel();
 }
 
-void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&)
+void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, const juce::Identifier&)
 {
-    rebuildRowsFromModel();
+    if (v == envelopesTree)
+        rebuildRowsFromModel();
 }
 
 
