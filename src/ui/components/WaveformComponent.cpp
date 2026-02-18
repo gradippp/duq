@@ -49,7 +49,8 @@ void WaveformComponent::paint(juce::Graphics& g)
     const float visibleSamples = visibleWidthNorm * bufferLength;
     const float samplesPerPixel = visibleSamples / (float)width;
 
-    g.setColour(juce::Colours::azure);
+    juce::Path waveformPath;
+    bool started = false;
 
     for (int x = 0; x < width; ++x)
     {
@@ -79,12 +80,24 @@ void WaveformComponent::paint(juce::Graphics& g)
         float nyBottom = (normYBottom - offsetY) / visibleHeightNorm;
 
         // Map to pixels
-        float yTop = (1.0f - nyTop) * height;
-        float yBottom = (1.0f - nyBottom) * height;
+        float yTop = (1.0f - nyTop) * (float)height;
+        float yBottom = (1.0f - nyBottom) * (float)height;
 
-        g.drawLine((float)x, yTop,
-            (float)x, yBottom, 1.0f);
+        if (!started)
+        {
+            waveformPath.startNewSubPath((float)x, yTop);
+            waveformPath.lineTo((float)x, yBottom);
+            started = true;
+        }
+        else
+        {
+            waveformPath.lineTo((float)x, yTop);
+            waveformPath.lineTo((float)x, yBottom);
+        }
     }
+
+    g.setColour(juce::Colours::azure);
+    g.strokePath(waveformPath, juce::PathStrokeType(1.0f));
 
     // subtle center line (0.0 amplitude -> normY = 0.5)
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;
