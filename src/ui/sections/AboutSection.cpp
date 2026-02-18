@@ -11,7 +11,7 @@ AboutSection::AboutSection()
     titleLabel.setJustificationType(juce::Justification::centredLeft);
 
     addAndMakeVisible(versionLabel);
-    versionLabel.setText("VERSION " + juce::String(PROJECT_VERSION) + " (" + juce::String(PROJECT_GIT_COMMIT) + ")", juce::dontSendNotification);
+    versionLabel.setText("VERSION " + juce::String(PROJECT_VERSION) + " (build " + juce::String(PROJECT_GIT_COMMIT) + ")", juce::dontSendNotification);
     versionLabel.setFont(FontManager::getJetBrainsMono(14.0f));
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.4f));
     versionLabel.setJustificationType(juce::Justification::centredLeft);
