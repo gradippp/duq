@@ -1,5 +1,4 @@
 #include "EnvelopeListSection.h"
-#include "../../actions/EnvelopeUndoActions.h"
 #include "../../PluginProcessor.h"
 
 EnvelopeListSection::EnvelopeListSection()
@@ -13,199 +12,137 @@ EnvelopeListSection::EnvelopeListSection()
     viewport.setScrollBarsShown(true, false);
     addAndMakeVisible(viewport);
 
-    // ---- Create default envelope first ----
-    auto defaultEnv = std::make_unique<EnvelopeData>();
-    defaultEnv->triggerNote = 36;
-    defaultEnv->name = generateDefaultName();
-
-    addEnvelopeAt(0, std::move(defaultEnv));
-
-    // ---- Add button logic ----
     addButton.onClick = [this]()
         {
-            if (!undoManager || isInitialising)
+            if (!undoManager || !envelopesTree.isValid())
                 return;
 
-            int index = envelopes.size();
-
             undoManager->beginNewTransaction("Add Envelope");
-            undoManager->perform(new AddEnvelopeAction(*this, index));
-        };
 
-    isInitialising = false;
+            juce::ValueTree env("ENVELOPE");
+            env.setProperty("name", generateDefaultName(), nullptr);
+            env.setProperty("triggerNote", getNextFreeNote(36), nullptr);
+            env.setProperty("rate", 20.0, nullptr);
+            env.setProperty("depth", 100.0, nullptr);
+            env.setProperty("smooth", 0.0, nullptr);
+            env.setProperty("rateIsFrequencyMode", true, nullptr);
+
+            juce::ValueTree points("POINTS");
+
+            juce::ValueTree p1("POINT");
+            p1.setProperty("x", 0.0f, nullptr);
+            p1.setProperty("y", 0.0f, nullptr);
+            p1.setProperty("curve", 0.0f, nullptr);
+
+            juce::ValueTree p2("POINT");
+            p2.setProperty("x", 1.0f, nullptr);
+            p2.setProperty("y", 1.0f, nullptr);
+            p2.setProperty("curve", 0.0f, nullptr);
+
+            points.addChild(p1, -1, nullptr);
+            points.addChild(p2, -1, nullptr);
+
+            env.addChild(points, -1, nullptr);
+
+            envelopesTree.addChild(env, -1, undoManager);
+        };
 }
 
 EnvelopeListSection::~EnvelopeListSection()
 {
-    if (undoManager)
-        undoManager->removeChangeListener(this);
 }
 
-void EnvelopeListSection::changeListenerCallback(juce::ChangeBroadcaster*)
+void EnvelopeListSection::setProcessor(DuqAudioProcessor& p)
+{
+    envelopesTree = p.getEnvelopesTree();
+
+    envelopesTree.addListener(this);
+
+    rebuildRowsFromModel();
+}
+
+void EnvelopeListSection::valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&)
 {
     rebuildRowsFromModel();
 }
+
+void EnvelopeListSection::valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int)
+{
+    rebuildRowsFromModel();
+}
+
+void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&)
+{
+    rebuildRowsFromModel();
+}
+
 
 void EnvelopeListSection::rebuildRowsFromModel()
 {
     rowContainer.removeAllChildren();
     rows.clear();
 
-    for (int i = 0; i < envelopes.size(); ++i)
+    const int count = envelopesTree.getNumChildren();
+
+    for (int i = 0; i < count; ++i)
     {
-        auto* row = rows.insert(i,
-            new EnvelopeRowComponent(*envelopes[i]));
+        auto envTree = envelopesTree.getChild(i);
 
-        row->onNameChanged = [this, row](const juce::String& newName)
+        auto* row = new EnvelopeRowComponent(envTree);
+
+        row->onNameChanged = [this, i](const juce::String& newName)
             {
-                int rowIndex = rows.indexOf(row);
-                trySetEnvelopeName(rowIndex, newName);
+                auto envTree = envelopesTree.getChild(i);
+                envTree.setProperty("name", newName.trim(), undoManager);
             };
 
-        row->onNoteChanged = [this, row](int newNote)
+        row->onNoteChanged = [this, envTree](int newNote) mutable
             {
-                int rowIndex = rows.indexOf(row);
-                trySetEnvelopeNote(rowIndex, newNote);
+                newNote = juce::jlimit(0, 127, newNote);
+
+                if (!isNoteAlreadyUsed(newNote, envelopesTree.indexOf(envTree)))
+                    envTree.setProperty("triggerNote", newNote, undoManager);
             };
 
-        row->onDeleteRequested = [this, row]()
+        row->onSelected = [this, i]()
             {
-                removeRow(row);
+                selectEnvelope(i);
             };
 
-        row->onSelected = [this, row]()
-            {
-                int idx = rows.indexOf(row);
-                selectEnvelope(idx);
-            };
-
+        rows.add(row);
         rowContainer.addAndMakeVisible(row);
     }
 
-    // Fix selection bounds
-    if (selectedIndex >= envelopes.size())
-        selectedIndex = envelopes.size() - 1;
+    if (selectedIndex >= count)
+        selectedIndex = count - 1;
 
-    if (envelopes.empty())
+    if (count == 0)
     {
         selectedIndex = -1;
 
         if (onEnvelopeSelected)
-            onEnvelopeSelected(nullptr);
+            onEnvelopeSelected(juce::ValueTree());
 
         resized();
         return;
     }
 
-    // If nothing selected yet, select first
     if (selectedIndex < 0)
         selectedIndex = 0;
 
     selectEnvelope(selectedIndex);
-
     resized();
-
 }
-
-
-bool EnvelopeListSection::trySetEnvelopeName(int index,
-    const juce::String& newName)
-{
-    if (index < 0 || index >= static_cast<int>(envelopes.size()))
-        return false;
-
-    auto trimmed = newName.trim();
-
-    if (trimmed.isEmpty())
-        return false;
-
-    auto& env = envelopes[index];
-
-    if (env->name == trimmed)
-        return false; // no change
-
-    if (!undoManager)
-        return applyEnvelopeNameDirect(index, trimmed);
-
-    undoManager->beginNewTransaction("Rename Envelope");
-
-    undoManager->perform(
-        new ChangeEnvelopeNameAction(*this,
-            index,
-            env->name,
-            trimmed));
-
-    return true;
-}
-
-bool EnvelopeListSection::applyEnvelopeNameDirect(int index,
-    const juce::String& newName)
-{
-    if (index < 0 || index >= static_cast<int>(envelopes.size()))
-        return false;
-
-    envelopes[index]->name = newName;
-
-    // Update visible row immediately (no full rebuild needed)
-    if (index < rows.size())
-        rows[index]->setName(newName);
-
-    return true;
-}
-
 
 
 void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
 {
     undoManager = &um;
-    undoManager->addChangeListener(this);
 }
-
-
-void EnvelopeListSection::addEnvelopeAt(
-    int index,
-    std::unique_ptr<EnvelopeData> env)
-{
-    envelopes.insert(envelopes.begin() + index,
-        std::move(env));
-}
-
-
-std::unique_ptr<EnvelopeData> EnvelopeListSection::removeEnvelopeAt(int index)
-{
-    if (index < 0 || index >= envelopes.size())
-        return nullptr;
-
-    auto removed = std::move(envelopes[index]);
-    envelopes.erase(envelopes.begin() + index);
-
-    return removed;
-}
-
-void EnvelopeListSection::updateSelectedEnvelope(const EnvelopeData& data)
-{
-    if (selectedIndex >= 0 &&
-        selectedIndex < static_cast<int>(envelopes.size()))
-    {
-        *envelopes[selectedIndex] = data;
-    }
-}
-
-EnvelopeData* EnvelopeListSection::getSelectedEnvelope()
-{
-    if (selectedIndex >= 0 &&
-        selectedIndex < static_cast<int>(envelopes.size()))
-    {
-        return envelopes[selectedIndex].get();
-    }
-
-    return nullptr;
-}
-
 
 void EnvelopeListSection::selectEnvelope(int index)
 {
-    if (index < 0 || index >= envelopes.size())
+    if (index < 0 || index >= envelopesTree.getNumChildren())
         return;
 
     selectedIndex = index;
@@ -214,22 +151,7 @@ void EnvelopeListSection::selectEnvelope(int index)
         rows[i]->setSelected(i == index);
 
     if (onEnvelopeSelected)
-        onEnvelopeSelected(envelopes[index].get());
-}
-
-void EnvelopeListSection::removeRow(EnvelopeRowComponent* row)
-{
-    if (!undoManager || isInitialising)
-        return;
-
-    int index = rows.indexOf(row);
-
-    if (index >= 0)
-    {
-        undoManager->beginNewTransaction("Remove Envelope");
-        undoManager->perform(
-            new RemoveEnvelopeAction(*this, index));
-    }
+        onEnvelopeSelected(envelopesTree.getChild(index));
 }
 
 
@@ -300,50 +222,23 @@ int EnvelopeListSection::getSelectedIndex() const
 
 int EnvelopeListSection::getEnvelopeCount() const
 {
-    return static_cast<int>(envelopes.size());
+    return envelopesTree.getNumChildren();
 }
 
 bool EnvelopeListSection::isNoteAlreadyUsed(int note, int ignoreIndex) const
 {
-    for (int i = 0; i < static_cast<int>(envelopes.size()); ++i)
+    const int count = envelopesTree.getNumChildren();
+
+    for (int i = 0; i < count; ++i)
     {
         if (i == ignoreIndex)
             continue;
 
-        if (envelopes[i]->triggerNote == note)
+        if ((int)envelopesTree.getChild(i)["triggerNote"] == note)
             return true;
     }
 
     return false;
-}
-
-bool EnvelopeListSection::trySetEnvelopeNote(int index, int newNote)
-{
-    if (index < 0 || index >= envelopes.size())
-        return false;
-
-    newNote = juce::jlimit(0, 127, newNote);
-
-    if (isNoteAlreadyUsed(newNote, index))
-        return false;
-
-    int oldNote = envelopes[index]->triggerNote;
-
-    if (oldNote == newNote)
-        return false;
-
-    if (!undoManager)
-        return applyEnvelopeNoteDirect(index, newNote);
-
-    undoManager->beginNewTransaction("Change Envelope Note");
-
-    undoManager->perform(
-        new ChangeEnvelopeNoteAction(*this,
-            index,
-            oldNote,
-            newNote));
-
-    return true;
 }
 
 juce::String EnvelopeListSection::generateDefaultName() const
@@ -353,12 +248,11 @@ juce::String EnvelopeListSection::generateDefaultName() const
     while (true)
     {
         juce::String candidate = "Env " + juce::String(counter);
-
         bool exists = false;
 
-        for (const auto& env : envelopes)
+        for (int i = 0; i < envelopesTree.getNumChildren(); ++i)
         {
-            if (env->name == candidate)
+            if (envelopesTree.getChild(i)["name"].toString() == candidate)
             {
                 exists = true;
                 break;
@@ -372,20 +266,6 @@ juce::String EnvelopeListSection::generateDefaultName() const
     }
 }
 
-
-bool EnvelopeListSection::applyEnvelopeNoteDirect(int index, int newNote)
-{
-    if (index < 0 || index >= envelopes.size())
-        return false;
-
-    envelopes[index]->triggerNote = newNote;
-
-    if (index < rows.size())
-        rows[index]->setTriggerNote(newNote);
-
-    return true;
-}
-
 int EnvelopeListSection::getNextFreeNote(int startFrom) const
 {
     for (int note = startFrom; note <= 127; ++note)
@@ -394,16 +274,15 @@ int EnvelopeListSection::getNextFreeNote(int startFrom) const
             return note;
     }
 
-    return -1; // no notes available
+    return 36;
 }
 
 void EnvelopeListSection::updateMidiActivity(DuqAudioProcessor& processor)
 {
     for (int i = 0; i < rows.size(); ++i)
     {
-        int note = envelopes[i]->triggerNote;
+        int note = (int)envelopesTree.getChild(i)["triggerNote"];
         bool isActive = processor.isNoteActive(note);
-
         rows[i]->setActive(isActive);
     }
 }

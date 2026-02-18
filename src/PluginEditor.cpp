@@ -25,40 +25,55 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
 
     envelopeListSection.setUndoManager(undoManager);
+    envelopeListSection.setProcessor(p);
     controlSection.setUndoManager(undoManager);
     gridSection.setUndoManager(undoManager);
 
-    header.setUndoCallback([this]
-        {
-            if (undoManager.canUndo())
-            {
-                undoManager.undo();
+    //header.setUndoCallback([this]
+    //    {
+    //        if (undoManager.canUndo())
+    //        {
+    //            undoManager.undo();
 
-                if (auto* env = envelopeListSection.getSelectedEnvelope())
-                {
-                    controlSection.loadEnvelope(*env);
-                    gridSection.setEnvelope(env);
-                }
+    //            auto env = envelopeListSection.getSelectedEnvelope();
 
-                gridSection.repaint();
-            }
-        });
+    //            if (env.isValid())
+    //            {
+    //                controlSection.setEnvelope(env);
+    //                gridSection.setEnvelope(env);
+    //            }
+    //            else
+    //            {
+    //                controlSection.clearEnvelope();
+    //                gridSection.setEnvelope({});
+    //            }
 
-    header.setRedoCallback([this]
-        {
-            if (undoManager.canRedo())
-            {
-                undoManager.redo();
+    //            gridSection.repaint();
+    //        }
+    //    });
 
-                if (auto* env = envelopeListSection.getSelectedEnvelope())
-                {
-                    controlSection.loadEnvelope(*env);
-                    gridSection.setEnvelope(env);
-                }
+    //header.setRedoCallback([this]
+    //    {
+    //        if (undoManager.canRedo())
+    //        {
+    //            undoManager.redo();
 
-                gridSection.repaint();
-            }
-        });
+    //            auto env = envelopeListSection.getSelectedEnvelope();
+
+    //            if (env.isValid())
+    //            {
+    //                controlSection.setEnvelope(env);
+    //                gridSection.setEnvelope(env);
+    //            }
+    //            else
+    //            {
+    //                controlSection.clearEnvelope();
+    //                gridSection.setEnvelope({});
+    //            }
+
+    //            gridSection.repaint();
+    //        }
+    //    });
 
     startTimerHz(10);
 
@@ -66,27 +81,27 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     envelopeListSection.onEnvelopeSelected =
-        [this](EnvelopeData* env)
+        [this](juce::ValueTree env)
         {
-            if (env)
+            if (env.isValid())
             {
-                gridSection.setEnvelope(env);
-                controlSection.loadEnvelope(*env);
+                //gridSection.setEnvelope(env);
+                //controlSection.setEnvelope(env);
             }
             else
             {
-                gridSection.setEnvelope(nullptr);
+                gridSection.setEnvelope({});
                 controlSection.clearEnvelope();
             }
         };
 
 
-    controlSection.onEnvelopeChanged =
-        [this](const EnvelopeData& data)
-        {
-            envelopeListSection.updateSelectedEnvelope(data);
-            gridSection.repaint();
-        };
+    //controlSection.onEnvelopeChanged =
+    //    [this](const EnvelopeData& data)
+    //    {
+    //        envelopeListSection.updateSelectedEnvelope(data);
+    //        gridSection.repaint();
+    //    };
 
     gridSection.setSampleBuffer(
         &audioProcessor.getMonitorWritePosition(),

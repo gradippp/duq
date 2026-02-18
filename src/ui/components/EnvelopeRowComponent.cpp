@@ -3,9 +3,11 @@
 #include "../utils/MidiUtils.h"
 #include "../components/PianoModal.h"
 
-EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
-    : data(dataRef)
+EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
+    : envelope(envelopeTree)
 {
+    envelope.addListener(this);
+
     auto setupIconButton = [](juce::DrawableButton& button,
         const juce::String& iconName)
         {
@@ -27,7 +29,10 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
             button.setTooltip(iconName);
         };
 
-    nameLabel.setText(data.name, juce::dontSendNotification);
+    // ===============================
+    // Name label
+    // ===============================
+
     nameLabel.setEditable(false, true, false);
     nameLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
@@ -46,19 +51,13 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
             if (newName.isEmpty())
                 newName = "Envelope";
 
-            nameLabel.setText(newName, juce::dontSendNotification);
-
             if (onNameChanged)
                 onNameChanged(newName);
         };
 
-    nameLabel.onTextChange = [this]
-        {
-            data.name = nameLabel.getText();
-
-            if (onNameChanged)
-                onNameChanged(data.name);
-        };
+    // ===============================
+    // Note button
+    // ===============================
 
     noteButton.setClickingTogglesState(false);
     noteButton.setTooltip("Trigger MIDI note");
@@ -69,11 +68,11 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
     noteButton.setColour(juce::TextButton::buttonOnColourId,
         juce::Colours::darkgrey.withAlpha(0.5f));
 
-    setTriggerNote(data.triggerNote);
-
     noteButton.onClick = [this]
         {
-            auto modal = std::make_unique<PianoModal>(data.triggerNote);
+            int currentNote = (int)envelope["triggerNote"];
+
+            auto modal = std::make_unique<PianoModal>(currentNote);
 
             modal->onNoteSelected = [this](int note)
                 {
@@ -87,14 +86,23 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
                 nullptr);
         };
 
+    // ===============================
+    // Icons
+    // ===============================
 
     setupIconButton(saveButton, "save");
     setupIconButton(replaceButton, "replace");
     setupIconButton(deleteButton, "delete");
 
-    saveButton.setTooltip("Save this envelope as a preset, including the controls.");
-    replaceButton.setTooltip("Replace this envelope from a preset");
-    deleteButton.setTooltip("Delete this envelope");
+    saveButton.onClick = [this]()
+        {
+            // TODO: implement envelope save preset
+        };
+
+    replaceButton.onClick = [this]()
+        {
+            // TODO: implement envelope replace preset
+        };
 
     deleteButton.onClick = [this]()
         {
@@ -102,23 +110,36 @@ EnvelopeRowComponent::EnvelopeRowComponent(EnvelopeData& dataRef)
                 onDeleteRequested();
         };
 
-
     addAndMakeVisible(saveButton);
     addAndMakeVisible(replaceButton);
     addAndMakeVisible(deleteButton);
     addAndMakeVisible(noteButton);
     addAndMakeVisible(nameLabel);
+
+    refreshFromTree();
 }
 
-
-void EnvelopeRowComponent::setName(const juce::String& name)
+EnvelopeRowComponent::~EnvelopeRowComponent()
 {
-    nameLabel.setText(name, juce::dontSendNotification);
+    envelope.removeListener(this);
 }
 
-void EnvelopeRowComponent::setTriggerNote(int note)
+void EnvelopeRowComponent::refreshFromTree()
 {
+    nameLabel.setText(envelope["name"].toString(),
+        juce::dontSendNotification);
+
+    int note = (int)envelope["triggerNote"];
     noteButton.setButtonText(midiNoteNumberToName(note));
+
+    repaint();
+}
+
+void EnvelopeRowComponent::valueTreePropertyChanged(
+    juce::ValueTree&,
+    const juce::Identifier&)
+{
+    refreshFromTree();
 }
 
 void EnvelopeRowComponent::setSelected(bool shouldBeSelected)

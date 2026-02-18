@@ -1,6 +1,5 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../../model/EnvelopeData.h"
 
 class SelectableLabel : public juce::Label
 {
@@ -16,39 +15,43 @@ public:
     }
 };
 
-class EnvelopeRowComponent : public juce::Component
+class EnvelopeRowComponent : public juce::Component,
+    private juce::ValueTree::Listener
 {
 public:
-    EnvelopeRowComponent(EnvelopeData& dataRef);
+    EnvelopeRowComponent(juce::ValueTree envelopeTree);
+    ~EnvelopeRowComponent() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
 
     void setActive(bool shouldBeActive);
-    std::function<void()> onDeleteRequested;
-    std::function<void()> onSelected;
     void setSelected(bool shouldBeSelected);
 
-    void setTriggerNote(int note);
+    std::function<void()> onDeleteRequested;
+    std::function<void()> onSelected;
     std::function<void(int)> onNoteChanged;
     std::function<void(const juce::String&)> onNameChanged;
-    
-    void setName(const juce::String& name);
-
 
 private:
-    SelectableLabel nameLabel;
+    // ValueTree model
+    juce::ValueTree envelope;
 
-    EnvelopeData& data;
+    // UI
+    SelectableLabel nameLabel;
+    juce::TextButton noteButton{ "-" };
+    juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton replaceButton{ "replace", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
 
     bool isActive = false;
     bool isHovered = false;
     bool isSelected = false;
 
-    juce::TextButton noteButton{ "-" };
-    juce::DrawableButton saveButton{ "save", juce::DrawableButton::ImageFitted };
-    juce::DrawableButton replaceButton{ "replace", juce::DrawableButton::ImageFitted };
-    juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
+    void refreshFromTree();
+
+    // ValueTree::Listener
+    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
 
     void mouseDown(const juce::MouseEvent& e) override;
     void mouseEnter(const juce::MouseEvent&) override;
