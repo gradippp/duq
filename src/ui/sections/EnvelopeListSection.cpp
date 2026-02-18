@@ -44,7 +44,9 @@ EnvelopeListSection::EnvelopeListSection()
 
             env.addChild(points, -1, nullptr);
 
+            const int newIndex = envelopesTree.getNumChildren();
             envelopesTree.addChild(env, -1, undoManager);
+            selectEnvelope(newIndex);
         };
 }
 
