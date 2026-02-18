@@ -15,22 +15,24 @@ AboutSection::AboutSection()
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.4f));
     versionLabel.setJustificationType(juce::Justification::centredLeft);
 
-    addAndMakeVisible(aboutText);
-    aboutText.setMultiLine(true);
-    aboutText.setReadOnly(true);
-    aboutText.setScrollbarsShown(true);
-    aboutText.setCaretVisible(false);
-    aboutText.setColour(juce::TextEditor::backgroundColourId, juce::Colours::transparentBlack);
-    aboutText.setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
-    aboutText.setColour(juce::TextEditor::textColourId, juce::Colours::white.withAlpha(0.7f));
-    aboutText.setFont(FontManager::getInterRegular(16.0f));
+    addAndMakeVisible(viewport);
+    viewport.setOpaque(false);
+    viewport.setViewedComponent(&content, false);
+    if (auto* viewed = viewport.getViewedComponent())
+        viewed->setOpaque(false);
+    
+    viewport.setScrollBarsShown(true, false, true, false);
+    viewport.setScrollBarThickness(10);
+    viewport.setScrollOnDragMode(juce::Viewport::ScrollOnDragMode::all);
+    viewport.setSingleStepSizes(1, 20);
+    viewport.setLookAndFeel(&scrollbarLF);
 
     // Load text from BinaryData
     int dataSize = 0;
     const char* data = BinaryData::getNamedResource("about_txt", dataSize);
     if (data != nullptr && dataSize > 0)
     {
-        aboutText.setText(juce::String::fromUTF8(data, dataSize));
+        content.setText(juce::String::fromUTF8(data, dataSize));
     }
 
     addAndMakeVisible(githubLink);
@@ -56,6 +58,53 @@ AboutSection::AboutSection()
 
 AboutSection::~AboutSection()
 {
+    viewport.setLookAndFeel(nullptr);
+}
+
+// --- AboutContent Implementation ---
+AboutSection::AboutContent::AboutContent()
+{
+    addAndMakeVisible(label);
+    label.setFont(FontManager::getInterRegular(16.0f));
+    label.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.7f));
+    label.setJustificationType(juce::Justification::topLeft);
+    label.setMinimumHorizontalScale(1.0f);
+}
+
+void AboutSection::AboutContent::setText(const juce::String& text)
+{
+    label.setText(text, juce::dontSendNotification);
+}
+
+void AboutSection::AboutContent::resized()
+{
+    label.setBounds(getLocalBounds());
+}
+
+int AboutSection::AboutContent::getRequiredHeight(int width)
+{
+    juce::AttributedString s;
+    s.append(label.getText(), label.getFont(), label.findColour(juce::Label::textColourId));
+    
+    juce::TextLayout layout;
+    layout.createLayout(s, (float)width);
+    return (int)layout.getHeight() + 20; // Some bottom padding
+}
+
+// --- ModernScrollbarLF Implementation ---
+void AboutSection::ModernScrollbarLF::drawScrollbar(juce::Graphics& g, juce::ScrollBar& scrollbar,
+    int x, int y, int width, int height,
+    bool isScrollbarVertical, int thumbStartPosition,
+    int thumbSize, bool isMouseOver, bool isMouseDown)
+{
+    if (thumbSize <= 0)
+        return;
+
+    auto thumbBounds = isScrollbarVertical ? juce::Rectangle<int>(x, thumbStartPosition, width, thumbSize)
+                                           : juce::Rectangle<int>(thumbStartPosition, y, thumbSize, height);
+
+    g.setColour(juce::Colours::white.withAlpha(isMouseOver ? 0.2f : 0.1f));
+    g.fillRoundedRectangle(thumbBounds.reduced(3).toFloat(), 2.0f);
 }
 
 void AboutSection::paint(juce::Graphics& g)
@@ -71,10 +120,6 @@ void AboutSection::paint(juce::Graphics& g)
     // Metallic outer border
     g.setColour(juce::Colours::white.withAlpha(0.08f));
     g.drawRect(bounds, 1.0f);
-    
-    // Subtle inner glow/line at the top
-    g.setColour(juce::Colours::white.withAlpha(0.03f));
-    g.fillRect(bounds.removeFromTop(1.0f));
 
     // Horizontal divider
     g.setColour(juce::Colours::white.withAlpha(0.05f));
@@ -101,15 +146,21 @@ void AboutSection::resized()
     titleLabel.setBounds(headerArea.removeFromTop(60));
     versionLabel.setBounds(headerArea.removeFromTop(20));
 
-    // --- Text Area (no padding, directly under divider) ---
-// --- Text Area ---
+    // --- Viewport Area ---
     const int dividerY = 120;
-    const int verticalPadding = 5;
+    const int verticalPadding = 20; // More padding for modern feel
 
-    aboutText.setBounds(
+    auto viewportBounds = juce::Rectangle<int>(
         60,                                    // left margin
-        dividerY + verticalPadding,            // 5px below divider
+        dividerY + verticalPadding,
         getWidth() - 120,                      // symmetric horizontal margins
-        getHeight() - (dividerY + verticalPadding)
+        getHeight() - (dividerY + verticalPadding) - 20 // bottom margin
     );
+
+    viewport.setBounds(viewportBounds);
+    
+    // Calculate and set content height
+    const int contentWidth = viewport.getMaximumVisibleWidth();
+    const int contentHeight = content.getRequiredHeight(contentWidth);
+    content.setSize(contentWidth, contentHeight);
 }
