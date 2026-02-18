@@ -23,7 +23,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(external/JUCE)
 
-set(plugin_formats AU)
+set(plugin_formats VST3)
 
 if(BUILD_STANDALONE)
     list(APPEND plugin_formats Standalone)
