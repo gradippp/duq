@@ -157,6 +157,11 @@ void GridSection::mouseMove(const juce::MouseEvent&)
     updatePanCursor();
 }
 
+// Note: GridSection intentionally does not implement MouseListener
+// overrides directly. Panning is started from child components by calling
+// `beginPanningAtScreenPosition` when Alt+drag is detected in child
+// components. This avoids duplicate definitions of existing mouse handlers.
+
 void GridSection::mouseDown(const juce::MouseEvent& e)
 {
     if (!envelope.isValid())
@@ -170,25 +175,86 @@ void GridSection::mouseDown(const juce::MouseEvent& e)
     if (altDown && canPan)
     {
         isPanning = true;
-        panStartMouse = e.getPosition();
+        panStartMouse = e.getEventRelativeTo(this).getPosition();
 
         panStartOffsetX = offsetX;
         panStartOffsetY = offsetY;
 
         updatePanCursor();
+        {
+            juce::String msg = "GridSection::mouseDown startPan alt=";
+            msg += (altDown ? "true" : "false");
+            msg += " panStartMouse=(";
+            msg += juce::String(panStartMouse.x);
+            msg += ",";
+            msg += juce::String(panStartMouse.y);
+            msg += ") panStartOffset=(";
+            msg += juce::String(panStartOffsetX);
+            msg += ",";
+            msg += juce::String(panStartOffsetY);
+            msg += ")";
+            juce::Logger::outputDebugString(msg);
+        }
     }
 }
 
 void GridSection::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!isPanning || !envelope.isValid() ||
-        (zoomX <= 1.0f && zoomY <= 1.0f))
+    // If the user didn't start panning on mouseDown (e.g. clicked a child
+    // component), allow panning to start on the first mouseDrag when Alt is
+    // held and zoom is active.
+    bool altDown = juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
+
+    if (!isPanning && altDown && envelope.isValid() && (uniformZoom > 1.0f)
+        && !isDraggingPoint && !isDraggingAnchor)
+    {
+        isPanning = true;
+        panStartMouse = e.getEventRelativeTo(this).getPosition();
+        panStartOffsetX = offsetX;
+        panStartOffsetY = offsetY;
+        updatePanCursor();
+        {
+            juce::String msg = "GridSection::mouseDrag autoStartPan alt=";
+            msg += (altDown ? "true" : "false");
+            msg += " panStartMouse=(";
+            msg += juce::String(panStartMouse.x);
+            msg += ",";
+            msg += juce::String(panStartMouse.y);
+            msg += ") panStartOffset=(";
+            msg += juce::String(panStartOffsetX);
+            msg += ",";
+            msg += juce::String(panStartOffsetY);
+            msg += ")";
+            juce::Logger::outputDebugString(msg);
+        }
+    }
+
+    if (!isPanning || !envelope.isValid() || (uniformZoom <= 1.0f))
         return;
 
-    auto delta = e.getPosition() - panStartMouse;
+    auto currentPos = e.getEventRelativeTo(this).position;
+    auto deltaF = currentPos - juce::Point<float>((float)panStartMouse.x, (float)panStartMouse.y);
+    juce::Point<int> delta = { (int)std::round(deltaF.x), (int)std::round(deltaF.y) };
 
-    float visibleWidth = 1.0f / zoomX;
-    float visibleHeight = 1.0f / zoomY;
+    {
+        juce::String msg = "GridSection::mouseDrag delta=(";
+        msg += juce::String(delta.x);
+        msg += ",";
+        msg += juce::String(delta.y);
+        msg += ") currentPos=(";
+        msg += juce::String(currentPos.x);
+        msg += ",";
+        msg += juce::String(currentPos.y);
+        msg += ") offsetBefore=(";
+        msg += juce::String(offsetX);
+        msg += ",";
+        msg += juce::String(offsetY);
+        msg += ")";
+        juce::Logger::outputDebugString(msg);
+    }
+
+    float visibleWidth = 1.0f / uniformZoom;
+    float visibleHeight = 1.0f / uniformZoom;
 
     float dx = (float)delta.x / viewArea.getWidth() * visibleWidth;
     float dy = (float)delta.y / viewArea.getHeight() * visibleHeight;
@@ -199,10 +265,13 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
     offsetX = juce::jlimit(0.0f, 1.0f - visibleWidth, offsetX);
     offsetY = juce::jlimit(0.0f, 1.0f - visibleHeight, offsetY);
 
-    envelope.setProperty("offsetX", offsetX, nullptr);
-    envelope.setProperty("offsetY", offsetY, nullptr);
+    if (persistZoomToTree)
+    {
+        envelope.setProperty("offsetX", offsetX, nullptr);
+        envelope.setProperty("offsetY", offsetY, nullptr);
+    }
 
-    waveform.setViewState(zoomX, zoomY);
+    waveform.setViewState(uniformZoom, offsetX);
 
     updatePanCursor();
     updatePointPositions();
@@ -215,12 +284,28 @@ void GridSection::mouseUp(const juce::MouseEvent&)
     updatePanCursor();
 }
 
+void GridSection::beginPanningAtScreenPosition(juce::Point<int> screenPos)
+{
+    if (!envelope.isValid() || uniformZoom <= 1.0f)
+        return;
+
+    isPanning = true;
+    // Convert screen pos to local
+    auto local = getLocalPoint(nullptr, screenPos);
+    panStartMouse = local;
+    panStartOffsetX = offsetX;
+    panStartOffsetY = offsetY;
+    updatePanCursor();
+}
+
 void GridSection::updatePanCursor()
 {
     bool altDown =
         juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
 
-    bool canPan = (zoomX > 1.0f || zoomY > 1.0f);
+    // Use uniformZoom to decide if panning is possible (strict pinch uses
+    // uniformZoom as the single zoom state).
+    bool canPan = (uniformZoom > 1.0f);
 
     if (!altDown || !canPan)
     {
@@ -277,8 +362,8 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
 
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
 {
-    float visibleWidth = 1.0f / zoomX;
-    float visibleHeight = 1.0f / zoomY;
+    float visibleWidth = 1.0f / uniformZoom;
+    float visibleHeight = 1.0f / uniformZoom;
 
     float nx = (p.x - offsetX) / visibleWidth;
     float ny = (p.y - offsetY) / visibleHeight;
@@ -291,8 +376,8 @@ juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
 
 juce::Point<float> GridSection::pixelToNormalized(juce::Point<float> p) const
 {
-    float visibleWidth = 1.0f / zoomX;
-    float visibleHeight = 1.0f / zoomY;
+    float visibleWidth = 1.0f / uniformZoom;
+    float visibleHeight = 1.0f / uniformZoom;
 
     float nx = (p.x - viewArea.getX()) / viewArea.getWidth();
     float ny = 1.0f - ((p.y - viewArea.getY()) / viewArea.getHeight());
@@ -493,8 +578,8 @@ void GridSection::drawGrid(juce::Graphics& g)
     int divisions = 1 << gridPower;      // 2^gridPower
     float baseStep = 1.0f / divisions;
 
-    float visibleWidth = 1.0f / zoomX;
-    float visibleHeight = 1.0f / zoomY;
+    float visibleWidth = 1.0f / uniformZoom;
+    float visibleHeight = 1.0f / uniformZoom;
 
     float startX = offsetX;
     float endX = offsetX + visibleWidth;

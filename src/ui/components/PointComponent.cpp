@@ -31,6 +31,15 @@ void PointComponent::mouseDown(const juce::MouseEvent& e)
     if (!point.isValid())
         return;
 
+    // If Alt is held, delegate to parent to begin panning instead of
+    // starting a point drag. This lets Alt+drag work even when the mouse
+    // lands on a child component.
+    if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
+    {
+        grid.beginPanningAtScreenPosition(e.getScreenPosition());
+        return;
+    }
+
     dragStartNormalized = normalized;
     dragStartMouse = e.getScreenPosition();
 
@@ -42,6 +51,12 @@ void PointComponent::mouseDrag(const juce::MouseEvent& e)
 {
     if (!point.isValid())
         return;
+    // If Alt is held, forward the drag to the grid for panning.
+    if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
+    {
+        grid.mouseDrag(e.getEventRelativeTo(&grid));
+        return;
+    }
 
     auto deltaPixels = e.getScreenPosition() - dragStartMouse;
 
@@ -61,8 +76,15 @@ void PointComponent::mouseDrag(const juce::MouseEvent& e)
         onDragMove(point, newPos, snapMode);
 }
 
-void PointComponent::mouseUp(const juce::MouseEvent&)
+void PointComponent::mouseUp(const juce::MouseEvent& e)
 {
+    // If Alt-panning was active, forward mouseUp to grid
+    if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
+    {
+        grid.mouseUp(e.getEventRelativeTo(&grid));
+        return;
+    }
+
     grid.setDraggingPoint(false);
 
     if (onDragEnd)

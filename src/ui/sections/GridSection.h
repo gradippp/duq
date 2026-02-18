@@ -22,6 +22,7 @@ public:
     juce::Rectangle<int> getViewArea() const { return viewArea; }
     float getZoomX() const { return zoomX; }
     float getZoomY() const { return zoomY; }
+    float getUniformZoom() const { return uniformZoom; }
     juce::ValueTree activeDragNode;
     juce::Point<float> activeDragPosition;
 
@@ -50,6 +51,9 @@ public:
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
+
+    // Allow child components to begin panning when Alt+drag starts on them
+    void beginPanningAtScreenPosition(juce::Point<int> screenPos);
     void mouseWheelMove(const juce::MouseEvent&,
         const juce::MouseWheelDetails&) override;
 
