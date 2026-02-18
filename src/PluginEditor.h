@@ -16,6 +16,7 @@
 #include "ui/sections/GridSection.h"
 #include "ui/sections/MeterSection.h"
 #include "ui/sections/PresetSection.h"
+#include "ui/sections/AboutSection.h"
 
 //==============================================================================
 /**
@@ -44,6 +45,7 @@ private:
     GridSection gridSection;
     MeterSection meterSection;
     PresetSection presetSection{ audioProcessor };
+    AboutSection aboutSection;
 
     juce::TooltipWindow tooltipWindow{ this };
 

@@ -67,6 +67,22 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             header.setPresetName(name);
         };
 
+    header.setAboutCallback([this]
+        {
+            aboutSection.setVisible(true);
+            gridSection.setVisible(false);
+            presetSection.setVisible(false);
+            resized();
+        });
+
+    aboutSection.setVisible(false);
+    aboutSection.onClose = [this]
+        {
+            aboutSection.setVisible(false);
+            gridSection.setVisible(true);
+            resized();
+        };
+
     controlSection.setUndoManager(undoManager);
     gridSection.setUndoManager(undoManager);
 
@@ -167,6 +183,9 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     addAndMakeVisible(meterSection);
     addAndMakeVisible(presetSection);
+    addAndMakeVisible(aboutSection);
+    aboutSection.toFront(false);
+    aboutSection.setVisible(false);
     presetSection.setVisible(false); // <--- ENSURE IT IS HIDDEN AFTER ADDING
 
     undoManager.clearUndoHistory();
@@ -224,6 +243,7 @@ void DuqAudioProcessorEditor::resized()
 
     gridSection.setBounds(rightArea);
     presetSection.setBounds(rightArea);
+    aboutSection.setBounds(getLocalBounds());
     meterSection.setBounds(meterArea);
 }
 

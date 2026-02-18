@@ -23,6 +23,7 @@ public:
     void setSaveProjectCallback(std::function<void()> cb) { onSaveProject = std::move(cb); }
     void setLoadProjectCallback(std::function<void()> cb) { onLoadProject = std::move(cb); }
     void setInitPresetCallback(std::function<void()> cb) { onInitPreset = std::move(cb); }
+    void setAboutCallback(std::function<void()> cb) { onAboutClicked = std::move(cb); }
 
     void updateUndoState(bool canUndo, bool canRedo);
 
@@ -38,6 +39,7 @@ private:
     juce::DrawableButton initPresetButton{ "init_preset", juce::DrawableButton::ImageFitted };
     
     SelectableLabel presetNameLabel;
+    SelectableLabel brandLabel;
 
     std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
     std::unique_ptr<ControlKnobComponent> mixKnob;
@@ -47,6 +49,7 @@ private:
     std::function<void()> onSaveProject;
     std::function<void()> onLoadProject;
     std::function<void()> onInitPreset;
+    std::function<void()> onAboutClicked;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderSection)
 };

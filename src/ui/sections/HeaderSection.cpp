@@ -45,6 +45,12 @@ HeaderSection::HeaderSection()
     presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
     presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
 
+    addAndMakeVisible(brandLabel);
+    brandLabel.setText("DUQ", juce::dontSendNotification);
+    brandLabel.setFont(FontManager::getInterBold(28.0f));
+    brandLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.9f));
+    brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
+
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
     mixKnob = std::make_unique<ControlKnobComponent>("", 100.0f, "%");
     mixKnob->getSlider().setLookAndFeel(knobLookAndFeel.get());
@@ -114,14 +120,6 @@ void HeaderSection::paint(juce::Graphics& g)
     g.setColour(juce::Colours::black);
     g.drawLine(0.0f, bounds.getBottom() - 1.0f, bounds.getRight(), bounds.getBottom() - 1.0f, 1.0f);
 
-    const int leftPadding = 24;
-
-    // ---------- Brand Title (Left) ----------
-    g.setColour(juce::Colours::white.withAlpha(0.9f));
-    g.setFont(FontManager::getInterBold(28.0f));
-    juce::Rectangle<int> titleArea(leftPadding, 0, 100, (int)getHeight());
-    g.drawText("DUQ", titleArea, juce::Justification::centredLeft);
-
     // ---------- Preset "Bay" (Center) ----------
     auto centerArea = getLocalBounds().withSizeKeepingCentre(280, 28).toFloat();
     g.setColour(juce::Colours::black.withAlpha(0.4f));
@@ -137,7 +135,7 @@ void HeaderSection::resized()
     auto area = getLocalBounds();
 
     // --- Left Brand ---
-    area.removeFromLeft(120);
+    brandLabel.setBounds(area.removeFromLeft(120).reduced(24, 0));
 
     const int buttonSize = 24;
     const int spacing = 4;
