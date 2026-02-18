@@ -43,7 +43,7 @@ private:
     ControlSection controlSection;
     GridSection gridSection;
     MeterSection meterSection;
-    PresetSection presetSection;
+    PresetSection presetSection{ audioProcessor };
 
     juce::TooltipWindow tooltipWindow{ this };
 

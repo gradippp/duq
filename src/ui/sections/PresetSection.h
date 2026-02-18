@@ -2,17 +2,26 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+class DuqAudioProcessor;
+
 class PresetSection : public juce::Component,
     private juce::ListBoxModel
 {
 public:
-    PresetSection();
+    enum class Mode
+    {
+        Envelope,
+        Project
+    };
+
+    PresetSection(DuqAudioProcessor& p);
     ~PresetSection() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
 
     void setTargetEnvelope(juce::ValueTree envelope);
+    void setMode(Mode newMode);
     void setUndoManager(juce::UndoManager& um);
 
     std::function<void()> onClose;
@@ -24,6 +33,9 @@ public:
 
 private:
     void refreshPresetList();
+
+    DuqAudioProcessor& processor;
+    Mode mode = Mode::Envelope;
 
     juce::ValueTree targetEnvelope;
     juce::UndoManager* undoManager = nullptr;

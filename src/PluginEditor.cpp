@@ -47,6 +47,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     envelopeListSection.onReplaceRequested = [this](juce::ValueTree env)
         {
+            presetSection.setMode(PresetSection::Mode::Envelope);
             presetSection.setTargetEnvelope(env);
             gridSection.setVisible(false);
             presetSection.setVisible(true);
@@ -100,27 +101,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     header.setLoadProjectCallback([this]
         {
-            auto initialFile = PresetManager::getProjectDirectory();
-
-            auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-
-            auto chooser = std::make_shared<juce::FileChooser>("Load Project Preset",
-                initialFile,
-                "*" + PresetManager::projectExtension);
-
-            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
-                {
-                    auto file = fc.getResult();
-                    if (file == juce::File())
-                        return;
-
-                    auto loaded = PresetManager::loadProject(file);
-                    if (loaded.isValid())
-                    {
-                        undoManager.beginNewTransaction("Load Project: " + file.getFileNameWithoutExtension());
-                        audioProcessor.getEnvelopesTree().copyPropertiesAndChildrenFrom(loaded, &undoManager);
-                    }
-                });
+            presetSection.setMode(PresetSection::Mode::Project);
+            gridSection.setVisible(false);
+            presetSection.setVisible(true);
+            resized();
         });
 
     startTimerHz(10);

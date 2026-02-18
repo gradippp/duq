@@ -1,17 +1,19 @@
 #include "PresetSection.h"
 #include "../utils/IconFactory.h"
 #include "../utils/PresetManager.h"
+#include "../../PluginProcessor.h"
 
-PresetSection::PresetSection()
+PresetSection::PresetSection(DuqAudioProcessor& p)
+    : processor(p)
 {
     addAndMakeVisible(titleLabel);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setFont(juce::Font("Segoe UI", 20.0f, juce::Font::bold));
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.8f));
 
-    auto normal = Icons::load("delete", juce::Colours::white.withAlpha(0.6f));
-    auto over = Icons::load("delete", juce::Colours::white);
-    auto down = Icons::load("delete", juce::Colours::white.withAlpha(0.4f));
+    auto normal = Icons::load("close", juce::Colours::white.withAlpha(0.6f));
+    auto over = Icons::load("close", juce::Colours::white);
+    auto down = Icons::load("close", juce::Colours::white.withAlpha(0.4f));
     closeButton.setImages(normal.get(), over.get(), down.get());
 
     addAndMakeVisible(closeButton);
@@ -34,14 +36,28 @@ PresetSection::~PresetSection()
 {
 }
 
+void PresetSection::setMode(Mode newMode)
+{
+    mode = newMode;
+    titleLabel.setText(mode == Mode::Envelope ? "SELECT ENVELOPE PRESET" : "SELECT PROJECT PRESET", juce::dontSendNotification);
+    refreshPresetList();
+}
+
 void PresetSection::refreshPresetList()
 {
     presetFiles.clear();
-    auto dir = PresetManager::getEnvelopeDirectory();
+    
+    auto dir = (mode == Mode::Envelope) 
+        ? PresetManager::getEnvelopeDirectory() 
+        : PresetManager::getProjectDirectory();
+
+    auto extension = (mode == Mode::Envelope)
+        ? PresetManager::envelopeExtension
+        : PresetManager::projectExtension;
     
     if (dir.exists() && dir.isDirectory())
     {
-        auto files = dir.findChildFiles(juce::File::findFiles, false, "*" + PresetManager::envelopeExtension);
+        auto files = dir.findChildFiles(juce::File::findFiles, false, "*" + extension);
         for (auto& f : files)
             presetFiles.push_back(f);
     }
@@ -76,8 +92,7 @@ void PresetSection::paintListBoxItem(int rowNumber, juce::Graphics& g, int width
     g.setFont(juce::Font("Segoe UI", 14.0f, juce::Font::plain));
     
     juce::String fileName = presetFiles[rowNumber].getFileNameWithoutExtension();
-    // For .duq.env, getFileNameWithoutExtension() might leave .duq if it only strips one extension
-    if (fileName.endsWith(".duq")) 
+    if (mode == Mode::Envelope && fileName.endsWith(".duq")) 
          fileName = fileName.substring(0, fileName.length() - 4);
 
     g.drawText(fileName, area.reduced(10, 0), juce::Justification::centredLeft, true);
@@ -85,19 +100,39 @@ void PresetSection::paintListBoxItem(int rowNumber, juce::Graphics& g, int width
 
 void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
 {
-    if (rowNumber >= (int)presetFiles.size() || !targetEnvelope.isValid())
+    if (rowNumber >= (int)presetFiles.size())
         return;
 
-    auto loaded = PresetManager::loadEnvelope(presetFiles[rowNumber]);
-    if (loaded.isValid())
+    if (mode == Mode::Envelope)
     {
-        if (undoManager)
-            undoManager->beginNewTransaction("Load Preset: " + presetFiles[rowNumber].getFileNameWithoutExtension());
+        if (!targetEnvelope.isValid())
+            return;
 
-        targetEnvelope.copyPropertiesAndChildrenFrom(loaded, undoManager);
-        
-        if (onClose)
-            onClose();
+        auto loaded = PresetManager::loadEnvelope(presetFiles[rowNumber]);
+        if (loaded.isValid())
+        {
+            if (undoManager)
+                undoManager->beginNewTransaction("Load Envelope: " + presetFiles[rowNumber].getFileNameWithoutExtension());
+
+            targetEnvelope.copyPropertiesAndChildrenFrom(loaded, undoManager);
+            
+            if (onClose)
+                onClose();
+        }
+    }
+    else // Mode::Project
+    {
+        auto loaded = PresetManager::loadProject(presetFiles[rowNumber]);
+        if (loaded.isValid())
+        {
+            if (undoManager)
+                undoManager->beginNewTransaction("Load Project: " + presetFiles[rowNumber].getFileNameWithoutExtension());
+
+            processor.getEnvelopesTree().copyPropertiesAndChildrenFrom(loaded, undoManager);
+            
+            if (onClose)
+                onClose();
+        }
     }
 }
 
