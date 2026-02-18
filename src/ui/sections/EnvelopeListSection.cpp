@@ -122,9 +122,7 @@ void EnvelopeListSection::rebuildRowsFromModel()
         row->onNoteChanged = [this, envTree](int newNote) mutable
             {
                 newNote = juce::jlimit(0, 127, newNote);
-
-                if (!isNoteAlreadyUsed(newNote, envelopesTree.indexOf(envTree)))
-                    envTree.setProperty("triggerNote", newNote, undoManager);
+                envTree.setProperty("triggerNote", newNote, undoManager);
             };
 
         row->onSelected = [this, i]()
@@ -248,15 +246,12 @@ int EnvelopeListSection::getEnvelopeCount() const
     return envelopesTree.getNumChildren();
 }
 
-bool EnvelopeListSection::isNoteAlreadyUsed(int note, int ignoreIndex) const
+bool EnvelopeListSection::isNoteAlreadyUsed(int note) const
 {
     const int count = envelopesTree.getNumChildren();
 
     for (int i = 0; i < count; ++i)
     {
-        if (i == ignoreIndex)
-            continue;
-
         if ((int)envelopesTree.getChild(i)["triggerNote"] == note)
             return true;
     }
@@ -297,7 +292,7 @@ int EnvelopeListSection::getNextFreeNote(int startFrom) const
             return note;
     }
 
-    return 36;
+    return startFrom;
 }
 
 void EnvelopeListSection::updateMidiActivity(DuqAudioProcessor& processor)

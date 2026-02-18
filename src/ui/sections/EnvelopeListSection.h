@@ -28,7 +28,6 @@ public:
 
     void setUndoManager(juce::UndoManager& um);
 
-    bool isNoteAlreadyUsed(int note, int ignoreIndex = -1) const;
     int getNextFreeNote(int startFrom = 36) const;
 
     juce::String generateDefaultName() const;
@@ -53,6 +52,8 @@ private:
     juce::UndoManager* undoManager = nullptr;
 
     int selectedIndex = -1;
+
+    bool isNoteAlreadyUsed(int note) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EnvelopeListSection)
 };
