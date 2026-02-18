@@ -25,7 +25,6 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
     if (!point.isValid())
         return;
 
-    // If Alt is held, begin panning instead of editing anchor curve.
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.beginPanningAtScreenPosition(e.getScreenPosition());
@@ -43,8 +42,6 @@ void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
 {
     if (!point.isValid())
         return;
-
-    // If Alt is held, forward drag to grid to pan rather than edit curve.
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.mouseDrag(e.getEventRelativeTo(&grid));
@@ -52,14 +49,8 @@ void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
     }
 
     auto deltaPixels = e.getScreenPosition() - dragStartMouse;
-
-    float sensitivity = 0.005f;
-
-    float newCurve = juce::jlimit(
-        -1.0f,
-        1.0f,
-        startCurve - deltaPixels.y * sensitivity
-    );
+    const float sensitivity = 0.005f;
+    float newCurve = juce::jlimit(-1.0f, 1.0f, startCurve - deltaPixels.y * sensitivity);
 
     if (onDragMove)
         onDragMove(point, newCurve);
@@ -70,7 +61,6 @@ void AnchorComponent::mouseUp(const juce::MouseEvent& e)
     if (!point.isValid())
         return;
 
-    // If Alt-panning was active, forward mouseUp to grid
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.mouseUp(e.getEventRelativeTo(&grid));

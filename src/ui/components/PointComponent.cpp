@@ -30,10 +30,6 @@ void PointComponent::mouseDown(const juce::MouseEvent& e)
 {
     if (!point.isValid())
         return;
-
-    // If Alt is held, delegate to parent to begin panning instead of
-    // starting a point drag. This lets Alt+drag work even when the mouse
-    // lands on a child component.
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.beginPanningAtScreenPosition(e.getScreenPosition());
@@ -43,8 +39,8 @@ void PointComponent::mouseDown(const juce::MouseEvent& e)
     dragStartNormalized = normalized;
     dragStartMouse = e.getScreenPosition();
 
-    grid.setDraggingPoint(true);
-    grid.getUndoManager().beginNewTransaction("Move Envelope Point");
+    if (onDragStart)
+        onDragStart(point);
 }
 
 void PointComponent::mouseDrag(const juce::MouseEvent& e)
@@ -78,14 +74,11 @@ void PointComponent::mouseDrag(const juce::MouseEvent& e)
 
 void PointComponent::mouseUp(const juce::MouseEvent& e)
 {
-    // If Alt-panning was active, forward mouseUp to grid
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.mouseUp(e.getEventRelativeTo(&grid));
         return;
     }
-
-    grid.setDraggingPoint(false);
 
     if (onDragEnd)
         onDragEnd(point);

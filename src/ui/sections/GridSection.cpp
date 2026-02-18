@@ -167,34 +167,14 @@ void GridSection::mouseDown(const juce::MouseEvent& e)
     if (!envelope.isValid())
         return;
 
-    bool altDown =
-        juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
-
     bool canPan = (uniformZoom > 1.0f);
-
-    if (altDown && canPan)
+    if (juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown() && canPan)
     {
         isPanning = true;
         panStartMouse = e.getEventRelativeTo(this).getPosition();
-
         panStartOffsetX = offsetX;
         panStartOffsetY = offsetY;
-
         updatePanCursor();
-        {
-            juce::String msg = "GridSection::mouseDown startPan alt=";
-            msg += (altDown ? "true" : "false");
-            msg += " panStartMouse=(";
-            msg += juce::String(panStartMouse.x);
-            msg += ",";
-            msg += juce::String(panStartMouse.y);
-            msg += ") panStartOffset=(";
-            msg += juce::String(panStartOffsetX);
-            msg += ",";
-            msg += juce::String(panStartOffsetY);
-            msg += ")";
-            juce::Logger::outputDebugString(msg);
-        }
     }
 }
 
@@ -203,8 +183,7 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
     // If the user didn't start panning on mouseDown (e.g. clicked a child
     // component), allow panning to start on the first mouseDrag when Alt is
     // held and zoom is active.
-    bool altDown = juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
-
+    const bool altDown = juce::ModifierKeys::getCurrentModifiersRealtime().isAltDown();
     if (!isPanning && altDown && envelope.isValid() && (uniformZoom > 1.0f)
         && !isDraggingPoint && !isDraggingAnchor)
     {
@@ -213,20 +192,6 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
         panStartOffsetX = offsetX;
         panStartOffsetY = offsetY;
         updatePanCursor();
-        {
-            juce::String msg = "GridSection::mouseDrag autoStartPan alt=";
-            msg += (altDown ? "true" : "false");
-            msg += " panStartMouse=(";
-            msg += juce::String(panStartMouse.x);
-            msg += ",";
-            msg += juce::String(panStartMouse.y);
-            msg += ") panStartOffset=(";
-            msg += juce::String(panStartOffsetX);
-            msg += ",";
-            msg += juce::String(panStartOffsetY);
-            msg += ")";
-            juce::Logger::outputDebugString(msg);
-        }
     }
 
     if (!isPanning || !envelope.isValid() || (uniformZoom <= 1.0f))
@@ -236,25 +201,8 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
     auto deltaF = currentPos - juce::Point<float>((float)panStartMouse.x, (float)panStartMouse.y);
     juce::Point<int> delta = { (int)std::round(deltaF.x), (int)std::round(deltaF.y) };
 
-    {
-        juce::String msg = "GridSection::mouseDrag delta=(";
-        msg += juce::String(delta.x);
-        msg += ",";
-        msg += juce::String(delta.y);
-        msg += ") currentPos=(";
-        msg += juce::String(currentPos.x);
-        msg += ",";
-        msg += juce::String(currentPos.y);
-        msg += ") offsetBefore=(";
-        msg += juce::String(offsetX);
-        msg += ",";
-        msg += juce::String(offsetY);
-        msg += ")";
-        juce::Logger::outputDebugString(msg);
-    }
-
     float visibleWidth = 1.0f / uniformZoom;
-    float visibleHeight = 1.0f / uniformZoom;
+    float visibleHeight = visibleWidth; // uniformZoom drives both axes
 
     float dx = (float)delta.x / viewArea.getWidth() * visibleWidth;
     float dy = (float)delta.y / viewArea.getHeight() * visibleHeight;
