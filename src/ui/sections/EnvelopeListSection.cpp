@@ -1,5 +1,6 @@
 #include "EnvelopeListSection.h"
 #include "../../PluginProcessor.h"
+#include "../utils/FontManager.h"
 
 EnvelopeListSection::EnvelopeListSection()
 {
@@ -194,9 +195,9 @@ void EnvelopeListSection::paint(juce::Graphics& g)
     g.fillRect(headerArea);
 
     g.setColour(juce::Colours::white);
-    g.setFont(juce::Font(14.0f, juce::Font::bold));
+    g.setFont(FontManager::getBarlowBold(16.0f));
 
-    g.drawText("Envelopes",
+    g.drawText("ENVELOPES",
         headerArea.reduced(10, 0),
         juce::Justification::centredLeft);
 }

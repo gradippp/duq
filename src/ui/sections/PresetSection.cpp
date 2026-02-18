@@ -1,6 +1,7 @@
 #include "PresetSection.h"
 #include "../utils/IconFactory.h"
 #include "../utils/PresetManager.h"
+#include "../utils/FontManager.h"
 #include "../../PluginProcessor.h"
 
 PresetSection::PresetSection(DuqAudioProcessor& p)
@@ -8,7 +9,7 @@ PresetSection::PresetSection(DuqAudioProcessor& p)
 {
     addAndMakeVisible(titleLabel);
     titleLabel.setJustificationType(juce::Justification::centred);
-    titleLabel.setFont(juce::Font("Segoe UI", 20.0f, juce::Font::bold));
+    titleLabel.setFont(FontManager::getBarlowBold(22.0f));
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.8f));
 
     auto normal = Icons::load("close", juce::Colours::white.withAlpha(0.6f));
@@ -89,7 +90,7 @@ void PresetSection::paintListBoxItem(int rowNumber, juce::Graphics& g, int width
     }
 
     g.setColour(juce::Colours::white.withAlpha(0.8f));
-    g.setFont(juce::Font("Segoe UI", 14.0f, juce::Font::plain));
+    g.setFont(FontManager::getInterRegular(14.0f));
     
     juce::String fileName = presetFiles[rowNumber].getFileNameWithoutExtension();
     if (mode == Mode::Envelope && fileName.endsWith(".duq")) 

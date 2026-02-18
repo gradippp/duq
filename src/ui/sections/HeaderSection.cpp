@@ -1,5 +1,6 @@
 #include "HeaderSection.h"
 #include "../utils/IconFactory.h"
+#include "../utils/FontManager.h"
 
 HeaderSection::HeaderSection()
 {
@@ -39,7 +40,7 @@ HeaderSection::HeaderSection()
 
     addAndMakeVisible(presetNameLabel);
     presetNameLabel.setJustificationType(juce::Justification::centred);
-    presetNameLabel.setFont(juce::Font("Segoe UI", 14.0f, juce::Font::bold));
+    presetNameLabel.setFont(FontManager::getJetBrainsMono(15.0f));
     presetNameLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.85f));
     presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
     presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
@@ -117,7 +118,7 @@ void HeaderSection::paint(juce::Graphics& g)
 
     // ---------- Brand Title (Left) ----------
     g.setColour(juce::Colours::white.withAlpha(0.9f));
-    g.setFont(juce::Font("Segoe UI", 28.0f, juce::Font::bold));
+    g.setFont(FontManager::getInterBold(28.0f));
     juce::Rectangle<int> titleArea(leftPadding, 0, 100, (int)getHeight());
     g.drawText("DUQ", titleArea, juce::Justification::centredLeft);
 

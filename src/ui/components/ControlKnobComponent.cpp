@@ -1,4 +1,5 @@
 #include "ControlKnobComponent.h"
+#include "../utils/FontManager.h"
 
 ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float initialValue,
     const juce::String& unitSuffix)
@@ -35,6 +36,7 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
 
     valueLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     valueLabel.setJustificationType(juce::Justification::centredLeft);
+    valueLabel.setFont(FontManager::getJetBrainsMono(13.0f));
 
     updateValueLabel();
 }
@@ -159,7 +161,7 @@ void ControlKnobComponent::paint(juce::Graphics& g)
     bounds.removeFromLeft(knobSize + spacing);
 
     g.setColour(juce::Colours::white);
-    g.setFont(juce::Font(14.0f));
+    g.setFont(FontManager::getInterMedium(14.0f));
 
     g.drawText(labelText,
         bounds,

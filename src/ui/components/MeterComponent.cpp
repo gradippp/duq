@@ -1,4 +1,5 @@
 #include "MeterComponent.h"
+#include "../utils/FontManager.h"
 
 MeterComponent::MeterComponent(std::atomic<float>& source,
     Direction dir,
@@ -55,7 +56,7 @@ void MeterComponent::paint(juce::Graphics& g)
     if (labelText.isNotEmpty())
     {
         g.setColour(juce::Colours::white.withAlpha(0.6f));
-        g.setFont(juce::Font("Segoe UI", 13.0f, juce::Font::plain));
+        g.setFont(FontManager::getBarlowBold(15.0f));
         g.drawFittedText(labelText.toUpperCase(),
             labelArea.toNearestInt(),
             juce::Justification::centredLeft,

@@ -2,6 +2,7 @@
 #include "../utils/IconFactory.h"
 #include "../utils/MidiUtils.h"
 #include "../utils/PresetManager.h"
+#include "../utils/FontManager.h"
 #include "../components/PianoModal.h"
 
 EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
@@ -38,6 +39,7 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     nameLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
     nameLabel.setJustificationType(juce::Justification::centredLeft);
+    nameLabel.setFont(FontManager::getInterRegular(13.0f));
 
     nameLabel.onSingleClick = [this]
         {
@@ -68,6 +70,7 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
         juce::Colours::white);
     noteButton.setColour(juce::TextButton::buttonOnColourId,
         juce::Colours::darkgrey.withAlpha(0.5f));
+    noteButton.getLookAndFeel().setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
 
     noteButton.onClick = [this]
         {
@@ -216,7 +219,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // ===============================
 
     g.setColour(juce::Colours::white);
-    g.setFont(juce::Font(13.0f));
+    g.setFont(FontManager::getInterRegular(13.0f));
 
     auto nameArea = bounds;
     nameArea.removeFromLeft(noteButton.getRight());
