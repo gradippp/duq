@@ -44,79 +44,87 @@ void MeterComponent::timerCallback()
 void MeterComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    g.fillAll(juce::Colours::black);
-
+    
     // ----- Layout -----
-    const float labelWidth = 90.0f;
-
-    auto labelArea = bounds.removeFromLeft(labelWidth);
-    auto meterBounds = bounds.reduced(4.0f);
+    const float labelWidth = 100.0f;
+    auto labelArea = bounds.removeFromLeft(labelWidth).reduced(8.0f, 0.0f);
+    // Taller meter: reduce the vertical padding (from 6.0f to 2.0f)
+    auto meterBounds = bounds.reduced(8.0f, 2.0f);
 
     // ----- Draw Label -----
     if (labelText.isNotEmpty())
     {
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(14.0f, juce::Font::bold));
-        g.drawFittedText(labelText,
+        g.setColour(juce::Colours::white.withAlpha(0.6f));
+        g.setFont(juce::Font("Segoe UI", 13.0f, juce::Font::plain));
+        g.drawFittedText(labelText.toUpperCase(),
             labelArea.toNearestInt(),
             juce::Justification::centredLeft,
             1);
     }
 
-    // ----- LED Meter -----
-    constexpr int ledCount = 20;
-    constexpr float ledGap = 2.0f;
+    // ----- Meter Track (Background) -----
+    // Very dark background for the bar track to provide high contrast
+    g.setColour(juce::Colours::black.withAlpha(0.6f));
+    g.fillRoundedRectangle(meterBounds, 2.0f);
 
-    float meterWidth = meterBounds.getWidth();
-    float meterHeight = meterBounds.getHeight();
-
-    float ledWidth =
-        (meterWidth - (ledGap * (ledCount - 1))) / ledCount;
-
-    for (int i = 0; i < ledCount; ++i)
+    // ----- Filled Meter -----
+    if (smoothedLevel > 0.001f)
     {
-        float ledStartX =
-            meterBounds.getX() +
-            i * (ledWidth + ledGap);
-
-        float ledThreshold =
-            (float)(i + 1) / ledCount;
-
-        bool isLit = smoothedLevel >= ledThreshold;
-
-        juce::Colour ledColour;
-
-        // Envelope mode = single colour
-        if (mode == MeterMode::Envelope)
+        auto fillArea = meterBounds;
+        float levelWidth = meterBounds.getWidth() * smoothedLevel;
+        
+        if (meterDirection == Direction::LeftToRight)
         {
-            ledColour = juce::Colours::orange;
+            fillArea = meterBounds.withWidth(levelWidth);
         }
         else
         {
-            // Audio level zones
-            if (ledThreshold > 0.8f)
-                ledColour = juce::Colours::red;
-            else if (ledThreshold > 0.6f)
-                ledColour = juce::Colours::yellow;
-            else
-                ledColour = juce::Colours::green;
+            fillArea = meterBounds.withLeft(meterBounds.getRight() - levelWidth);
         }
 
-        if (!isLit)
-            ledColour = ledColour.darker(0.8f);
+        juce::ColourGradient grad;
+        if (mode == MeterMode::Envelope)
+        {
+            // Modern Amber/Orange for envelope/reduction
+            grad = juce::ColourGradient(juce::Colour(0xffff9f1c), meterBounds.getX(), 0,
+                                        juce::Colour(0xffffbf69), meterBounds.getRight(), 0, false);
+        }
+        else
+        {
+            // Modern Cyan -> Green -> Red for audio levels
+            grad = juce::ColourGradient(juce::Colour(0xff2ec4b6), meterBounds.getX(), 0,
+                                        juce::Colour(0xffe71d36), meterBounds.getRight(), 0, false);
+            grad.addColour(0.6, juce::Colour(0xffcbf3f0));
+            grad.addColour(0.8, juce::Colours::yellow);
+        }
 
-        g.setColour(ledColour);
+        g.setGradientFill(grad);
+        g.fillRoundedRectangle(fillArea, 2.0f);
 
-        g.fillRoundedRectangle(
-            ledStartX,
-            meterBounds.getY(),
-            ledWidth,
-            meterHeight,
-            2.0f);
+        // Subtle Glow
+        g.setColour(grad.getColourAtPosition(smoothedLevel).withAlpha(0.15f));
+        g.fillRoundedRectangle(fillArea.expanded(1.0f), 2.0f);
     }
 
+    // ----- Modern LED Overlay (Grid) -----
+    // This gives it a "digital hardware" feel without being too chunky
+    g.setColour(juce::Colour(0xff1a1a1c).withAlpha(0.8f));
+    constexpr int gridCount = 40;
+    float gridStep = meterBounds.getWidth() / gridCount;
+    for (int i = 1; i < gridCount; ++i)
+    {
+        float x = meterBounds.getX() + i * gridStep;
+        g.drawVerticalLine((int)x, meterBounds.getY(), meterBounds.getBottom());
+    }
+
+    // ----- Glass Highlight -----
+    auto highlightArea = meterBounds.withHeight(meterBounds.getHeight() * 0.4f);
+    g.setGradientFill(juce::ColourGradient(juce::Colours::white.withAlpha(0.05f), 0, highlightArea.getY(),
+                                           juce::Colours::transparentWhite, 0, highlightArea.getBottom(), false));
+    g.fillRoundedRectangle(highlightArea, 2.0f);
+
     // ----- Border -----
-    g.setColour(juce::Colours::grey);
-    g.drawRect(meterBounds, 1.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.1f));
+    g.drawRoundedRectangle(meterBounds, 2.0f, 1.0f);
 }
 

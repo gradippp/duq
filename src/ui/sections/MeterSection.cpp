@@ -26,9 +26,9 @@ MeterSection::MeterSection(std::atomic<float>& inputSource,
 
 void MeterSection::resized()
 {
-    auto area = getLocalBounds().reduced(6);
+    auto area = getLocalBounds().reduced(4);
 
-    constexpr int gap = 6; // space between meters
+    constexpr int gap = 8; // reduced gap to give more room to the bars
     const int totalGap = gap * 2;
 
     const int meterHeight =

@@ -133,7 +133,7 @@ void DuqAudioProcessorEditor::resized()
     envelopeListSection.setBounds(leftArea);
 
     // ===== Right Side =====
-    constexpr int meterHeight = 70;
+    constexpr int meterHeight = 100;
 
     auto meterArea = rightArea.removeFromBottom(meterHeight);
 
