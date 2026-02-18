@@ -101,7 +101,8 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
 
     replaceButton.onClick = [this]()
         {
-            // TODO: implement envelope replace preset
+            if (onReplaceRequested)
+                onReplaceRequested();
         };
 
     deleteButton.onClick = [this]()

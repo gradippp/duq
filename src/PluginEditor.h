@@ -15,6 +15,7 @@
 #include "ui/utils/FlatKnobLookAndFeel.h"
 #include "ui/sections/GridSection.h"
 #include "ui/sections/MeterSection.h"
+#include "ui/sections/PresetSection.h"
 
 //==============================================================================
 /**
@@ -42,6 +43,7 @@ private:
     ControlSection controlSection;
     GridSection gridSection;
     MeterSection meterSection;
+    PresetSection presetSection;
 
     juce::TooltipWindow tooltipWindow{ this };
 

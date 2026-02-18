@@ -107,6 +107,12 @@ void EnvelopeListSection::rebuildRowsFromModel()
             };
 
 
+        row->onReplaceRequested = [this, envTree]()
+            {
+                if (onReplaceRequested)
+                    onReplaceRequested(envTree);
+            };
+
         row->onNameChanged = [this, i](const juce::String& newName)
             {
                 auto envTree = envelopesTree.getChild(i);

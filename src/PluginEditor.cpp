@@ -43,6 +43,22 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     envelopeListSection.setProcessor(p);
 
+    envelopeListSection.onReplaceRequested = [this](juce::ValueTree env)
+        {
+            presetSection.setTargetEnvelope(env);
+            gridSection.setVisible(false);
+            presetSection.setVisible(true);
+            resized();
+        };
+
+    presetSection.setVisible(false);
+    presetSection.onClose = [this]()
+        {
+            presetSection.setVisible(false);
+            gridSection.setVisible(true);
+            resized();
+        };
+
     controlSection.setUndoManager(undoManager);
     gridSection.setUndoManager(undoManager);
 
@@ -83,6 +99,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     addAndMakeVisible(controlSection);
 
     addAndMakeVisible(meterSection);
+    addAndMakeVisible(presetSection);
+    presetSection.setVisible(false); // <--- ENSURE IT IS HIDDEN AFTER ADDING
 
     undoManager.clearUndoHistory();
 }
@@ -138,6 +156,7 @@ void DuqAudioProcessorEditor::resized()
     auto meterArea = rightArea.removeFromBottom(meterHeight);
 
     gridSection.setBounds(rightArea);
+    presetSection.setBounds(rightArea);
     meterSection.setBounds(meterArea);
 }
 

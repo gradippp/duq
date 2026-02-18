@@ -24,6 +24,7 @@ public:
 
     // Now returns ValueTree, not raw model pointer
     std::function<void(juce::ValueTree)> onEnvelopeSelected;
+    std::function<void(juce::ValueTree)> onReplaceRequested;
 
     void setUndoManager(juce::UndoManager& um);
 
