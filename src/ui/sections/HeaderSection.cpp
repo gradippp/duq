@@ -12,10 +12,10 @@ HeaderSection::HeaderSection()
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                juce::Colours::darkgrey.withAlpha(0.2f));
+                juce::Colours::white.withAlpha(0.08f));
 
             auto normal = Icons::load(iconName, juce::Colours::white);
-            auto over = Icons::load(iconName, juce::Colours::white.withAlpha(0.8f));
+            auto over = Icons::load(iconName, juce::Colours::white.withAlpha(0.85f));
             auto down = Icons::load(iconName, juce::Colours::white.withAlpha(0.6f));
 
             if (normal != nullptr)
@@ -44,10 +44,15 @@ HeaderSection::HeaderSection()
         };
 }
 
+//==============================================================================
+
 void HeaderSection::updateUndoState(bool canUndo, bool canRedo)
 {
     undoButton.setEnabled(canUndo);
     redoButton.setEnabled(canRedo);
+
+    undoButton.setAlpha(canUndo ? 1.0f : 0.4f);
+    redoButton.setAlpha(canRedo ? 1.0f : 0.4f);
 }
 
 void HeaderSection::setUndoCallback(std::function<void()> cb)
@@ -72,77 +77,97 @@ void HeaderSection::setProjectURI(const juce::String& uri)
     repaint();
 }
 
+//==============================================================================
+
 void HeaderSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    // Background
-    g.fillAll(juce::Colours::black);
+    // ---------- Background Gradient ----------
+    juce::ColourGradient gradient(
+        juce::Colour(18, 18, 18),
+        0, 0,
+        juce::Colour(10, 10, 10),
+        0, bounds.getBottom(),
+        false);
 
-    // Bottom divider line
-    g.setColour(juce::Colours::darkgrey);
-    g.drawLine(0.0f, bounds.getBottom() - 1.0f,
-        bounds.getRight(), bounds.getBottom() - 1.0f, 1.0f);
+    g.setGradientFill(gradient);
+    g.fillAll();
 
+    // ---------- Bottom Divider ----------
+    g.setColour(juce::Colours::white.withAlpha(0.08f));
+    g.drawLine(0.0f,
+        bounds.getBottom() - 1.0f,
+        bounds.getRight(),
+        bounds.getBottom() - 1.0f,
+        1.0f);
+
+    const int leftPadding = 24;
+    const int rightPadding = 24;
+
+    // ---------- Brand Title ----------
     g.setColour(juce::Colours::white);
 
-    // Large DUQ title (Brand - 56)
-    g.setFont(juce::Font(56.0f));
+    juce::Font brandFont(48.0f, juce::Font::bold);
+    g.setFont(brandFont);
+
+    juce::Rectangle<int> titleArea(leftPadding, 0, 240, getHeight());
     g.drawText("DUQ",
-        20,
-        0,
-        250,
-        getHeight(),
+        titleArea,
         juce::Justification::centredLeft);
 
-    // Subtitle (MIDI text - 15)
-    //g.setFont(juce::Font(15.0f));
-    //g.drawText("MIDI-Based Envelope Trigger",
-    //    280,
-    //    0,
-    //    600,
-    //    getHeight(),
-    //    juce::Justification::centredLeft);
+    // Accent underline
+    auto accentY = getHeight() - 6;
+    g.setColour(juce::Colour(0xff4cc9f0)); // subtle blue accent
+    g.drawLine((float)leftPadding,
+        (float)accentY,
+        (float)(leftPadding + 70),
+        (float)accentY,
+        2.0f);
 
-    const int rightPadding = 20;
-    const int textWidth = 220;
+    // ---------- Right Meta Info ----------
+    const int metaWidth = 260;
+    juce::Rectangle<int> metaArea(
+        getWidth() - metaWidth - rightPadding,
+        0,
+        metaWidth,
+        getHeight());
 
-    // --- URL (top right - 10) ---
-    g.setFont(juce::Font(10.0f));
+    // Project URI (top-right)
+    g.setColour(juce::Colours::white.withAlpha(0.7f));
+    g.setFont(juce::Font(11.0f));
     g.drawText(projectURI,
-        getWidth() - textWidth - rightPadding,
-        5,
-        textWidth,
-        20,
-        juce::Justification::topRight);
+        metaArea.removeFromTop(22),
+        juce::Justification::centredRight);
 
-    // --- Version (bottom right - 12) ---
-    g.setFont(juce::Font(12.0f));
+    // Version (bottom-right)
+    g.setColour(juce::Colours::white.withAlpha(0.9f));
+    g.setFont(juce::Font(13.0f, juce::Font::bold));
     g.drawText("v" + versionString,
-        getWidth() - textWidth - rightPadding,
-        getHeight() - 25,
-        textWidth,
-        20,
-        juce::Justification::bottomRight);
+        metaArea.removeFromBottom(24),
+        juce::Justification::centredRight);
 }
+
+//==============================================================================
 
 void HeaderSection::resized()
 {
     auto area = getLocalBounds();
 
-    const int buttonSize = 28;
-    const int padding = 20;
+    const int buttonSize = 30;
+    const int spacing = 14;
+    const int rightInset = 24;
 
-    auto rightArea = area.removeFromRight(120);
+    auto rightArea = area.removeFromRight(140);
+    rightArea.removeFromRight(rightInset);
 
+    auto buttonArea = rightArea.removeFromLeft(buttonSize);
     undoButton.setBounds(
-        rightArea.removeFromLeft(buttonSize)
-        .withSizeKeepingCentre(buttonSize, buttonSize));
+        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
 
-    rightArea.removeFromLeft(12);
+    rightArea.removeFromLeft(spacing);
 
+    buttonArea = rightArea.removeFromLeft(buttonSize);
     redoButton.setBounds(
-        rightArea.removeFromLeft(buttonSize)
-        .withSizeKeepingCentre(buttonSize, buttonSize));
+        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
 }
-
