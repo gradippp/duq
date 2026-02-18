@@ -25,8 +25,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
 
     envelopeListSection.setUndoManager(undoManager);
+    envelopeListSection.setProcessor(p);
 
-    envelopeListSection.setUndoManager(undoManager);
+    controlSection.setUndoManager(undoManager);
+    gridSection.setUndoManager(undoManager);
 
     envelopeListSection.onEnvelopeSelected =
         [this](juce::ValueTree env)
@@ -34,7 +36,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             if (env.isValid())
             {
                 controlSection.setEnvelope(env);
-                //gridSection.setEnvelope(env);
+                gridSection.setEnvelope(env);
             }
             else
             {
@@ -43,55 +45,17 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             }
         };
 
-    envelopeListSection.setProcessor(p);
-    controlSection.setUndoManager(undoManager);
-    gridSection.setUndoManager(undoManager);
+    header.setUndoCallback([this]
+        {
+            if (undoManager.canUndo())
+                undoManager.undo();
+        });
 
-    //header.setUndoCallback([this]
-    //    {
-    //        if (undoManager.canUndo())
-    //        {
-    //            undoManager.undo();
-
-    //            auto env = envelopeListSection.getSelectedEnvelope();
-
-    //            if (env.isValid())
-    //            {
-    //                controlSection.setEnvelope(env);
-    //                gridSection.setEnvelope(env);
-    //            }
-    //            else
-    //            {
-    //                controlSection.clearEnvelope();
-    //                gridSection.setEnvelope({});
-    //            }
-
-    //            gridSection.repaint();
-    //        }
-    //    });
-
-    //header.setRedoCallback([this]
-    //    {
-    //        if (undoManager.canRedo())
-    //        {
-    //            undoManager.redo();
-
-    //            auto env = envelopeListSection.getSelectedEnvelope();
-
-    //            if (env.isValid())
-    //            {
-    //                controlSection.setEnvelope(env);
-    //                gridSection.setEnvelope(env);
-    //            }
-    //            else
-    //            {
-    //                controlSection.clearEnvelope();
-    //                gridSection.setEnvelope({});
-    //            }
-
-    //            gridSection.repaint();
-    //        }
-    //    });
+    header.setRedoCallback([this]
+        {
+            if (undoManager.canRedo())
+                undoManager.redo();
+        });
 
     startTimerHz(10);
 

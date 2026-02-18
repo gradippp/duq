@@ -6,14 +6,17 @@ class GridSection;
 class PointComponent : public juce::Component
 {
 public:
-    PointComponent(GridSection& owner, int index);
+    PointComponent(GridSection& owner, juce::ValueTree pointNode);
 
     void setNormalizedPosition(juce::Point<float> p);
     juce::Point<float> getNormalizedPosition() const;
 
-    int getIndex() const noexcept { return pointIndex; }
-
-    std::function<void(int, juce::Point<float>, bool)> onDrag;
+    // Identity-based callbacks (NOT index-based)
+    std::function<void(juce::ValueTree)> onDragStart;
+    std::function<void(juce::ValueTree,
+        juce::Point<float>,
+        bool)> onDragMove;
+    std::function<void(juce::ValueTree)> onDragEnd;
 
     void paint(juce::Graphics&) override;
 
@@ -22,15 +25,11 @@ public:
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
-    std::function<void(int)> onDragStart;
-    std::function<void(int, juce::Point<float>, bool)> onDragMove;
-    std::function<void(int)> onDragEnd;
-
-
 private:
     GridSection& grid;
-    int pointIndex;
-
+    juce::ValueTree point;   // Stable identity
     juce::Point<float> normalized{ 0.0f, 0.0f };
-};
 
+    juce::Point<float> dragStartNormalized;
+    juce::Point<int> dragStartMouse;
+};

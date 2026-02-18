@@ -23,9 +23,30 @@ GridSection::GridSection()
 
 GridSection::~GridSection()
 {
-    if (undoManager)
-        undoManager->removeChangeListener(this);
+    if (envelope.isValid())
+        envelope.removeListener(this);
 }
+
+void GridSection::valueTreePropertyChanged(
+    juce::ValueTree&,
+    const juce::Identifier&)
+{
+    if (!isDraggingPoint && !isDraggingAnchor)
+        repaint();
+}
+
+void GridSection::valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&)
+{
+    rebuildPointComponents();
+    repaint();
+}
+
+void GridSection::valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int)
+{
+    rebuildPointComponents();
+    repaint();
+}
+
 
 void GridSection::setSampleBuffer(
     const std::atomic<int>* writePos,
@@ -38,7 +59,6 @@ void GridSection::setSampleBuffer(
 void GridSection::setUndoManager(juce::UndoManager& um)
 {
     undoManager = &um;
-    undoManager->addChangeListener(this);
 }
 
 juce::UndoManager& GridSection::getUndoManager()
@@ -53,45 +73,52 @@ float GridSection::snapValue(float value, float step)
     return std::round(value / step) * step;
 }
 
-void GridSection::setEnvelope(EnvelopeData* newEnvelope)
+void GridSection::setEnvelope(juce::ValueTree newEnvelope)
 {
+    if (envelope.isValid())
+        envelope.removeListener(this);
+
     envelope = newEnvelope;
 
-    if (envelope)
+    if (envelope.isValid())
     {
-        zoomX = envelope->viewState.zoomX;
-        zoomY = envelope->viewState.zoomY;
-        offsetX = envelope->viewState.offsetX;
-        offsetY = envelope->viewState.offsetY;
+        envelope.addListener(this);
 
-        gridPower = envelope->viewState.gridPower;
+        // Load view state from tree
+        zoomX = (float)envelope.getProperty("zoomX", 1.0f);
+        zoomY = (float)envelope.getProperty("zoomY", 1.0f);
+        offsetX = (float)envelope.getProperty("offsetX", 0.0f);
+        offsetY = (float)envelope.getProperty("offsetY", 0.0f);
+        gridPower = (int)envelope.getProperty("gridPower", 4);
     }
 
     rebuildPointComponents();
     repaint();
 }
 
-void GridSection::deletePoint(int index)
+void GridSection::deletePoint(juce::ValueTree pointNode)
 {
-    if (!envelope)
+    if (!envelope.isValid() || !pointNode.isValid())
         return;
 
-    auto& points = envelope->points;
+    auto points = envelope.getChildWithName("POINTS");
+    if (!points.isValid())
+        return;
 
-    const int lastIndex = (int)points.size() - 1;
+    int index = points.indexOf(pointNode);
+    if (index < 0)
+        return;
+
+    const int lastIndex = points.getNumChildren() - 1;
 
     // Protect endpoints
     if (index == 0 || index == lastIndex)
         return;
 
-    if (index >= 0 && index < points.size())
-    {
-        EnvelopePoint removed = points[index];
-
+    if (undoManager)
         undoManager->beginNewTransaction("Delete Envelope Point");
-        undoManager->perform(
-            new DeletePointAction(*envelope, removed, index));
-    }
+
+    points.removeChild(pointNode, undoManager);
 }
 
 void GridSection::resized()
@@ -103,7 +130,14 @@ void GridSection::resized()
 
 float GridSection::getCurveForSegment(int index) const
 {
-    return envelope->points[index].curve;
+    if (!envelope.isValid())
+        return 0.0f;
+
+    auto points = envelope.getChildWithName("POINTS");
+    if (!points.isValid() || index >= points.getNumChildren())
+        return 0.0f;
+
+    return (float)points.getChild(index)["curve"];
 }
 
 void GridSection::mouseMove(const juce::MouseEvent&)
@@ -113,7 +147,7 @@ void GridSection::mouseMove(const juce::MouseEvent&)
 
 void GridSection::mouseDown(const juce::MouseEvent& e)
 {
-    if (!envelope)
+    if (!envelope.isValid())
         return;
 
     bool altDown =
@@ -135,7 +169,8 @@ void GridSection::mouseDown(const juce::MouseEvent& e)
 
 void GridSection::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!isPanning || !envelope || zoomX <= 1.0f && zoomY <= 1.0f)
+    if (!isPanning || !envelope.isValid() ||
+        (zoomX <= 1.0f && zoomY <= 1.0f))
         return;
 
     auto delta = e.getPosition() - panStartMouse;
@@ -152,8 +187,8 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
     offsetX = juce::jlimit(0.0f, 1.0f - visibleWidth, offsetX);
     offsetY = juce::jlimit(0.0f, 1.0f - visibleHeight, offsetY);
 
-    envelope->viewState.offsetX = offsetX;
-    envelope->viewState.offsetY = offsetY;
+    envelope.setProperty("offsetX", offsetX, nullptr);
+    envelope.setProperty("offsetY", offsetY, nullptr);
 
     waveform.setViewState(zoomX, zoomY);
 
@@ -189,39 +224,43 @@ void GridSection::updatePanCursor()
 
 void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
 {
-    if (!envelope)
+    if (!envelope.isValid())
         return;
 
     if (!e.mods.isLeftButtonDown())
         return;
 
-    // If double click landed on a child component, ignore
     if (e.eventComponent != this)
         return;
 
     auto normalized = pixelToNormalized(e.position);
 
-    auto& points = envelope->points;
-
     if (normalized.x <= 0.0f || normalized.x >= 1.0f)
         return;
 
-    EnvelopePoint newPoint;
-    newPoint.x = normalized.x;
-    newPoint.y = normalized.y;
-    newPoint.curve = 0.0f;
+    auto points = envelope.getChildWithName("POINTS");
+    if (!points.isValid())
+        return;
 
-    auto it = std::lower_bound(points.begin(), points.end(), newPoint.x,
-        [](const EnvelopePoint& p, float value)
-        {
-            return p.x < value;
-        });
+    juce::ValueTree newPoint("POINT");
+    newPoint.setProperty("x", normalized.x, nullptr);
+    newPoint.setProperty("y", normalized.y, nullptr);
+    newPoint.setProperty("curve", 0.0f, nullptr);
 
-    int index = std::distance(points.begin(), it);
+    int insertIndex = 0;
 
-    undoManager->beginNewTransaction("Add Envelope Point");
-    undoManager->perform(
-        new AddPointAction(*envelope, newPoint, index));
+    for (int i = 0; i < points.getNumChildren(); ++i)
+    {
+        if ((float)points.getChild(i)["x"] > normalized.x)
+            break;
+
+        insertIndex = i + 1;
+    }
+
+    if (undoManager)
+        undoManager->beginNewTransaction("Add Envelope Point");
+
+    points.addChild(newPoint, insertIndex, undoManager);
 }
 
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
@@ -258,7 +297,7 @@ juce::Point<float> GridSection::pixelToNormalized(juce::Point<float> p) const
 void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     const juce::MouseWheelDetails& wheel)
 {
-    if (!envelope)
+    if (!envelope.isValid())
         return;
 
     // --- CTRL + Scroll -> change grid resolution ---
@@ -272,8 +311,7 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
         else if (wheel.deltaY < 0)
             gridPower = juce::jlimit(minGridPower, maxGridPower, gridPower - 1);
 
-        if (envelope)
-            envelope->viewState.gridPower = gridPower;
+        envelope.setProperty("gridPower", gridPower, nullptr);
 
         repaint();
         return;
@@ -282,39 +320,46 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     // --- Normal scroll -> zoom ---
     float zoomFactor = 1.0f + wheel.deltaY * 0.2f;
 
+    // Save old values
     float oldZoomX = zoomX;
     float oldZoomY = zoomY;
+    float oldOffsetX = offsetX;
+    float oldOffsetY = offsetY;
 
-    zoomX = juce::jlimit(minZoom, maxZoom, zoomX * zoomFactor);
-    zoomY = juce::jlimit(minZoom, maxZoom, zoomY * zoomFactor);
-
-    auto mouseNorm = pixelToNormalized(e.position);
-
+    // Compute mouse normalized position using OLD zoom/offset
     float visibleWidthOld = 1.0f / oldZoomX;
     float visibleHeightOld = 1.0f / oldZoomY;
+
+    auto localPos = e.getEventRelativeTo(this).position;
+
+    float nx = (localPos.x - viewArea.getX()) / viewArea.getWidth();
+    float ny = 1.0f - ((localPos.y - viewArea.getY()) / viewArea.getHeight());
+
+    float mouseNormX = oldOffsetX + nx * visibleWidthOld;
+    float mouseNormY = oldOffsetY + ny * visibleHeightOld;
+
+    // Apply new zoom
+    zoomX = juce::jlimit(minZoom, maxZoom, oldZoomX * zoomFactor);
+    zoomY = juce::jlimit(minZoom, maxZoom, oldZoomY * zoomFactor);
 
     float visibleWidthNew = 1.0f / zoomX;
     float visibleHeightNew = 1.0f / zoomY;
 
-    offsetX = mouseNorm.x -
-        ((mouseNorm.x - offsetX) / visibleWidthOld) * visibleWidthNew;
+    // Recalculate offset so mouse stays anchored
+    offsetX = mouseNormX - nx * visibleWidthNew;
+    offsetY = mouseNormY - ny * visibleHeightNew;
 
-    offsetY = mouseNorm.y -
-        ((mouseNorm.y - offsetY) / visibleHeightOld) * visibleHeightNew;
-
+    // Clamp
     offsetX = juce::jlimit(0.0f, 1.0f - visibleWidthNew, offsetX);
     offsetY = juce::jlimit(0.0f, 1.0f - visibleHeightNew, offsetY);
 
-    if (envelope)
-    {
-        envelope->viewState.zoomX = zoomX;
-        envelope->viewState.zoomY = zoomY;
-        envelope->viewState.offsetX = offsetX;
-        envelope->viewState.offsetY = offsetY;
-    }
+    // Store to tree
+    envelope.setProperty("zoomX", zoomX, nullptr);
+    envelope.setProperty("zoomY", zoomY, nullptr);
+    envelope.setProperty("offsetX", offsetX, nullptr);
+    envelope.setProperty("offsetY", offsetY, nullptr);
 
     waveform.setViewState(zoomX, zoomY);
-
     updatePointPositions();
     repaint();
 }
@@ -327,37 +372,71 @@ void GridSection::paintOverChildren(juce::Graphics& g)
 {
     drawGrid(g);
 
-    if (!envelope)
+    if (!envelope.isValid())
+        return;
+
+    auto points = envelope.getChildWithName("POINTS");
+    if (!points.isValid())
+        return;
+
+    const int numPoints = points.getNumChildren();
+    if (numPoints < 2)
         return;
 
     juce::Path path;
 
-    auto& points = envelope->points;
+    // ---- First point ----
+    auto firstNode = points.getChild(0);
 
-    auto first = normalizedToPixel({ points[0].x, points[0].y });
-    path.startNewSubPath(first);
+    float firstX = (firstNode == activeDragNode)
+        ? activeDragPosition.x
+        : (float)firstNode["x"];
 
-    for (int i = 0; i < (int)points.size() - 1; ++i)
+    float firstY = (firstNode == activeDragNode)
+        ? activeDragPosition.y
+        : (float)firstNode["y"];
+
+    path.startNewSubPath(
+        normalizedToPixel({ firstX, firstY })
+    );
+
+    // ---- Segments ----
+    for (int i = 0; i < numPoints - 1; ++i)
     {
-        auto& p1 = points[i];
-        auto& p2 = points[i + 1];
+        auto p1 = points.getChild(i);
+        auto p2 = points.getChild(i + 1);
+
+        float x1 = (p1 == activeDragNode)
+            ? activeDragPosition.x
+            : (float)p1["x"];
+
+        float y1 = (p1 == activeDragNode)
+            ? activeDragPosition.y
+            : (float)p1["y"];
+
+        float x2 = (p2 == activeDragNode)
+            ? activeDragPosition.x
+            : (float)p2["x"];
+
+        float y2 = (p2 == activeDragNode)
+            ? activeDragPosition.y
+            : (float)p2["y"];
+
+        float curve = (p1 == activeAnchorNode)
+            ? activeDragCurve
+            : (float)p1["curve"];
 
         const int resolution = 40;
 
-        for (int s = 0; s <= resolution; ++s)
+        for (int s = 1; s <= resolution; ++s)
         {
             float t = (float)s / resolution;
-            float shapedT = applyCurve(t, p1.curve);
+            float shapedT = applyCurve(t, curve);
 
-            float x = juce::jmap(t, p1.x, p2.x);
-            float y = juce::jmap(shapedT, p1.y, p2.y);
+            float x = juce::jmap(t, x1, x2);
+            float y = juce::jmap(shapedT, y1, y2);
 
-            auto pixel = normalizedToPixel({ x, y });
-
-            if (i == 0 && s == 0)
-                path.startNewSubPath(pixel);
-            else
-                path.lineTo(pixel);
+            path.lineTo(normalizedToPixel({ x, y }));
         }
     }
 
@@ -455,32 +534,41 @@ void GridSection::rebuildPointComponents()
     pointComponents.clear();
     anchorComponents.clear();
 
-    if (!envelope)
+    if (!envelope.isValid())
         return;
 
-    auto& points = envelope->points;
+    auto points = envelope.getChildWithName("POINTS");
+    if (!points.isValid())
+        return;
 
-    // === Build points ===
-    for (int i = 0; i < (int)points.size(); ++i)
+    const int numPoints = points.getNumChildren();
+
+    // ============================
+    // POINT COMPONENTS
+    // ============================
+
+    for (int i = 0; i < numPoints; ++i)
     {
-        auto comp = std::make_unique<PointComponent>(*this, i);
+        auto node = points.getChild(i);
+        auto comp = std::make_unique<PointComponent>(*this, node);
 
-        comp->onDragStart = [this](int index)
+        comp->onDragStart =
+            [this](juce::ValueTree node)
             {
-                if (!envelope) return;
+                isDraggingPoint = true;
+                activeDragNode = node;
 
-                dragStartStates[index] = envelope->points[index];
-
-                undoManager->beginNewTransaction("Move Envelope Point");
+                if (undoManager)
+                    undoManager->beginNewTransaction("Move Envelope Point");
             };
 
-        comp->onDragMove = [this](int index,
-            juce::Point<float> pos,
-            bool snapMode)
+        comp->onDragMove =
+            [this, compPtr = comp.get()](juce::ValueTree node,
+                juce::Point<float> pos,
+                bool snapMode)
             {
-                if (!envelope) return;
-
-                auto& pts = envelope->points;
+                if (!node.isValid())
+                    return;
 
                 pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
                 pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
@@ -492,106 +580,168 @@ void GridSection::rebuildPointComponents()
                     pos.y = snapValue(pos.y, snapStep);
                 }
 
-                const int lastIndex = (int)pts.size() - 1;
+                activeDragNode = node;
+                activeDragPosition = pos;
 
-                if (index == 0)
+                // Move dragged point visually
+                compPtr->setNormalizedPosition(pos);
+
+                // ---- LIVE ANCHOR UPDATE ----
+
+                auto points = envelope.getChildWithName("POINTS");
+                if (!points.isValid())
+                    return;
+
+                int index = points.indexOf(node);
+                if (index < 0)
+                    return;
+
+                const int numPoints = points.getNumChildren();
+
+                // Update anchor BEFORE this point
+                if (index > 0 && index - 1 < anchorComponents.size())
                 {
-                    pts[index].x = 0.0f;
-                    pts[index].y = pos.y;
+                    auto prevNode = points.getChild(index - 1);
+
+                    float x1 = (prevNode == activeDragNode)
+                        ? activeDragPosition.x
+                        : (float)prevNode["x"];
+
+                    float y1 = (prevNode == activeDragNode)
+                        ? activeDragPosition.y
+                        : (float)prevNode["y"];
+
+                    float x2 = pos.x;
+                    float y2 = pos.y;
+
+                    float curve = (float)prevNode["curve"];
+
+                    float t = 0.5f;
+                    float shapedT = applyCurve(t, curve);
+
+                    float ax = juce::jmap(t, x1, x2);
+                    float ay = juce::jmap(shapedT, y1, y2);
+
+                    anchorComponents[index - 1]->setNormalizedPosition({ ax, ay });
                 }
-                else if (index == lastIndex)
+
+                // Update anchor AFTER this point
+                if (index < numPoints - 1 && index < anchorComponents.size())
                 {
-                    pts[index].x = 1.0f;
-                    pts[index].y = pos.y;
+                    auto nextNode = points.getChild(index + 1);
+
+                    float x1 = pos.x;
+                    float y1 = pos.y;
+
+                    float x2 = (nextNode == activeDragNode)
+                        ? activeDragPosition.x
+                        : (float)nextNode["x"];
+
+                    float y2 = (nextNode == activeDragNode)
+                        ? activeDragPosition.y
+                        : (float)nextNode["y"];
+
+                    float curve = (float)node["curve"];
+
+                    float t = 0.5f;
+                    float shapedT = applyCurve(t, curve);
+
+                    float ax = juce::jmap(t, x1, x2);
+                    float ay = juce::jmap(shapedT, y1, y2);
+
+                    anchorComponents[index]->setNormalizedPosition({ ax, ay });
                 }
-                else
-                {
-                    float leftLimit = pts[index - 1].x + 0.001f;
-                    float rightLimit = pts[index + 1].x - 0.001f;
 
-                    pos.x = juce::jlimit(leftLimit, rightLimit, pos.x);
-
-                    pts[index].x = pos.x;
-                    pts[index].y = pos.y;
-                }
-
-                updatePointPositions();
                 repaint();
             };
 
-        comp->onDragEnd = [this](int index)
+        juce::Component::SafePointer<GridSection> safeThis(this);
+
+        comp->onDragEnd = [safeThis](juce::ValueTree node)
             {
-                if (!envelope) return;
+                if (safeThis == nullptr)
+                    return;
 
-                auto newState = envelope->points[index];
-                auto oldState = dragStartStates[index];
+                auto& grid = *safeThis;
 
-                if (!juce::approximatelyEqual(oldState.x, newState.x) ||
-                    !juce::approximatelyEqual(oldState.y, newState.y))
+                if (node.isValid())
                 {
-                    undoManager->perform(
-                        new MovePointAction(*envelope,
-                            index,
-                            oldState,
-                            newState));
+                    node.setProperty("x", grid.activeDragPosition.x, grid.undoManager);
+                    node.setProperty("y", grid.activeDragPosition.y, grid.undoManager);
                 }
 
-                dragStartStates.erase(index);
+                grid.activeDragNode = {};
+                grid.isDraggingPoint = false;
             };
-
 
         addAndMakeVisible(comp.get());
         pointComponents.push_back(std::move(comp));
     }
 
-    // === Build anchors (ONE PER SEGMENT) ===
-    for (int i = 0; i < (int)points.size() - 1; ++i)
+    // ============================
+    // ANCHOR COMPONENTS
+    // ============================
+
+    for (int i = 0; i < numPoints - 1; ++i)
     {
-        auto anchor = std::make_unique<AnchorComponent>(*this, i);
+        auto node = points.getChild(i);
+        auto anchor = std::make_unique<AnchorComponent>(*this, node);
 
-        anchor->onDragStart = [this](int segmentIndex)
+        juce::Component::SafePointer<GridSection> safeThis(this);
+
+        anchor->onDragStart =
+            [safeThis, i](juce::ValueTree node)
             {
-                if (!envelope) return;
-
-                curveDragStartStates[segmentIndex] =
-                    envelope->points[segmentIndex].curve;
-
-                if (undoManager)
-                    undoManager->beginNewTransaction("Move Curve");
-            };
-
-        anchor->onDragMove = [this](int segmentIndex, float newCurve)
-            {
-                if (!envelope) return;
-
-                envelope->points[segmentIndex].curve =
-                    juce::jlimit(-1.0f, 1.0f, newCurve);
-
-                updatePointPositions();
-                repaint();
-            };
-
-        anchor->onDragEnd = [this](int segmentIndex)
-            {
-                if (!envelope || !undoManager) return;
-
-                auto it = curveDragStartStates.find(segmentIndex);
-                if (it == curveDragStartStates.end())
+                if (safeThis == nullptr)
                     return;
 
-                float oldCurve = it->second;
-                float newCurve = envelope->points[segmentIndex].curve;
+                auto& grid = *safeThis;
 
-                if (!juce::approximatelyEqual(oldCurve, newCurve))
-                {
-                    undoManager->perform(
-                        new MoveCurveAction(*envelope,
-                            segmentIndex,
-                            oldCurve,
-                            newCurve));
-                }
+                grid.isDraggingAnchor = true;
+                grid.activeAnchorNode = node;
+                grid.activeDragCurve = (float)node["curve"];
+                grid.activeAnchorIndex = i;
 
-                curveDragStartStates.erase(segmentIndex);
+                if (grid.undoManager)
+                    grid.undoManager->beginNewTransaction("Move Curve");
+            };
+
+        anchor->onDragMove =
+            [safeThis, i](juce::ValueTree node, float newCurve)
+            {
+                if (safeThis == nullptr)
+                    return;
+
+                if (!node.isValid())
+                    return;
+
+                auto& grid = *safeThis;
+
+                grid.activeAnchorNode = node;
+                grid.activeAnchorIndex = i;
+                grid.activeDragCurve = juce::jlimit(-1.0f, 1.0f, newCurve);
+
+                grid.updatePointPositions();
+                grid.repaint();
+            };
+
+        anchor->onDragEnd =
+            [safeThis, i](juce::ValueTree)
+            {
+                if (safeThis == nullptr)
+                    return;
+
+                auto& grid = *safeThis;
+
+                if (grid.activeAnchorIndex != i)
+                    return;
+
+                auto points = grid.envelope.getChildWithName("POINTS");
+                if (points.isValid() && i < points.getNumChildren())
+                    points.getChild(i).setProperty("curve", grid.activeDragCurve, grid.undoManager);
+
+                grid.activeAnchorIndex = -1;
+                grid.isDraggingAnchor = false;
             };
 
         addAndMakeVisible(anchor.get());
@@ -602,36 +752,48 @@ void GridSection::rebuildPointComponents()
 }
 
 
+
 void GridSection::updatePointPositions()
 {
-    if (!envelope)
+    if (!envelope.isValid())
         return;
 
-    for (int i = 0; i < (int)pointComponents.size(); ++i)
+    auto points = envelope.getChildWithName("POINTS");
+    if (!points.isValid())
+        return;
+
+    const int numPoints = points.getNumChildren();
+
+    for (int i = 0; i < numPoints && i < (int)pointComponents.size(); ++i)
     {
-        auto& p = envelope->points[i];
-        pointComponents[i]->setNormalizedPosition({ p.x, p.y });
+        auto point = points.getChild(i);
+
+        float x = (float)point["x"];
+        float y = (float)point["y"];
+
+        pointComponents[i]->setNormalizedPosition({ x, y });
     }
 
-    // Update anchors
-    for (int i = 0; i < (int)anchorComponents.size(); ++i)
+    for (int i = 0; i < numPoints - 1 && i < (int)anchorComponents.size(); ++i)
     {
-        auto& p1 = envelope->points[i];
-        auto& p2 = envelope->points[i + 1];
+        auto p1 = points.getChild(i);
+        auto p2 = points.getChild(i + 1);
+
+        float x1 = (float)p1["x"];
+        float y1 = (float)p1["y"];
+        float x2 = (float)p2["x"];
+        float y2 = (float)p2["y"];
+        float curve = (p1 == activeAnchorNode)
+            ? activeDragCurve
+            : (float)p1["curve"];
+
 
         float t = 0.5f;
+        float shapedT = applyCurve(t, curve);
 
-        float shapedT = applyCurve(t, p1.curve);
-
-        float x = juce::jmap(t, p1.x, p2.x);
-        float y = juce::jmap(shapedT, p1.y, p2.y);
+        float x = juce::jmap(t, x1, x2);
+        float y = juce::jmap(shapedT, y1, y2);
 
         anchorComponents[i]->setNormalizedPosition({ x, y });
     }
-}
-
-void GridSection::changeListenerCallback(juce::ChangeBroadcaster*)
-{
-    rebuildPointComponents();
-    repaint();
 }

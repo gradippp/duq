@@ -1,9 +1,8 @@
 #include "PointComponent.h"
 #include "../sections/GridSection.h"
-#include "../../actions/GridUndoActions.h"
 
-PointComponent::PointComponent(GridSection& owner, int index)
-    : grid(owner), pointIndex(index)
+PointComponent::PointComponent(GridSection& owner, juce::ValueTree node)
+    : grid(owner), point(node)
 {
     setSize(12, 12);
 }
@@ -16,51 +15,70 @@ void PointComponent::setNormalizedPosition(juce::Point<float> p)
     setCentrePosition((int)pixel.x, (int)pixel.y);
 }
 
+juce::Point<float> PointComponent::getNormalizedPosition() const
+{
+    return normalized;
+}
+
 void PointComponent::paint(juce::Graphics& g)
 {
     g.setColour(juce::Colours::white);
     g.fillEllipse(getLocalBounds().toFloat());
 }
 
-void PointComponent::mouseDown(const juce::MouseEvent&)
+void PointComponent::mouseDown(const juce::MouseEvent& e)
 {
-    if (onDragStart)
-        onDragStart(pointIndex);
+    if (!point.isValid())
+        return;
+
+    dragStartNormalized = normalized;
+    dragStartMouse = e.getScreenPosition();
+
+    grid.setDraggingPoint(true);
+    grid.getUndoManager().beginNewTransaction("Move Envelope Point");
 }
 
 void PointComponent::mouseDrag(const juce::MouseEvent& e)
 {
-    auto pos = grid.pixelToNormalized(
-        e.getEventRelativeTo(&grid).position);
+    if (!point.isValid())
+        return;
+
+    auto deltaPixels = e.getScreenPosition() - dragStartMouse;
+
+    // Convert pixel delta to normalized delta
+    auto view = grid.getViewArea();
+
+    float dx = (float)deltaPixels.x / view.getWidth();
+    float dy = -(float)deltaPixels.y / view.getHeight();
+
+    juce::Point<float> newPos = dragStartNormalized;
+    newPos.x += dx / grid.getZoomX();
+    newPos.y += dy / grid.getZoomY();
 
     bool snapMode = e.mods.isShiftDown();
 
     if (onDragMove)
-        onDragMove(pointIndex, pos, snapMode);
+        onDragMove(point, newPos, snapMode);
 }
 
 void PointComponent::mouseUp(const juce::MouseEvent&)
 {
-    if (onDragEnd)
-        onDragEnd(pointIndex);
-}
+    grid.setDraggingPoint(false);
 
+    if (onDragEnd)
+        onDragEnd(point);
+}
 
 void PointComponent::mouseDoubleClick(const juce::MouseEvent& e)
 {
-    if (!onDrag)
+    if (!point.isValid())
         return;
 
-    if (e.mods.isLeftButtonDown())
-    {
-        if (auto* parent = dynamic_cast<GridSection*>(getParentComponent()))
-        {
-            parent->deletePoint(pointIndex);
-        }
-    }
-}
+    if (!e.mods.isLeftButtonDown())
+        return;
 
-juce::Point<float> PointComponent::getNormalizedPosition() const
-{
-    return normalized;
+    if (auto* parent = dynamic_cast<GridSection*>(getParentComponent()))
+    {
+        parent->deletePoint(point);
+    }
 }

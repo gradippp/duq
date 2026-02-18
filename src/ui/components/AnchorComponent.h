@@ -6,23 +6,23 @@ class GridSection;
 class AnchorComponent : public juce::Component
 {
 public:
-    AnchorComponent(GridSection& owner, int segmentIndex);
+    AnchorComponent(GridSection& owner, juce::ValueTree node);
 
-    void setNormalizedPosition(juce::Point<float> p);
+    void setNormalizedPosition(juce::Point<float>);
 
-    std::function<void(int)> onDragStart;
-    std::function<void(int, float)> onDragMove;
-    std::function<void(int)> onDragEnd;
-
-    void paint(juce::Graphics&) override;
-    void mouseDrag(const juce::MouseEvent&) override;
-    void mouseDown(const juce::MouseEvent& e);
-    void mouseUp(const juce::MouseEvent&) override;
+    std::function<void(juce::ValueTree)> onDragStart;
+    std::function<void(juce::ValueTree, float)> onDragMove;
+    std::function<void(juce::ValueTree)> onDragEnd;
 
 private:
     GridSection& grid;
-    int segmentIndex;
-
+    juce::ValueTree point;     // Stable identity
     float startCurve = 0.0f;
-    int dragStartY = 0;
+
+    juce::Point<int> dragStartMouse;
+
+    void paint(juce::Graphics&) override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
 };

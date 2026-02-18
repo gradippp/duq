@@ -1,8 +1,9 @@
 #include "AnchorComponent.h"
 #include "../sections/GridSection.h"
 
-AnchorComponent::AnchorComponent(GridSection& owner, int index)
-    : grid(owner), segmentIndex(index)
+AnchorComponent::AnchorComponent(GridSection& owner,
+    juce::ValueTree node)
+    : grid(owner), point(node)
 {
     setSize(10, 10);
 }
@@ -19,30 +20,42 @@ void AnchorComponent::paint(juce::Graphics& g)
     g.drawEllipse(getLocalBounds().toFloat(), 2.0f);
 }
 
-void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
+void AnchorComponent::mouseDown(const juce::MouseEvent& e)
 {
-    int dy = e.getDistanceFromDragStartY();
+    if (!point.isValid())
+        return;
 
-    float sensitivity = 0.005f;
-    float newCurve =
-        juce::jlimit(-1.0f, 1.0f,
-            startCurve - dy * sensitivity);
+    startCurve = (float)point["curve"];
+    dragStartMouse = e.getScreenPosition();
 
-    if (onDragMove)
-        onDragMove(segmentIndex, newCurve);
+    if (onDragStart)
+        onDragStart(point);
 }
 
-void AnchorComponent::mouseDown(const juce::MouseEvent&)
+void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
 {
-    if (onDragStart)
-        onDragStart(segmentIndex);
+    if (!point.isValid())
+        return;
 
-    startCurve = grid.getCurveForSegment(segmentIndex);
+    auto deltaPixels = e.getScreenPosition() - dragStartMouse;
+
+    float sensitivity = 0.005f;
+
+    float newCurve = juce::jlimit(
+        -1.0f,
+        1.0f,
+        startCurve - deltaPixels.y * sensitivity
+    );
+
+    if (onDragMove)
+        onDragMove(point, newCurve);
 }
 
 void AnchorComponent::mouseUp(const juce::MouseEvent&)
 {
-    if (onDragEnd)
-        onDragEnd(segmentIndex);
-}
+    if (!point.isValid())
+        return;
 
+    if (onDragEnd)
+        onDragEnd(point);
+}
