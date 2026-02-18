@@ -32,7 +32,12 @@ void GridSection::valueTreePropertyChanged(
     const juce::Identifier&)
 {
     if (!isDraggingPoint && !isDraggingAnchor)
+    {
+        // A property change (e.g. curve) in the ValueTree should update
+        // the anchor/point positions so undo/redo immediately reflects in UI.
+        updatePointPositions();
         repaint();
+    }
 }
 
 void GridSection::valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&)
@@ -552,110 +557,117 @@ void GridSection::rebuildPointComponents()
         auto node = points.getChild(i);
         auto comp = std::make_unique<PointComponent>(*this, node);
 
-        comp->onDragStart =
-            [this](juce::ValueTree node)
-            {
-                isDraggingPoint = true;
-                activeDragNode = node;
-
-                if (undoManager)
-                    undoManager->beginNewTransaction("Move Envelope Point");
-            };
-
-        comp->onDragMove =
-            [this, compPtr = comp.get()](juce::ValueTree node,
-                juce::Point<float> pos,
-                bool snapMode)
-            {
-                if (!node.isValid())
-                    return;
-
-                pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
-                pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
-
-                if (snapMode)
-                {
-                    float snapStep = 1.0f / (1 << gridPower);
-                    pos.x = snapValue(pos.x, snapStep);
-                    pos.y = snapValue(pos.y, snapStep);
-                }
-
-                activeDragNode = node;
-                activeDragPosition = pos;
-
-                // Move dragged point visually
-                compPtr->setNormalizedPosition(pos);
-
-                // ---- LIVE ANCHOR UPDATE ----
-
-                auto points = envelope.getChildWithName("POINTS");
-                if (!points.isValid())
-                    return;
-
-                int index = points.indexOf(node);
-                if (index < 0)
-                    return;
-
-                const int numPoints = points.getNumChildren();
-
-                // Update anchor BEFORE this point
-                if (index > 0 && index - 1 < anchorComponents.size())
-                {
-                    auto prevNode = points.getChild(index - 1);
-
-                    float x1 = (prevNode == activeDragNode)
-                        ? activeDragPosition.x
-                        : (float)prevNode["x"];
-
-                    float y1 = (prevNode == activeDragNode)
-                        ? activeDragPosition.y
-                        : (float)prevNode["y"];
-
-                    float x2 = pos.x;
-                    float y2 = pos.y;
-
-                    float curve = (float)prevNode["curve"];
-
-                    float t = 0.5f;
-                    float shapedT = applyCurve(t, curve);
-
-                    float ax = juce::jmap(t, x1, x2);
-                    float ay = juce::jmap(shapedT, y1, y2);
-
-                    anchorComponents[index - 1]->setNormalizedPosition({ ax, ay });
-                }
-
-                // Update anchor AFTER this point
-                if (index < numPoints - 1 && index < anchorComponents.size())
-                {
-                    auto nextNode = points.getChild(index + 1);
-
-                    float x1 = pos.x;
-                    float y1 = pos.y;
-
-                    float x2 = (nextNode == activeDragNode)
-                        ? activeDragPosition.x
-                        : (float)nextNode["x"];
-
-                    float y2 = (nextNode == activeDragNode)
-                        ? activeDragPosition.y
-                        : (float)nextNode["y"];
-
-                    float curve = (float)node["curve"];
-
-                    float t = 0.5f;
-                    float shapedT = applyCurve(t, curve);
-
-                    float ax = juce::jmap(t, x1, x2);
-                    float ay = juce::jmap(shapedT, y1, y2);
-
-                    anchorComponents[index]->setNormalizedPosition({ ax, ay });
-                }
-
-                repaint();
-            };
-
         juce::Component::SafePointer<GridSection> safeThis(this);
+
+        comp->onDragStart = [safeThis](juce::ValueTree node)
+        {
+            if (safeThis == nullptr)
+                return;
+
+            auto& grid = *safeThis;
+
+            grid.isDraggingPoint = true;
+            grid.activeDragNode = node;
+
+            if (grid.undoManager)
+                grid.undoManager->beginNewTransaction("Move Envelope Point");
+        };
+
+        comp->onDragMove = [safeThis, compPtr = comp.get()](juce::ValueTree node,
+            juce::Point<float> pos,
+            bool snapMode)
+        {
+            if (safeThis == nullptr)
+                return;
+
+            if (!node.isValid())
+                return;
+
+            auto& grid = *safeThis;
+
+            pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
+            pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
+
+            if (snapMode)
+            {
+                float snapStep = 1.0f / (1 << grid.gridPower);
+                pos.x = grid.snapValue(pos.x, snapStep);
+                pos.y = grid.snapValue(pos.y, snapStep);
+            }
+
+            grid.activeDragNode = node;
+            grid.activeDragPosition = pos;
+
+            // Move dragged point visually
+            compPtr->setNormalizedPosition(pos);
+
+            // ---- LIVE ANCHOR UPDATE ----
+            auto points = grid.envelope.getChildWithName("POINTS");
+            if (!points.isValid())
+                return;
+
+            int index = points.indexOf(node);
+            if (index < 0)
+                return;
+
+            const int numPoints = points.getNumChildren();
+
+            // Update anchor BEFORE this point
+            if (index > 0 && (size_t)(index - 1) < grid.anchorComponents.size())
+            {
+                auto prevNode = points.getChild(index - 1);
+
+                float x1 = (prevNode == grid.activeDragNode)
+                    ? grid.activeDragPosition.x
+                    : (float)prevNode["x"];
+
+                float y1 = (prevNode == grid.activeDragNode)
+                    ? grid.activeDragPosition.y
+                    : (float)prevNode["y"];
+
+                float x2 = pos.x;
+                float y2 = pos.y;
+
+                float curve = (float)prevNode["curve"];
+
+                float t = 0.5f;
+                float shapedT = applyCurve(t, curve);
+
+                float ax = juce::jmap(t, x1, x2);
+                float ay = juce::jmap(shapedT, y1, y2);
+
+                grid.anchorComponents[index - 1]->setNormalizedPosition({ ax, ay });
+            }
+
+            // Update anchor AFTER this point
+            if (index < numPoints - 1 && (size_t)index < grid.anchorComponents.size())
+            {
+                auto nextNode = points.getChild(index + 1);
+
+                float x1 = pos.x;
+                float y1 = pos.y;
+
+                float x2 = (nextNode == grid.activeDragNode)
+                    ? grid.activeDragPosition.x
+                    : (float)nextNode["x"];
+
+                float y2 = (nextNode == grid.activeDragNode)
+                    ? grid.activeDragPosition.y
+                    : (float)nextNode["y"];
+
+                float curve = (float)node["curve"];
+
+                float t = 0.5f;
+                float shapedT = applyCurve(t, curve);
+
+                float ax = juce::jmap(t, x1, x2);
+                float ay = juce::jmap(shapedT, y1, y2);
+
+                grid.anchorComponents[index]->setNormalizedPosition({ ax, ay });
+            }
+
+            grid.repaint();
+        };
 
         comp->onDragEnd = [safeThis](juce::ValueTree node)
             {
@@ -669,6 +681,10 @@ void GridSection::rebuildPointComponents()
                     node.setProperty("x", grid.activeDragPosition.x, grid.undoManager);
                     node.setProperty("y", grid.activeDragPosition.y, grid.undoManager);
                 }
+
+                // Transaction started on drag start is ended implicitly when a
+                // new transaction is started elsewhere. Do not start an empty
+                // transaction here.
 
                 grid.activeDragNode = {};
                 grid.isDraggingPoint = false;
@@ -687,15 +703,15 @@ void GridSection::rebuildPointComponents()
         auto node = points.getChild(i);
         auto anchor = std::make_unique<AnchorComponent>(*this, node);
 
-        juce::Component::SafePointer<GridSection> safeThis(this);
+        juce::Component::SafePointer<GridSection> safeThisAnchor(this);
 
         anchor->onDragStart =
-            [safeThis, i](juce::ValueTree node)
+            [safeThisAnchor, i](juce::ValueTree node)
             {
-                if (safeThis == nullptr)
+                if (safeThisAnchor == nullptr)
                     return;
 
-                auto& grid = *safeThis;
+                auto& grid = *safeThisAnchor;
 
                 grid.isDraggingAnchor = true;
                 grid.activeAnchorNode = node;
@@ -707,15 +723,15 @@ void GridSection::rebuildPointComponents()
             };
 
         anchor->onDragMove =
-            [safeThis, i](juce::ValueTree node, float newCurve)
+            [safeThisAnchor, i](juce::ValueTree node, float newCurve)
             {
-                if (safeThis == nullptr)
+                if (safeThisAnchor == nullptr)
                     return;
 
                 if (!node.isValid())
                     return;
 
-                auto& grid = *safeThis;
+                auto& grid = *safeThisAnchor;
 
                 grid.activeAnchorNode = node;
                 grid.activeAnchorIndex = i;
@@ -726,20 +742,20 @@ void GridSection::rebuildPointComponents()
             };
 
         anchor->onDragEnd =
-            [safeThis, i](juce::ValueTree)
+            [safeThisAnchor](juce::ValueTree node)
             {
-                if (safeThis == nullptr)
+                if (safeThisAnchor == nullptr)
                     return;
 
-                auto& grid = *safeThis;
+                auto& grid = *safeThisAnchor;
 
-                if (grid.activeAnchorIndex != i)
+                if (!node.isValid())
                     return;
 
-                auto points = grid.envelope.getChildWithName("POINTS");
-                if (points.isValid() && i < points.getNumChildren())
-                    points.getChild(i).setProperty("curve", grid.activeDragCurve, grid.undoManager);
+                // Commit the edited curve to the exact node that was dragged.
+                node.setProperty("curve", grid.activeDragCurve, grid.undoManager);
 
+                grid.activeAnchorNode = {};
                 grid.activeAnchorIndex = -1;
                 grid.isDraggingAnchor = false;
             };

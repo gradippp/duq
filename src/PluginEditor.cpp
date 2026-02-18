@@ -25,10 +25,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
 
     envelopeListSection.setUndoManager(undoManager);
-    envelopeListSection.setProcessor(p);
-
-    controlSection.setUndoManager(undoManager);
-    gridSection.setUndoManager(undoManager);
 
     envelopeListSection.onEnvelopeSelected =
         [this](juce::ValueTree env)
@@ -44,6 +40,12 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                 gridSection.setEnvelope({});
             }
         };
+
+    envelopeListSection.setProcessor(p);
+
+    controlSection.setUndoManager(undoManager);
+    gridSection.setUndoManager(undoManager);
+
 
     header.setUndoCallback([this]
         {
@@ -62,14 +64,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-
-
-    //controlSection.onEnvelopeChanged =
-    //    [this](const EnvelopeData& data)
-    //    {
-    //        envelopeListSection.updateSelectedEnvelope(data);
-    //        gridSection.repaint();
-    //    };
 
     gridSection.setSampleBuffer(
         &audioProcessor.getMonitorWritePosition(),
