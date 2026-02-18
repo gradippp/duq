@@ -25,6 +25,7 @@ public:
     void setUndoManager(juce::UndoManager& um);
 
     std::function<void()> onClose;
+    std::function<void(juce::String)> onProjectLoaded;
 
     // ListBoxModel overrides
     int getNumRows() override;

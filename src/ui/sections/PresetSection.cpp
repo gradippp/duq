@@ -125,11 +125,15 @@ void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
         auto loaded = PresetManager::loadProject(presetFiles[rowNumber]);
         if (loaded.isValid())
         {
+            auto fileName = presetFiles[rowNumber].getFileNameWithoutExtension();
             if (undoManager)
-                undoManager->beginNewTransaction("Load Project: " + presetFiles[rowNumber].getFileNameWithoutExtension());
+                undoManager->beginNewTransaction("Load Project: " + fileName);
 
             processor.getEnvelopesTree().copyPropertiesAndChildrenFrom(loaded, undoManager);
             
+            if (onProjectLoaded)
+                onProjectLoaded(fileName);
+
             if (onClose)
                 onClose();
         }

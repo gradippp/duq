@@ -1,5 +1,7 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../components/ControlKnobComponent.h"
+#include "../components/SelectableLabel.h"
 
 class HeaderSection : public juce::Component
 {
@@ -12,29 +14,37 @@ public:
 
     void setVersionString(const juce::String& version);
     void setProjectURI(const juce::String& uri);
+    void setPresetName(const juce::String& name);
 
     void setUndoCallback(std::function<void()> cb);
     void setRedoCallback(std::function<void()> cb);
     
     void setSaveProjectCallback(std::function<void()> cb) { onSaveProject = std::move(cb); }
     void setLoadProjectCallback(std::function<void()> cb) { onLoadProject = std::move(cb); }
+    void setInitPresetCallback(std::function<void()> cb) { onInitPreset = std::move(cb); }
 
     void updateUndoState(bool canUndo, bool canRedo);
 
 private:
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
+    juce::String presetName{ "Default Project" };
 
     juce::DrawableButton undoButton{ "undo", juce::DrawableButton::ImageFitted };
     juce::DrawableButton redoButton{ "redo", juce::DrawableButton::ImageFitted };
     
     juce::DrawableButton saveProjectButton{ "save_project", juce::DrawableButton::ImageFitted };
-    juce::DrawableButton loadProjectButton{ "load_project", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton initPresetButton{ "init_preset", juce::DrawableButton::ImageFitted };
+    
+    SelectableLabel presetNameLabel;
+
+    std::unique_ptr<ControlKnobComponent> mixKnob;
 
     std::function<void()> undoCallback;
     std::function<void()> redoCallback;
     std::function<void()> onSaveProject;
     std::function<void()> onLoadProject;
+    std::function<void()> onInitPreset;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderSection)
 };

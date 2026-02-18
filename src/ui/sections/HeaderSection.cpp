@@ -25,44 +25,42 @@ HeaderSection::HeaderSection()
     setupIconButton(undoButton, "undo");
     setupIconButton(redoButton, "redo");
     setupIconButton(saveProjectButton, "save");
-    setupIconButton(loadProjectButton, "replace");
-
+    setupIconButton(initPresetButton, "close"); 
+    
     undoButton.setTooltip("Undo");
     redoButton.setTooltip("Redo");
     saveProjectButton.setTooltip("Save Project Preset");
-    loadProjectButton.setTooltip("Load Project Preset");
+    initPresetButton.setTooltip("Init Preset (Reset State)");
 
     addAndMakeVisible(undoButton);
     addAndMakeVisible(redoButton);
     addAndMakeVisible(saveProjectButton);
-    addAndMakeVisible(loadProjectButton);
+    addAndMakeVisible(initPresetButton);
 
-    undoButton.onClick = [this]
-        {
-            if (undoCallback)
-                undoCallback();
-        };
+    addAndMakeVisible(presetNameLabel);
+    presetNameLabel.setJustificationType(juce::Justification::centred);
+    presetNameLabel.setFont(juce::Font("Segoe UI", 14.0f, juce::Font::bold));
+    presetNameLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.85f));
+    presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
+    presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
 
-    redoButton.onClick = [this]
-        {
-            if (redoCallback)
-                redoCallback();
-        };
+    mixKnob = std::make_unique<ControlKnobComponent>("Mix", 100.0f, "%");
+    addAndMakeVisible(mixKnob.get());
 
-    saveProjectButton.onClick = [this]
-        {
-            if (onSaveProject)
-                onSaveProject();
-        };
-
-    loadProjectButton.onClick = [this]
-        {
-            if (onLoadProject)
-                onLoadProject();
-        };
+    undoButton.onClick = [this] { if (undoCallback) undoCallback(); };
+    redoButton.onClick = [this] { if (redoCallback) redoCallback(); };
+    saveProjectButton.onClick = [this] { if (onSaveProject) onSaveProject(); };
+    initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
 }
 
 //==============================================================================
+
+void HeaderSection::setPresetName(const juce::String& name)
+{
+    presetName = name;
+    presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
+    repaint();
+}
 
 void HeaderSection::updateUndoState(bool canUndo, bool canRedo)
 {
@@ -101,69 +99,32 @@ void HeaderSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    // ---------- Background Gradient ----------
-    juce::ColourGradient gradient(
-        juce::Colour(18, 18, 18),
-        0, 0,
-        juce::Colour(10, 10, 10),
-        0, bounds.getBottom(),
-        false);
-
-    g.setGradientFill(gradient);
+    // ---------- Background: Modern Dark Charcoal ----------
+    g.setColour(juce::Colour(0xff0d0d0d));
     g.fillAll();
 
+    // Subtle metallic top highlight
+    g.setColour(juce::Colours::white.withAlpha(0.03f));
+    g.fillRect(bounds.removeFromTop(1.0f));
+
     // ---------- Bottom Divider ----------
-    g.setColour(juce::Colours::white.withAlpha(0.08f));
-    g.drawLine(0.0f,
-        bounds.getBottom() - 1.0f,
-        bounds.getRight(),
-        bounds.getBottom() - 1.0f,
-        1.0f);
+    g.setColour(juce::Colours::black);
+    g.drawLine(0.0f, bounds.getBottom() - 1.0f, bounds.getRight(), bounds.getBottom() - 1.0f, 1.0f);
 
     const int leftPadding = 24;
-    const int rightPadding = 24;
 
-    // ---------- Brand Title ----------
-    g.setColour(juce::Colours::white);
-
-    juce::Font brandFont(48.0f, juce::Font::bold);
-    g.setFont(brandFont);
-
-    juce::Rectangle<int> titleArea(leftPadding, 0, 240, getHeight());
-    g.drawText("DUQ",
-        titleArea,
-        juce::Justification::centredLeft);
-
-    // Accent underline
-    auto accentY = getHeight() - 6;
-    g.setColour(juce::Colour(0xff4cc9f0)); // subtle blue accent
-    g.drawLine((float)leftPadding,
-        (float)accentY,
-        (float)(leftPadding + 70),
-        (float)accentY,
-        2.0f);
-
-    // ---------- Right Meta Info ----------
-    const int metaWidth = 260;
-    juce::Rectangle<int> metaArea(
-        getWidth() - metaWidth - rightPadding,
-        0,
-        metaWidth,
-        getHeight());
-
-    // Project URI (top-right)
-    g.setColour(juce::Colours::white.withAlpha(0.7f));
-    g.setFont(juce::Font(11.0f));
-    g.drawText(projectURI,
-        metaArea.removeFromTop(22),
-        juce::Justification::centredRight);
-
-    // Version (bottom-right)
+    // ---------- Brand Title (Left) ----------
     g.setColour(juce::Colours::white.withAlpha(0.9f));
-    g.setFont(juce::Font(13.0f, juce::Font::bold));
-    g.drawText("v" + versionString,
-        metaArea.removeFromBottom(24),
-        juce::Justification::centredRight);
+    g.setFont(juce::Font("Segoe UI", 28.0f, juce::Font::bold));
+    juce::Rectangle<int> titleArea(leftPadding, 0, 100, (int)getHeight());
+    g.drawText("DUQ", titleArea, juce::Justification::centredLeft);
+
+    // ---------- Preset "Bay" (Center) ----------
+    auto centerArea = getLocalBounds().withSizeKeepingCentre(280, 28).toFloat();
+    g.setColour(juce::Colours::black.withAlpha(0.4f));
+    g.fillRoundedRectangle(centerArea, 2.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.05f));
+    g.drawRoundedRectangle(centerArea, 2.0f, 1.0f);
 }
 
 //==============================================================================
@@ -172,32 +133,42 @@ void HeaderSection::resized()
 {
     auto area = getLocalBounds();
 
-    const int buttonSize = 30;
-    const int spacing = 10;
-    const int rightInset = 24;
+    // --- Left Brand ---
+    area.removeFromLeft(120);
 
-    auto rightArea = area.removeFromRight(200);
-    rightArea.removeFromRight(rightInset);
+    const int buttonSize = 24;
+    const int spacing = 4;
 
-    auto buttonArea = rightArea.removeFromLeft(buttonSize);
-    undoButton.setBounds(
-        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
+    // --- Center Preset Group ---
+    // [Name Bay (280px)] [Init] [Save]
+    auto centerGroupArea = getLocalBounds().withSizeKeepingCentre(400, getHeight());
+    
+    // Name Bay centered
+    int bayWidth = 280;
+    auto bayRect = centerGroupArea.withSizeKeepingCentre(bayWidth, 28);
+    presetNameLabel.setBounds(bayRect);
+    
+    // Init and Save next to the bay
+    auto initPos = bayRect.getRelativePoint(1.0f, 0.5f).translated(spacing, -buttonSize/2);
+    initPresetButton.setBounds(initPos.x, initPos.y, buttonSize, buttonSize);
 
-    rightArea.removeFromLeft(spacing);
+    auto savePos = initPos.translated(buttonSize + spacing, 0);
+    saveProjectButton.setBounds(savePos.x, savePos.y, buttonSize, buttonSize);
 
-    buttonArea = rightArea.removeFromLeft(buttonSize);
-    redoButton.setBounds(
-        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
+    // --- Right Tools Area ---
+    auto rightArea = getLocalBounds().removeFromRight(200).reduced(10, 0);
+    
+    // Mix Knob at the far right
+    if (mixKnob)
+    {
+        auto knobArea = rightArea.removeFromRight(60);
+        mixKnob->setBounds(knobArea.reduced(0, 5));
+    }
 
-    rightArea.removeFromLeft(spacing);
+    rightArea.removeFromRight(15); // Gap
 
-    buttonArea = rightArea.removeFromLeft(buttonSize);
-    saveProjectButton.setBounds(
-        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
-
-    rightArea.removeFromLeft(spacing);
-
-    buttonArea = rightArea.removeFromLeft(buttonSize);
-    loadProjectButton.setBounds(
-        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
+    // Undo / Redo
+    redoButton.setBounds(rightArea.removeFromRight(buttonSize).withSizeKeepingCentre(buttonSize, buttonSize));
+    rightArea.removeFromRight(spacing);
+    undoButton.setBounds(rightArea.removeFromRight(buttonSize).withSizeKeepingCentre(buttonSize, buttonSize));
 }

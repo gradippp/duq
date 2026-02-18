@@ -62,6 +62,11 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             resized();
         };
 
+    presetSection.onProjectLoaded = [this](juce::String name)
+        {
+            header.setPresetName(name);
+        };
+
     controlSection.setUndoManager(undoManager);
     gridSection.setUndoManager(undoManager);
 
@@ -89,14 +94,18 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                 initialFile,
                 "*" + PresetManager::projectExtension);
 
-            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
-                {
-                    auto file = fc.getResult();
-                    if (file == juce::File())
-                        return;
-
-                    PresetManager::saveProject(audioProcessor.getEnvelopesTree(), file);
-                });
+                            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+                            {
+                                auto file = fc.getResult();
+                                if (file == juce::File())
+                                    return;
+            
+                                if (PresetManager::saveProject(audioProcessor.getEnvelopesTree(), file))
+                                {
+                                    header.setPresetName(file.getFileNameWithoutExtension());
+                                }
+                            });
+            
         });
 
     header.setLoadProjectCallback([this]
@@ -105,6 +114,32 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             gridSection.setVisible(false);
             presetSection.setVisible(true);
             resized();
+        });
+
+    header.setInitPresetCallback([this]
+        {
+            undoManager.beginNewTransaction("Init Project");
+            auto envelopes = audioProcessor.getEnvelopesTree();
+            envelopes.removeAllChildren(&undoManager);
+            
+            // Add a single default envelope
+            juce::ValueTree env("ENVELOPE");
+            env.setProperty("name", "Env 1", nullptr);
+            env.setProperty("triggerNote", 36, nullptr);
+            env.setProperty("rate", 20.0, nullptr);
+            env.setProperty("depth", 100.0, nullptr);
+            env.setProperty("smooth", 0.0, nullptr);
+            env.setProperty("rateIsFrequencyMode", true, nullptr);
+
+            juce::ValueTree points("POINTS");
+            juce::ValueTree p1("POINT"); p1.setProperty("x", 0.0f, nullptr); p1.setProperty("y", 0.0f, nullptr); p1.setProperty("curve", 0.0f, nullptr);
+            juce::ValueTree p2("POINT"); p2.setProperty("x", 1.0f, nullptr); p2.setProperty("y", 1.0f, nullptr); p2.setProperty("curve", 0.0f, nullptr);
+            points.addChild(p1, -1, nullptr);
+            points.addChild(p2, -1, nullptr);
+            env.addChild(points, -1, nullptr);
+
+            envelopes.addChild(env, -1, &undoManager);
+            header.setPresetName("Default Project");
         });
 
     startTimerHz(10);
