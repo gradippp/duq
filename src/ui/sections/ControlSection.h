@@ -1,48 +1,42 @@
 #pragma once
-#include <juce_core/juce_core.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../components/ControlKnobComponent.h"
-#include "../../model/EnvelopeData.h"
 
 class ControlSection : public juce::Component,
-    private juce::ChangeListener
+    private juce::ValueTree::Listener
 {
 public:
     ControlSection();
-    ~ControlSection();
+    ~ControlSection() override;
 
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    void setEnvelope(juce::ValueTree env);
     void clearEnvelope();
-    void loadEnvelope(EnvelopeData& data);
+
+    void setUndoManager(juce::UndoManager& um);
 
     ControlKnobComponent& getRateKnob() { return rateKnob; }
     ControlKnobComponent& getDepthKnob() { return depthKnob; }
     ControlKnobComponent& getSmoothKnob() { return smoothKnob; }
 
-    std::function<void(const EnvelopeData&)> onEnvelopeChanged;
-
-    void setUndoManager(juce::UndoManager& um);
-
 private:
-    void changeListenerCallback(juce::ChangeBroadcaster*) override;
-    bool isInitialising = true;
+    // ValueTree listener
+    void valueTreePropertyChanged(juce::ValueTree&,
+        const juce::Identifier&) override;
 
-    EnvelopeData* currentData = nullptr;
+    void refreshFromTree();
+    void applyRateMode();
+
+    juce::ValueTree envelope;
     juce::UndoManager* undoManager = nullptr;
 
     bool hasEnvelope = false;
-
+    bool isInitialising = false;
     bool rateIsFrequencyMode = true;
-    void applyRateMode();
+
     std::array<ControlKnobComponent*, 3> knobList;
-    std::array<double EnvelopeData::*, 3> dataMembers =
-    {
-        &EnvelopeData::rate,
-        &EnvelopeData::depth,
-        &EnvelopeData::smooth
-    };
 
     ControlKnobComponent rateKnob{ "Frequency", 20.0f, "Hz" };
     ControlKnobComponent depthKnob{ "Depth", 100.0f, "%" };

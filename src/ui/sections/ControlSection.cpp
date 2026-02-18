@@ -1,5 +1,4 @@
 #include "ControlSection.h"
-#include "../../actions/ControlUndoActions.h"
 
 static const std::vector<juce::String> rateDivisions =
 {
@@ -24,15 +23,11 @@ ControlSection::ControlSection()
             };
     }
 
-    // ===== Default local state =====
-    rateIsFrequencyMode = true;
-
-    // ===== Rate Context Menu =====
     rateKnob.extendContextMenu =
         [this](juce::PopupMenu& menu)
         {
             menu.addItem(100,
-                "Set to Frequency mode",
+                "Toggle Frequency Mode",
                 true,
                 rateIsFrequencyMode);
         };
@@ -40,130 +35,132 @@ ControlSection::ControlSection()
     rateKnob.onCustomMenuResult =
         [this](int result)
         {
-            if (result == 100 && currentData && undoManager)
+            if (result == 100 && envelope.isValid())
             {
-                bool newValue = !currentData->rateIsFrequencyMode;
-
-                undoManager->perform(
-                    new ChangeBoolMemberAction(
-                        *currentData,
-                        &EnvelopeData::rateIsFrequencyMode,
-                        newValue));
-
-                if (onEnvelopeChanged)
-                    onEnvelopeChanged(*currentData);
+                bool newValue = !(bool)envelope["rateIsFrequencyMode"];
+                envelope.setProperty("rateIsFrequencyMode", newValue, undoManager);
             }
         };
 
-
-    // ===== Rate Formatter =====
     rateKnob.valueFormatter =
         [this](double value)
         {
             if (rateIsFrequencyMode)
                 return juce::String(value, 2) + " Hz";
 
-            int index = (int)value;
-            index = juce::jlimit(0,
-                (int)rateDivisions.size() - 1,
-                index);
-
+            int index = juce::jlimit(0, 5, (int)value);
             return rateDivisions[index];
         };
 
-    // ===== Slider Callbacks =====
-    for (size_t i = 0; i < knobList.size(); ++i)
-    {
-        knobList[i]->onValueChanged =
-            [this, i](double value)
-            {
-                if (isInitialising)
-                    return;
+    // Slider value changes
+    rateKnob.onValueChanged = [this](double value)
+        {
+            if (!envelope.isValid() || isInitialising)
+                return;
 
-                if (!currentData || !undoManager)
-                    return;
+            envelope.setProperty("rate", value, undoManager);
+        };
 
-                auto member = dataMembers[i];
+    depthKnob.onValueChanged = [this](double value)
+        {
+            if (!envelope.isValid() || isInitialising)
+                return;
 
-                undoManager->perform(
-                    new ChangeDoubleMemberAction(
-                        *currentData,
-                        member,
-                        value));
+            envelope.setProperty("depth", value, undoManager);
+        };
 
-                if (onEnvelopeChanged)
-                    onEnvelopeChanged(*currentData);
-            };
-    }
+    smoothKnob.onValueChanged = [this](double value)
+        {
+            if (!envelope.isValid() || isInitialising)
+                return;
 
+            envelope.setProperty("smooth", value, undoManager);
+        };
 
-    // ===== Add Components =====
     addAndMakeVisible(rateKnob);
     addAndMakeVisible(depthKnob);
     addAndMakeVisible(smoothKnob);
-
-    // ===== Initialize Mode =====
-    applyRateMode();
 }
+
 
 ControlSection::~ControlSection()
 {
-    if (undoManager)
-        undoManager->removeChangeListener(this);
+    if (envelope.isValid())
+        envelope.removeListener(this);
 }
 
-void ControlSection::setUndoManager(juce::UndoManager& um)
+void ControlSection::setEnvelope(juce::ValueTree env)
 {
-    undoManager = &um;
-    undoManager->addChangeListener(this);
+    if (envelope.isValid())
+        envelope.removeListener(this);
+
+    envelope = env;
+
+    if (envelope.isValid())
+    {
+        envelope.addListener(this);
+        hasEnvelope = true;
+
+        rateKnob.setVisible(true);
+        depthKnob.setVisible(true);
+        smoothKnob.setVisible(true);
+
+        refreshFromTree();
+    }
+    else
+    {
+        clearEnvelope();
+    }
 }
 
-void ControlSection::changeListenerCallback(juce::ChangeBroadcaster*)
+void ControlSection::refreshFromTree()
 {
-    if (!currentData)
+    if (!envelope.isValid())
         return;
 
-    loadEnvelope(*currentData);
-
-    if (onEnvelopeChanged)
-        onEnvelopeChanged(*currentData);
-}
-
-void ControlSection::clearEnvelope()
-{
-    currentData = nullptr;
-    hasEnvelope = false;
-
-    rateKnob.setVisible(false);
-    depthKnob.setVisible(false);
-    smoothKnob.setVisible(false);
-
-    repaint();
-}
-
-void ControlSection::loadEnvelope(EnvelopeData& data)
-{
     isInitialising = true;
 
-    currentData = &data;
-    hasEnvelope = true;
-
-    rateKnob.setVisible(true);
-    depthKnob.setVisible(true);
-    smoothKnob.setVisible(true);
-
-    rateIsFrequencyMode = data.rateIsFrequencyMode;
+    rateIsFrequencyMode = (bool)envelope["rateIsFrequencyMode"];
     applyRateMode();
 
-    rateKnob.getSlider().setValue(data.rate, juce::dontSendNotification);
-    depthKnob.getSlider().setValue(data.depth, juce::dontSendNotification);
-    smoothKnob.getSlider().setValue(data.smooth, juce::dontSendNotification);
+    rateKnob.getSlider().setValue((double)envelope["rate"], juce::dontSendNotification);
+    depthKnob.getSlider().setValue((double)envelope["depth"], juce::dontSendNotification);
+    smoothKnob.getSlider().setValue((double)envelope["smooth"], juce::dontSendNotification);
 
     rateKnob.refreshValueLabel();
     depthKnob.refreshValueLabel();
     smoothKnob.refreshValueLabel();
 
     isInitialising = false;
+
+    repaint();
+}
+
+
+void ControlSection::valueTreePropertyChanged(
+    juce::ValueTree&,
+    const juce::Identifier&)
+{
+    refreshFromTree();
+}
+
+
+void ControlSection::setUndoManager(juce::UndoManager& um)
+{
+    undoManager = &um;
+}
+
+void ControlSection::clearEnvelope()
+{
+    if (envelope.isValid())
+        envelope.removeListener(this);
+
+    envelope = {};
+    hasEnvelope = false;
+
+    rateKnob.setVisible(false);
+    depthKnob.setVisible(false);
+    smoothKnob.setVisible(false);
 
     repaint();
 }
@@ -205,20 +202,17 @@ void ControlSection::paint(juce::Graphics& g)
 
 void ControlSection::applyRateMode()
 {
-    if (!currentData)
+    if (!envelope.isValid())
         return;
 
-    if (currentData->rateIsFrequencyMode)
+    if (rateIsFrequencyMode)
     {
-        rateKnob.getSlider().setRange(0.1, 100.0f, 0.01);
+        rateKnob.getSlider().setRange(0.1, 100.0, 0.01);
         rateKnob.setLabel("Frequency");
     }
     else
     {
-        rateKnob.getSlider().setRange(
-            0,
-            (int)rateDivisions.size() - 1,
-            1.0);
+        rateKnob.getSlider().setRange(0, 5, 1);
         rateKnob.setLabel("Rate");
     }
 

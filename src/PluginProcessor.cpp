@@ -266,17 +266,17 @@ juce::AudioProcessorEditor* DuqAudioProcessor::createEditor()
 //==============================================================================
 void DuqAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    auto state = parameters.copyState();
-    std::unique_ptr<juce::XmlElement> xml(state.createXml());
-    copyXmlToBinary(*xml, destData);
+    //auto state = parameters.copyState();
+    //std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    //copyXmlToBinary(*xml, destData);
 }
 
 void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+    //std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
 
-    if (xml && xml->hasTagName(parameters.state.getType()))
-        parameters.replaceState(juce::ValueTree::fromXml(*xml));
+    //if (xml && xml->hasTagName(parameters.state.getType()))
+    //    parameters.replaceState(juce::ValueTree::fromXml(*xml));
 }
 
 //==============================================================================
