@@ -14,54 +14,60 @@ public:
         float rotaryEndAngle,
         juce::Slider& slider) override
     {
-        auto radius = juce::jmin(width, height) * 0.5f - 4.0f;
-        auto centreX = x + width * 0.5f;
-        auto centreY = y + height * 0.5f;
+        auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(4.0f);
+        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
+        auto centreX = bounds.getCentreX();
+        auto centreY = bounds.getCentreY();
 
         auto angle = rotaryStartAngle +
             sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
-        // Base circle
-        g.setColour(juce::Colour(30, 36, 42));
-        g.fillEllipse(centreX - radius,
-            centreY - radius,
-            radius * 2.0f,
-            radius * 2.0f);
+        // --- Outer Ring (Shadow/Glow) ---
+        g.setColour(juce::Colours::black.withAlpha(0.2f));
+        g.drawEllipse(centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f, 1.0f);
 
-        // Background arc
+        // --- Base Circle Gradient ---
+        juce::ColourGradient baseGrad(juce::Colour(0xff2a2a2e), centreX, centreY - radius,
+                                      juce::Colour(0xff121214), centreX, centreY + radius, false);
+        g.setGradientFill(baseGrad);
+        g.fillEllipse(centreX - radius + 1.0f, centreY - radius + 1.0f, (radius - 1.0f) * 2.0f, (radius - 1.0f) * 2.0f);
+
+        // Inner bevel highlight
+        g.setColour(juce::Colours::white.withAlpha(0.05f));
+        g.drawEllipse(centreX - radius + 2.0f, centreY - radius + 2.0f, (radius - 2.0f) * 2.0f, (radius - 2.0f) * 2.0f, 1.0f);
+
+        // --- Arcs Area ---
+        float arcRadius = radius - 3.5f;
+        float thickness = 2.5f;
+
+        // Background arc (Track)
         juce::Path bgArc;
-        bgArc.addCentredArc(centreX, centreY,
-            radius - 4.0f,
-            radius - 4.0f,
-            0.0f,
-            rotaryStartAngle,
-            rotaryEndAngle,
-            true);
+        bgArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, rotaryStartAngle, rotaryEndAngle, true);
+        g.setColour(juce::Colour(0xff0a0a0c));
+        g.strokePath(bgArc, juce::PathStrokeType(thickness + 0.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        g.setColour(juce::Colour(55, 65, 75));
-        g.strokePath(bgArc, juce::PathStrokeType(2.0f));
-
-        // Value arc
+        // Value arc (Active)
         juce::Path valueArc;
-        valueArc.addCentredArc(centreX, centreY,
-            radius - 4.0f,
-            radius - 4.0f,
-            0.0f,
-            rotaryStartAngle,
-            angle,
-            true);
+        valueArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, rotaryStartAngle, angle, true);
+        
+        auto accentColour = juce::Colour(0xff4cc9f0); // Cyan/Blue accent
+        g.setColour(accentColour);
+        g.strokePath(valueArc, juce::PathStrokeType(thickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        g.setColour(juce::Colour(60, 170, 255));
-        g.strokePath(valueArc, juce::PathStrokeType(3.0f));
+        // Subtle Glow on value arc
+        g.setColour(accentColour.withAlpha(0.15f));
+        g.strokePath(valueArc, juce::PathStrokeType(thickness + 1.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        // Indicator line
-        juce::Path indicator;
-        indicator.addRectangle(-1.5f, -radius + 6.0f,
-            3.0f, radius * 0.5f);
+        // --- Modern Indicator (Dot) ---
+        float dotRadius = 1.5f;
+        float dotDist = radius - 8.0f;
+        
+        juce::Point<float> dotPos (
+            centreX + dotDist * std::cos(angle - juce::MathConstants<float>::halfPi),
+            centreY + dotDist * std::sin(angle - juce::MathConstants<float>::halfPi)
+        );
 
-        g.setColour(juce::Colours::white);
-        g.fillPath(indicator,
-            juce::AffineTransform::rotation(angle)
-            .translated(centreX, centreY));
+        g.setColour(juce::Colours::white.withAlpha(0.9f));
+        g.fillEllipse(dotPos.x - dotRadius, dotPos.y - dotRadius, dotRadius * 2.0f, dotRadius * 2.0f);
     }
 };

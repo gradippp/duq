@@ -2,6 +2,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../components/ControlKnobComponent.h"
 #include "../components/SelectableLabel.h"
+#include "../utils/FlatKnobLookAndFeel.h"
 
 class HeaderSection : public juce::Component
 {
@@ -38,6 +39,7 @@ private:
     
     SelectableLabel presetNameLabel;
 
+    std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
     std::unique_ptr<ControlKnobComponent> mixKnob;
 
     std::function<void()> undoCallback;

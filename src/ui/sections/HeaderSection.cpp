@@ -44,7 +44,9 @@ HeaderSection::HeaderSection()
     presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
     presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
 
-    mixKnob = std::make_unique<ControlKnobComponent>("Mix", 100.0f, "%");
+    knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
+    mixKnob = std::make_unique<ControlKnobComponent>("", 100.0f, "%");
+    mixKnob->getSlider().setLookAndFeel(knobLookAndFeel.get());
     addAndMakeVisible(mixKnob.get());
 
     undoButton.onClick = [this] { if (undoCallback) undoCallback(); };
