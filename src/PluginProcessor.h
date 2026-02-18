@@ -65,6 +65,11 @@ public:
     const float* getMonitorSamples() const noexcept { return monSamples; }
     const std::atomic<int>& getMonitorWritePosition() const noexcept { return monpos; }
 
+    bool DuqAudioProcessor::isNoteActive(int note) const
+    {
+        return activeNotes[note].load(std::memory_order_relaxed);
+    }
+
 private:
     juce::UndoManager undoManager { 200 };
 
@@ -75,6 +80,8 @@ private:
     static constexpr int monitorBufferSize = 2048;
     float monSamples[monitorBufferSize];
     std::atomic<int> monpos{ 0 };
+
+    std::array<std::atomic<bool>, 128> activeNotes;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessor)

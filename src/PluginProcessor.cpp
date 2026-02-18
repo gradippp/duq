@@ -22,6 +22,8 @@ DuqAudioProcessor::DuqAudioProcessor()
                        )
 #endif
 {
+    for (auto& n : activeNotes)
+        n.store(false);
 }
 
 DuqAudioProcessor::~DuqAudioProcessor()
@@ -31,6 +33,17 @@ DuqAudioProcessor::~DuqAudioProcessor()
 void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::MidiBuffer& midi)
 {
+    for (const auto metadata : midi)
+    {
+        const auto msg = metadata.getMessage();
+
+        if (msg.isNoteOn())
+            activeNotes[msg.getNoteNumber()].store(true, std::memory_order_relaxed);
+
+        else if (msg.isNoteOff())
+            activeNotes[msg.getNoteNumber()].store(false, std::memory_order_relaxed);
+    }
+
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples = buffer.getNumSamples();

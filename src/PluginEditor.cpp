@@ -124,6 +124,8 @@ void DuqAudioProcessorEditor::timerCallback()
     header.updateUndoState(
         undoManager.canUndo(),
         undoManager.canRedo());
+
+    envelopeListSection.updateMidiActivity(audioProcessor);
 }
 
 //==============================================================================

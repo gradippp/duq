@@ -1,5 +1,6 @@
 #include "EnvelopeListSection.h"
 #include "../../actions/EnvelopeUndoActions.h"
+#include "../../PluginProcessor.h"
 
 EnvelopeListSection::EnvelopeListSection()
 {
@@ -394,4 +395,15 @@ int EnvelopeListSection::getNextFreeNote(int startFrom) const
     }
 
     return -1; // no notes available
+}
+
+void EnvelopeListSection::updateMidiActivity(DuqAudioProcessor& processor)
+{
+    for (int i = 0; i < rows.size(); ++i)
+    {
+        int note = envelopes[i]->triggerNote;
+        bool isActive = processor.isNoteActive(note);
+
+        rows[i]->setActive(isActive);
+    }
 }

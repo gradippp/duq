@@ -5,6 +5,7 @@
 
 class EnvelopeListComponent;
 class ChangeEnvelopeNoteAction;
+class DuqAudioProcessor;
 
 class EnvelopeListSection : public juce::Component,
     private juce::ChangeListener
@@ -37,6 +38,8 @@ public:
     bool applyEnvelopeNameDirect(int index, const juce::String& newName);
 
     juce::String generateDefaultName() const;
+
+    void updateMidiActivity(DuqAudioProcessor& processor);
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
