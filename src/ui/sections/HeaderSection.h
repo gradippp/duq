@@ -15,6 +15,10 @@ public:
 
     void setUndoCallback(std::function<void()> cb);
     void setRedoCallback(std::function<void()> cb);
+    
+    void setSaveProjectCallback(std::function<void()> cb) { onSaveProject = std::move(cb); }
+    void setLoadProjectCallback(std::function<void()> cb) { onLoadProject = std::move(cb); }
+
     void updateUndoState(bool canUndo, bool canRedo);
 
 private:
@@ -23,9 +27,14 @@ private:
 
     juce::DrawableButton undoButton{ "undo", juce::DrawableButton::ImageFitted };
     juce::DrawableButton redoButton{ "redo", juce::DrawableButton::ImageFitted };
+    
+    juce::DrawableButton saveProjectButton{ "save_project", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton loadProjectButton{ "load_project", juce::DrawableButton::ImageFitted };
 
     std::function<void()> undoCallback;
     std::function<void()> redoCallback;
+    std::function<void()> onSaveProject;
+    std::function<void()> onLoadProject;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderSection)
 };

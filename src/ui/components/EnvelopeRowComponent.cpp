@@ -1,6 +1,7 @@
 #include "EnvelopeRowComponent.h"
 #include "../utils/IconFactory.h"
 #include "../utils/MidiUtils.h"
+#include "../utils/PresetManager.h"
 #include "../components/PianoModal.h"
 
 EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
@@ -96,7 +97,23 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
 
     saveButton.onClick = [this]()
         {
-            // TODO: implement envelope save preset
+            auto initialFile = PresetManager::getEnvelopeDirectory()
+                .getChildFile(envelope["name"].toString());
+
+            auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+
+            auto chooser = std::make_shared<juce::FileChooser>("Save Envelope Preset",
+                initialFile,
+                "*" + PresetManager::envelopeExtension);
+
+            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+                {
+                    auto file = fc.getResult();
+                    if (file == juce::File())
+                        return;
+
+                    PresetManager::saveEnvelope(envelope, file);
+                });
         };
 
     replaceButton.onClick = [this]()

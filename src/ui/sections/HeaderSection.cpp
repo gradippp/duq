@@ -24,12 +24,18 @@ HeaderSection::HeaderSection()
 
     setupIconButton(undoButton, "undo");
     setupIconButton(redoButton, "redo");
+    setupIconButton(saveProjectButton, "save");
+    setupIconButton(loadProjectButton, "replace");
 
     undoButton.setTooltip("Undo");
     redoButton.setTooltip("Redo");
+    saveProjectButton.setTooltip("Save Project Preset");
+    loadProjectButton.setTooltip("Load Project Preset");
 
     addAndMakeVisible(undoButton);
     addAndMakeVisible(redoButton);
+    addAndMakeVisible(saveProjectButton);
+    addAndMakeVisible(loadProjectButton);
 
     undoButton.onClick = [this]
         {
@@ -41,6 +47,18 @@ HeaderSection::HeaderSection()
         {
             if (redoCallback)
                 redoCallback();
+        };
+
+    saveProjectButton.onClick = [this]
+        {
+            if (onSaveProject)
+                onSaveProject();
+        };
+
+    loadProjectButton.onClick = [this]
+        {
+            if (onLoadProject)
+                onLoadProject();
         };
 }
 
@@ -155,10 +173,10 @@ void HeaderSection::resized()
     auto area = getLocalBounds();
 
     const int buttonSize = 30;
-    const int spacing = 14;
+    const int spacing = 10;
     const int rightInset = 24;
 
-    auto rightArea = area.removeFromRight(140);
+    auto rightArea = area.removeFromRight(200);
     rightArea.removeFromRight(rightInset);
 
     auto buttonArea = rightArea.removeFromLeft(buttonSize);
@@ -169,5 +187,17 @@ void HeaderSection::resized()
 
     buttonArea = rightArea.removeFromLeft(buttonSize);
     redoButton.setBounds(
+        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
+
+    rightArea.removeFromLeft(spacing);
+
+    buttonArea = rightArea.removeFromLeft(buttonSize);
+    saveProjectButton.setBounds(
+        buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
+
+    rightArea.removeFromLeft(spacing);
+
+    buttonArea = rightArea.removeFromLeft(buttonSize);
+    loadProjectButton.setBounds(
         buttonArea.withSizeKeepingCentre(buttonSize, buttonSize));
 }

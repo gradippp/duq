@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "ui/utils/PresetManager.h"
 
 //==============================================================================
 DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
@@ -42,6 +43,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         };
 
     envelopeListSection.setProcessor(p);
+    presetSection.setUndoManager(undoManager);
 
     envelopeListSection.onReplaceRequested = [this](juce::ValueTree env)
         {
@@ -73,6 +75,52 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         {
             if (undoManager.canRedo())
                 undoManager.redo();
+        });
+
+    header.setSaveProjectCallback([this]
+        {
+            auto initialFile = PresetManager::getProjectDirectory()
+                .getChildFile("Project");
+
+            auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
+
+            auto chooser = std::make_shared<juce::FileChooser>("Save Project Preset",
+                initialFile,
+                "*" + PresetManager::projectExtension);
+
+            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+                {
+                    auto file = fc.getResult();
+                    if (file == juce::File())
+                        return;
+
+                    PresetManager::saveProject(audioProcessor.getEnvelopesTree(), file);
+                });
+        });
+
+    header.setLoadProjectCallback([this]
+        {
+            auto initialFile = PresetManager::getProjectDirectory();
+
+            auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+            auto chooser = std::make_shared<juce::FileChooser>("Load Project Preset",
+                initialFile,
+                "*" + PresetManager::projectExtension);
+
+            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
+                {
+                    auto file = fc.getResult();
+                    if (file == juce::File())
+                        return;
+
+                    auto loaded = PresetManager::loadProject(file);
+                    if (loaded.isValid())
+                    {
+                        undoManager.beginNewTransaction("Load Project: " + file.getFileNameWithoutExtension());
+                        audioProcessor.getEnvelopesTree().copyPropertiesAndChildrenFrom(loaded, &undoManager);
+                    }
+                });
         });
 
     startTimerHz(10);
