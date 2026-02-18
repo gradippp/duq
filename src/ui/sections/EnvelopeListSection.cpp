@@ -93,6 +93,20 @@ void EnvelopeListSection::rebuildRowsFromModel()
 
         auto* row = new EnvelopeRowComponent(envTree);
 
+        row->onDeleteRequested = [this, envTree]()
+            {
+                if (!undoManager || !envelopesTree.isValid())
+                    return;
+
+                int index = envelopesTree.indexOf(envTree);
+                if (index < 0)
+                    return;
+
+                undoManager->beginNewTransaction("Delete Envelope");
+                envelopesTree.removeChild(index, undoManager);
+            };
+
+
         row->onNameChanged = [this, i](const juce::String& newName)
             {
                 auto envTree = envelopesTree.getChild(i);
