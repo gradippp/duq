@@ -44,6 +44,26 @@ void GridSection::valueTreePropertyChanged(
         return;
     }
 
+    const auto idZoomX = juce::Identifier("zoomX");
+    const auto idZoomY = juce::Identifier("zoomY");
+    const auto idUniformZoom = juce::Identifier("uniformZoom");
+    const auto idOffsetX = juce::Identifier("offsetX");
+    const auto idOffsetY = juce::Identifier("offsetY");
+
+    if (i == idZoomX || i == idZoomY || i == idUniformZoom || i == idOffsetX || i == idOffsetY)
+    {
+        zoomX = (float)v.getProperty(idZoomX, 1.0f);
+        zoomY = (float)v.getProperty(idZoomY, 1.0f);
+        uniformZoom = (float)v.getProperty(idUniformZoom, 1.0f);
+        offsetX = (float)v.getProperty(idOffsetX, 0.0f);
+        offsetY = (float)v.getProperty(idOffsetY, 0.0f);
+
+        waveform.setViewState(uniformZoom, offsetX, uniformZoom, offsetY);
+        updatePointPositions();
+        repaint();
+        return;
+    }
+
     if (!isDraggingPoint && !isDraggingAnchor)
     {
         // A property change (e.g. curve) in the ValueTree should update
@@ -112,6 +132,8 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
         offsetX = (float)envelope.getProperty("offsetX", 0.0f);
         offsetY = (float)envelope.getProperty("offsetY", 0.0f);
         gridPower = (int)envelope.getProperty("gridPower", 4);
+
+        waveform.setViewState(uniformZoom, offsetX, uniformZoom, offsetY);
     }
 
     rebuildPointComponents();
@@ -229,7 +251,7 @@ void GridSection::mouseDrag(const juce::MouseEvent& e)
         envelope.setProperty("offsetY", offsetY, nullptr);
     }
 
-    waveform.setViewState(uniformZoom, offsetX);
+    waveform.setViewState(uniformZoom, offsetX, uniformZoom, offsetY);
 
     updatePanCursor();
     updatePointPositions();
@@ -420,7 +442,7 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
 
     // Update visuals immediately, but defer writing to the ValueTree to
     // avoid feedback from other listeners that can cause rubber-banding.
-    waveform.setViewState(uniformZoom, offsetX);
+    waveform.setViewState(uniformZoom, offsetX, uniformZoom, offsetY);
     updatePointPositions();
     repaint();
 

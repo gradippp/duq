@@ -14,7 +14,7 @@ public:
         const float* sampleData,
         int bufferSize);
 
-    void setViewState(float zoomX, float offsetX);
+    void setViewState(float zoomX, float offsetX, float zoomY = 1.0f, float offsetY = 0.0f);
 
     void paint(juce::Graphics& g) override;
 
@@ -27,4 +27,6 @@ private:
 
     float zoomX = 1.0f;
     float offsetX = 0.0f;
+    float zoomY = 1.0f;
+    float offsetY = 0.0f;
 };
