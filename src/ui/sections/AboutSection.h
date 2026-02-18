@@ -16,7 +16,7 @@ public:
 private:
     juce::DrawableButton closeButton{ "close", juce::DrawableButton::ImageFitted };
     juce::Label titleLabel{ "title", "DUQ" };
-    juce::Label versionLabel{ "version", "VERSION 0.0.0" };
+    juce::Label versionLabel{ "version", "" };
     
     struct ModernScrollbarLF : public juce::LookAndFeel_V4
     {
@@ -44,8 +44,8 @@ private:
 
     juce::Viewport viewport;
 
-    juce::HyperlinkButton githubLink{ "GitHub Repository", juce::URL("https://github.com/agradip/Duq") };
-    juce::HyperlinkButton websiteLink{ "Plugin Website", juce::URL("https://agradip.fyi/duq") };
+    juce::HyperlinkButton githubLink{ "GitHub Repository", juce::URL(PROJECT_GITHUB_URL) };
+    juce::HyperlinkButton websiteLink{ "Plugin Website", juce::URL(PROJECT_URI) };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutSection)
 };

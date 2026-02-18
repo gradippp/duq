@@ -10,10 +10,27 @@ option(BUILD_LV2 "Build LV2 plugin format" ON)
 
 project(Duq VERSION 0.0.0)
 
+# Get the current git hash
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE GIT_RESULT
+    OUTPUT_VARIABLE GIT_COMMIT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(NOT GIT_RESULT EQUAL 0)
+    set(GIT_COMMIT "unknown")
+endif()
+
 set(PROJECT_URI "https://agradip.fyi/duq")
+set(PROJECT_GITHUB_URL "https://github.com/gradippp/duq")
 
 add_compile_definitions(
     PROJECT_VERSION="${PROJECT_VERSION}"
+    PROJECT_GIT_COMMIT="${GIT_COMMIT}"
+    PROJECT_URI="${PROJECT_URI}"
+    PROJECT_GITHUB_URL="${PROJECT_GITHUB_URL}"
     PROJECT_URI="${PROJECT_URI}"
 )
 
