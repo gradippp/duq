@@ -1,8 +1,9 @@
 #include "PresetSection.h"
 #include "../utils/IconFactory.h"
-#include "../utils/PresetManager.h"
+#include "../../utils/PresetManager.h"
 #include "../utils/FontManager.h"
 #include "../../PluginProcessor.h"
+#include "../../Globals.h"
 
 PresetSection::PresetSection(DuqAudioProcessor& p)
     : processor(p)
@@ -40,7 +41,14 @@ PresetSection::~PresetSection()
 void PresetSection::setMode(Mode newMode)
 {
     mode = newMode;
-    titleLabel.setText(mode == Mode::Envelope ? "SELECT ENVELOPE PRESET" : "SELECT PROJECT PRESET", juce::dontSendNotification);
+    
+    if (mode == Mode::Envelope)
+        titleLabel.setText("SELECT ENVELOPE PRESET", juce::dontSendNotification);
+    else if (mode == Mode::Project)
+        titleLabel.setText("SELECT PROJECT PRESET", juce::dontSendNotification);
+    else if (mode == Mode::Import)
+        titleLabel.setText("IMPORT ENVELOPE PRESET", juce::dontSendNotification);
+
     refreshPresetList();
 }
 
@@ -48,13 +56,13 @@ void PresetSection::refreshPresetList()
 {
     presetFiles.clear();
     
-    auto dir = (mode == Mode::Envelope) 
-        ? PresetManager::getEnvelopeDirectory() 
-        : PresetManager::getProjectDirectory();
+    auto dir = (mode == Mode::Project) 
+        ? PresetManager::getProjectDirectory() 
+        : PresetManager::getEnvelopeDirectory();
 
-    auto extension = (mode == Mode::Envelope)
-        ? PresetManager::envelopeExtension
-        : PresetManager::projectExtension;
+    auto extension = (mode == Mode::Project)
+        ? PresetManager::projectExtension
+        : PresetManager::envelopeExtension;
     
     if (dir.exists() && dir.isDirectory())
     {
@@ -93,7 +101,7 @@ void PresetSection::paintListBoxItem(int rowNumber, juce::Graphics& g, int width
     g.setFont(FontManager::getInterRegular(14.0f));
     
     juce::String fileName = presetFiles[rowNumber].getFileNameWithoutExtension();
-    if (mode == Mode::Envelope && fileName.endsWith(".duq")) 
+    if ((mode == Mode::Envelope || mode == Mode::Import) && fileName.endsWith(".duq")) 
          fileName = fileName.substring(0, fileName.length() - 4);
 
     g.drawText(fileName, area.reduced(10, 0), juce::Justification::centredLeft, true);
@@ -117,6 +125,73 @@ void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
 
             targetEnvelope.copyPropertiesAndChildrenFrom(loaded, undoManager);
             
+            if (onClose)
+                onClose();
+        }
+        else
+        {
+            PresetManager::showCorruptPresetAlert();
+        }
+    }
+    else if (mode == Mode::Import)
+    {
+        auto loaded = PresetManager::loadEnvelope(presetFiles[rowNumber]);
+        if (loaded.isValid())
+        {
+            auto envelopesTree = processor.getEnvelopesTree();
+            
+            if (undoManager)
+                undoManager->beginNewTransaction("Import Envelope: " + presetFiles[rowNumber].getFileNameWithoutExtension());
+
+            // 1. Handle name collisions
+            auto baseName = loaded.getProperty("name", presetFiles[rowNumber].getFileNameWithoutExtension()).toString();
+            int counter = 1;
+            juce::String finalName = baseName;
+            bool nameExists = true;
+            
+            while (nameExists) 
+            {
+                nameExists = false;
+                for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 
+                {
+                    if (envelopesTree.getChild(i)["name"].toString() == finalName) 
+                    {
+                        nameExists = true;
+                        break;
+                    }
+                }
+                if (nameExists) 
+                    finalName = baseName + " " + juce::String(++counter);
+            }
+            loaded.setProperty("name", finalName, nullptr);
+
+            // 2. Find next free trigger note
+            int nextNote = Theme::Defaults::triggerNote;
+            for (int n = Theme::Defaults::triggerNote; n <= 127; ++n) 
+            {
+                bool isNoteUsed = false;
+                for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 
+                {
+                    if ((int)envelopesTree.getChild(i)["triggerNote"] == n) 
+                    {
+                        isNoteUsed = true;
+                        break;
+                    }
+                }
+                if (!isNoteUsed) 
+                {
+                    nextNote = n;
+                    break;
+                }
+            }
+            loaded.setProperty("triggerNote", nextNote, nullptr);
+
+            const int newIndex = envelopesTree.getNumChildren();
+            envelopesTree.addChild(loaded, -1, undoManager);
+            
+            if (onEnvelopeImported)
+                onEnvelopeImported(newIndex);
+
             if (onClose)
                 onClose();
         }

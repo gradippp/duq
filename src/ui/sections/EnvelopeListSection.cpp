@@ -4,7 +4,7 @@
 #include "../utils/FontManager.h"
 #include "../../model/EnvelopeData.h"
 #include "../../Globals.h"
-#include "../utils/PresetManager.h"
+#include "../../utils/PresetManager.h"
 #include "../utils/IconFactory.h"
 
 juce::Font EnvelopeListSection::CustomButtonLookAndFeel::getTextButtonFont(juce::TextButton&, int)
@@ -113,60 +113,8 @@ EnvelopeListSection::EnvelopeListSection()
 
     importButton.onClick = [this]()
         {
-            if (!undoManager || !envelopesTree.isValid())
-                return;
-
-            auto fc = std::make_unique<juce::FileChooser>(
-                "Import Envelope",
-                PresetManager::getEnvelopeDirectory(),
-                "*" + PresetManager::envelopeExtension);
-
-            fc->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-                [this, fc_ptr = fc.release()](const juce::FileChooser& chooser) mutable
-                {
-                    std::unique_ptr<juce::FileChooser> fc(fc_ptr);
-                    auto file = chooser.getResult();
-                    if (file.existsAsFile())
-                    {
-                        auto importedEnv = PresetManager::loadEnvelope(file);
-                        if (importedEnv.isValid())
-                        {
-                            undoManager->beginNewTransaction("Import Envelope");
-                            
-                            // Ensure the name is unique if needed, or keep original
-                            if (importedEnv.hasProperty("name")) {
-                                auto baseName = importedEnv["name"].toString();
-                                int counter = 1;
-                                juce::String finalName = baseName;
-                                bool nameExists = true;
-                                while (nameExists) {
-                                    nameExists = false;
-                                    for (int i = 0; i < envelopesTree.getNumChildren(); ++i) {
-                                        if (envelopesTree.getChild(i)["name"].toString() == finalName) {
-                                            nameExists = true;
-                                            break;
-                                        }
-                                    }
-                                    if (nameExists) {
-                                        finalName = baseName + " " + juce::String(++counter);
-                                    }
-                                }
-                                importedEnv.setProperty("name", finalName, nullptr);
-                            }
-
-                            // Ensure trigger note is free
-                            importedEnv.setProperty("triggerNote", getNextFreeNote(Theme::Defaults::triggerNote), nullptr);
-
-                            const int newIndex = envelopesTree.getNumChildren();
-                            envelopesTree.addChild(importedEnv, -1, undoManager);
-                            selectEnvelope(newIndex);
-                        }
-                        else
-                        {
-                            PresetManager::showCorruptPresetAlert();
-                        }
-                    }
-                });
+            if (onImportRequested)
+                onImportRequested();
         };
 }
 

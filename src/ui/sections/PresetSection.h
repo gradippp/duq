@@ -11,7 +11,8 @@ public:
     enum class Mode
     {
         Envelope,
-        Project
+        Project,
+        Import
     };
 
     PresetSection(DuqAudioProcessor& p);
@@ -26,6 +27,7 @@ public:
 
     std::function<void()> onClose;
     std::function<void(juce::String)> onProjectLoaded;
+    std::function<void(int)> onEnvelopeImported;
 
     // ListBoxModel overrides
     int getNumRows() override;

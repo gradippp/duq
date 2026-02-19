@@ -8,7 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "ui/utils/PresetManager.h"
+#include "utils/PresetManager.h"
 #include "model/EnvelopeData.h"
 #include "Globals.h"
 
@@ -57,12 +57,25 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             resized();
         };
 
+    envelopeListSection.onImportRequested = [this]()
+        {
+            presetSection.setMode(PresetSection::Mode::Import);
+            gridSection.setVisible(false);
+            presetSection.setVisible(true);
+            resized();
+        };
+
     presetSection.setVisible(false);
     presetSection.onClose = [this]()
         {
             presetSection.setVisible(false);
             gridSection.setVisible(true);
             resized();
+        };
+
+    presetSection.onEnvelopeImported = [this](int newIndex)
+        {
+            envelopeListSection.selectEnvelope(newIndex);
         };
 
     presetSection.onProjectLoaded = [this](juce::String name)

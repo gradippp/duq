@@ -21,6 +21,8 @@ public:
     static juce::ValueTree loadEnvelope(const juce::File& file);
     static juce::ValueTree loadProject(const juce::File& file);
 
+    static void importEnvelope (juce::ValueTree& parent, juce::UndoManager* undoManager, std::function<void(int)> onComplete);
+
     static void showCorruptPresetAlert();
 
 private:

@@ -1,4 +1,5 @@
 #include "PresetManager.h"
+#include "../Globals.h"
 
 const juce::String PresetManager::envelopeExtension = ".duq.env";
 const juce::String PresetManager::projectExtension = ".duq";
@@ -103,6 +104,85 @@ juce::ValueTree PresetManager::loadEnvelope(const juce::File& file)
 juce::ValueTree PresetManager::loadProject(const juce::File& file)
 {
     return loadValueTreeFromXml(file, juce::Identifier("ENVELOPES"));
+}
+
+void PresetManager::importEnvelope(juce::ValueTree& envelopesTree, juce::UndoManager* undoManager, std::function<void(int)> onComplete)
+{
+    if (!envelopesTree.isValid())
+        return;
+
+    auto chooser = std::make_shared<juce::FileChooser>(
+        "Import Envelope",
+        getEnvelopeDirectory(),
+        "*" + envelopeExtension);
+
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [envelopesTree, undoManager, onComplete, chooser](const juce::FileChooser& fc) mutable
+        {
+            auto file = fc.getResult();
+            if (file.existsAsFile())
+            {
+                auto importedEnv = loadEnvelope(file);
+                if (importedEnv.isValid())
+                {
+                    if (undoManager)
+                        undoManager->beginNewTransaction("Import Envelope");
+
+                    // 1. Handle name collisions
+                    auto baseName = importedEnv.getProperty("name", "Imported").toString();
+                    int counter = 1;
+                    juce::String finalName = baseName;
+                    bool nameExists = true;
+                    
+                    while (nameExists) 
+                    {
+                        nameExists = false;
+                        for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 
+                        {
+                            if (envelopesTree.getChild(i)["name"].toString() == finalName) 
+                            {
+                                nameExists = true;
+                                break;
+                            }
+                        }
+                        if (nameExists) 
+                            finalName = baseName + " " + juce::String(++counter);
+                    }
+                    importedEnv.setProperty("name", finalName, nullptr);
+
+                    // 2. Find next free trigger note
+                    int nextNote = Theme::Defaults::triggerNote;
+                    for (int n = Theme::Defaults::triggerNote; n <= 127; ++n) 
+                    {
+                        bool isNoteUsed = false;
+                        for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 
+                        {
+                            if ((int)envelopesTree.getChild(i)["triggerNote"] == n) 
+                            {
+                                isNoteUsed = true;
+                                break;
+                            }
+                        }
+                        if (!isNoteUsed) 
+                        {
+                            nextNote = n;
+                            break;
+                        }
+                    }
+                    importedEnv.setProperty("triggerNote", nextNote, nullptr);
+
+                    const int newIndex = envelopesTree.getNumChildren();
+                    envelopesTree.addChild(importedEnv, -1, undoManager);
+                    
+                    if (onComplete)
+                        onComplete(newIndex);
+                }
+                else
+                {
+                    showCorruptPresetAlert();
+                }
+            }
+        });
 }
 
 void PresetManager::showCorruptPresetAlert()
