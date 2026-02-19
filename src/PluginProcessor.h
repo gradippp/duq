@@ -79,6 +79,7 @@ public:
     void triggerEnvelope(int index) { manualTriggerIndex = index; }
 
     std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
+    double getPhaseIncrement(int envelopeIndex) const;
 
 private:
     //==============================================================================

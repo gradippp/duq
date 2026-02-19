@@ -361,6 +361,11 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     const int delaySize = delayBuffer.getNumSamples();
 
+    // Pre-calculate increments for all envelopes
+    std::vector<double> increments;
+    for (int i = 0; i < (int)dspState.envelopes.size(); ++i)
+        increments.push_back(getPhaseIncrement(i));
+
     for (int i = 0; i < numSamples; ++i)
     {
         // --- Write to Delay Buffer ---
@@ -395,29 +400,23 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 // Directly use raw envelope value for now (ignoring depth/smooth as requested)
                 sampleGain *= juce::jlimit(0.0f, 1.0f, envVal);
 
-                // Advance phase
-                double currentRate = env.rate;
-                
-                if (!env.isFrequencyMode)
+                // Advance phase if not at end
+                if (v.currentPhase < 1.0)
                 {
-                    if (auto* playhead = getPlayHead())
+                    v.currentPhase += increments[v.envelopeIndex];
+                    
+                    if (v.currentPhase >= 1.0)
                     {
-                        if (auto opt = playhead->getPosition())
-                        {
-                            if (auto bpm = opt->getBpm())
-                            {
-                                double beatsPerSecond = *bpm / 60.0;
-                                currentRate = env.rate * beatsPerSecond;
-                            }
-                        }
+                        v.currentPhase = 1.0;
+                        // If the final gain is effectively 1.0, deactivate immediately to free voice.
+                        // Otherwise it stays active to hold the final ducking level.
+                        if (envVal >= 0.999f)
+                            v.isActive = false;
                     }
                 }
-
-                v.currentPhase += currentRate / sampleRate;
-                
-                // One-Shot Deactivation
-                if (v.currentPhase >= 1.0)
+                else if (envVal >= 0.999f)
                 {
+                    // Voice is at the end and not doing anything, free it.
                     v.isActive = false;
                 }
             }
@@ -494,6 +493,35 @@ std::vector<double> DuqAudioProcessor::getActivePhasesForEnvelope(int envelopeIn
     }
 
     return phases;
+}
+
+double DuqAudioProcessor::getPhaseIncrement(int envelopeIndex) const
+{
+    if (envelopeIndex < 0 || envelopeIndex >= (int)dspState.envelopes.size())
+        return 0.0;
+
+    const auto& env = dspState.envelopes[envelopeIndex];
+    double sampleRate = getSampleRate();
+    if (sampleRate <= 0) return 0.0;
+
+    double currentRate = env.rate;
+
+    if (!env.isFrequencyMode)
+    {
+        if (auto* playhead = getPlayHead())
+        {
+            if (auto opt = playhead->getPosition())
+            {
+                if (auto bpm = opt->getBpm())
+                {
+                    double beatsPerSecond = *bpm / 60.0;
+                    currentRate = env.rate * beatsPerSecond;
+                }
+            }
+        }
+    }
+
+    return currentRate / sampleRate;
 }
 
 //==============================================================================

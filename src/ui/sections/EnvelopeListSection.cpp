@@ -73,6 +73,7 @@ EnvelopeListSection::~EnvelopeListSection()
 
 void EnvelopeListSection::setProcessor(DuqAudioProcessor& p)
 {
+    processor = &p;
     envelopesTree = p.getEnvelopesTree();
 
     envelopesTree.addListener(this);
@@ -146,6 +147,8 @@ void EnvelopeListSection::rebuildRowsFromModel()
         row->onSelected = [this, i]()
             {
                 selectEnvelope(i);
+                if (processor != nullptr)
+                    processor->triggerEnvelope(i);
             };
 
         rows.add(row);

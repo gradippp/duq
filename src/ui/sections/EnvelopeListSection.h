@@ -43,6 +43,7 @@ private:
     void rebuildRowsFromModel();
 
     juce::ValueTree envelopesTree;
+    DuqAudioProcessor* processor = nullptr;
 
     juce::Viewport viewport;
     juce::Component rowContainer;
