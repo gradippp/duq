@@ -15,6 +15,8 @@ public:
     void setActive(bool shouldBeActive);
     void setSelected(bool shouldBeSelected);
 
+    void setUndoManager(juce::UndoManager* um) { undoManager = um; }
+
     std::function<void()> onDeleteRequested;
     std::function<void()> onReplaceRequested;
     std::function<void()> onSelected;
@@ -32,10 +34,13 @@ private:
     juce::DrawableButton replaceButton{ "replace", juce::DrawableButton::ImageFitted };
     juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
 
+    juce::UndoManager* undoManager = nullptr;
+
     bool isActive = false;
     bool isHovered = false;
     bool isSelected = false;
 
+    void showContextMenu();
     void refreshFromTree();
 
     // ValueTree::Listener

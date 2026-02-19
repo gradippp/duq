@@ -5,11 +5,20 @@ class SelectableLabel : public juce::Label
 {
 public:
     std::function<void()> onSingleClick;
+    std::function<void()> onRightClick;
 
     void mouseDown(const juce::MouseEvent& e) override
     {
-        if (onSingleClick)
-            onSingleClick();
+        if (e.mods.isRightButtonDown())
+        {
+            if (onRightClick)
+                onRightClick();
+        }
+        else
+        {
+            if (onSingleClick)
+                onSingleClick();
+        }
 
         juce::Label::mouseDown(e);
     }

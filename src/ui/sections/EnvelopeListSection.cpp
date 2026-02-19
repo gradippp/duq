@@ -99,6 +99,7 @@ void EnvelopeListSection::rebuildRowsFromModel()
         auto envTree = envelopesTree.getChild(i);
 
         auto* row = new EnvelopeRowComponent(envTree);
+        row->setUndoManager(undoManager);
 
         row->onDeleteRequested = [this, envTree]()
             {

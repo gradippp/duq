@@ -47,6 +47,11 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
                 onSelected();
         };
 
+    nameLabel.onRightClick = [this]
+        {
+            showContextMenu();
+        };
+
     nameLabel.onEditorHide = [this]
         {
             auto newName = nameLabel.getText().trim();
@@ -153,6 +158,17 @@ void EnvelopeRowComponent::refreshFromTree()
     int note = (int)envelope["triggerNote"];
     noteButton.setButtonText(midiNoteNumberToName(note));
 
+    bool isDisabled = (bool)envelope.getProperty("disabled", false);
+
+    nameLabel.setColour(juce::Label::textColourId,
+        isDisabled ? juce::Colours::grey : juce::Colours::white);
+
+    float alpha = isDisabled ? 0.4f : 1.0f;
+    noteButton.setAlpha(alpha);
+    saveButton.setAlpha(alpha);
+    replaceButton.setAlpha(alpha);
+    deleteButton.setAlpha(alpha);
+
     repaint();
 }
 
@@ -177,11 +193,40 @@ void EnvelopeRowComponent::setActive(bool shouldBeActive)
 
 void EnvelopeRowComponent::mouseDown(const juce::MouseEvent& e)
 {
-    if (e.mods.isLeftButtonDown())
+    if (e.mods.isRightButtonDown())
+    {
+        showContextMenu();
+    }
+    else if (e.mods.isLeftButtonDown())
     {
         if (onSelected)
             onSelected();
     }
+}
+
+void EnvelopeRowComponent::showContextMenu()
+{
+    bool isDisabled = (bool)envelope.getProperty("disabled", false);
+
+    juce::PopupMenu m;
+    m.addItem(1, "Rename");
+    m.addItem(2, isDisabled ? "Enable" : "Disable");
+
+    m.showMenuAsync(juce::PopupMenu::Options(), [this, isDisabled](int result)
+    {
+        if (result == 1)
+        {
+            nameLabel.showEditor();
+        }
+        else if (result == 2)
+        {
+            if (undoManager != nullptr)
+                undoManager->beginNewTransaction(isDisabled ? "Enable Envelope" : "Disable Envelope");
+
+            envelope.setProperty("disabled", !isDisabled, undoManager);
+            repaint();
+        }
+    });
 }
 
 void EnvelopeRowComponent::mouseEnter(const juce::MouseEvent&)
@@ -199,6 +244,7 @@ void EnvelopeRowComponent::mouseExit(const juce::MouseEvent&)
 void EnvelopeRowComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
+    bool isDisabled = (bool)envelope.getProperty("disabled", false);
 
     // ===============================
     // Background
@@ -211,6 +257,9 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     else if (isHovered)
         bgColour = juce::Colours::darkgrey.withAlpha(0.35f);
 
+    if (isDisabled)
+        bgColour = bgColour.withAlpha(0.1f);
+
     g.setColour(bgColour);
     g.fillRect(bounds);
 
@@ -218,18 +267,20 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Envelope name
     // ===============================
 
-    g.setColour(juce::Colours::white);
+    g.setColour(isDisabled ? juce::Colours::grey : juce::Colours::white);
     g.setFont(FontManager::getInterRegular(13.0f));
 
     auto nameArea = bounds;
     nameArea.removeFromLeft(noteButton.getRight());
     nameArea.removeFromRight(90);
 
+    // (Text is drawn by Label component, but we set its color in refreshFromTree)
+
     // ===============================
     // MIDI Trigger Indicator (green dot)
     // ===============================
 
-    if (isActive)   // <-- ONLY for MIDI trigger now
+    if (isActive && !isDisabled)   // <-- ONLY for MIDI trigger now
     {
         const int dotSize = 6;
 
@@ -250,6 +301,13 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
         (float)getHeight() - 1.0f,
         (float)getWidth(),
         (float)getHeight() - 1.0f);
+
+    // Overlay for disabled state
+    if (isDisabled)
+    {
+        g.setColour(juce::Colours::black.withAlpha(0.2f));
+        g.fillRect(bounds);
+    }
 }
 
 void EnvelopeRowComponent::resized()
