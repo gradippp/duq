@@ -120,6 +120,10 @@ void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
             if (onClose)
                 onClose();
         }
+        else
+        {
+            PresetManager::showCorruptPresetAlert();
+        }
     }
     else // Mode::Project
     {
@@ -137,6 +141,10 @@ void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
 
             if (onClose)
                 onClose();
+        }
+        else
+        {
+            PresetManager::showCorruptPresetAlert();
         }
     }
 }

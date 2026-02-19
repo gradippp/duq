@@ -21,6 +21,8 @@ public:
     static juce::ValueTree loadEnvelope(const juce::File& file);
     static juce::ValueTree loadProject(const juce::File& file);
 
+    static void showCorruptPresetAlert();
+
 private:
     static bool saveValueTreeToXml(const juce::ValueTree& vt, const juce::File& file);
     static juce::ValueTree loadValueTreeFromXml(const juce::File& file, const juce::Identifier& expectedType);
