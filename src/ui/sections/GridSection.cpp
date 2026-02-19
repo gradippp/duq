@@ -774,13 +774,40 @@ void GridSection::rebuildPointComponents()
 
             auto& grid = *safeThis;
 
-            pos.x = juce::jlimit(0.0f, 1.0f, pos.x);
+            auto pointsVT = grid.envelope.getChildWithName("POINTS");
+            if (!pointsVT.isValid())
+                return;
+
+            const int index = pointsVT.indexOf(node);
+            const int numPoints = pointsVT.getNumChildren();
+
+            // Handle X restrictions
+            if (index == 0)
+            {
+                pos.x = 0.0f;
+            }
+            else if (index == numPoints - 1)
+            {
+                pos.x = 1.0f;
+            }
+            else
+            {
+                // Constrain to neighbors
+                float leftX = (float)pointsVT.getChild(index - 1)["x"] + 0.0001f;
+                float rightX = (float)pointsVT.getChild(index + 1)["x"] - 0.0001f;
+                pos.x = juce::jlimit(leftX, rightX, pos.x);
+            }
+
             pos.y = juce::jlimit(0.0f, 1.0f, pos.y);
 
             if (snapMode)
             {
                 float snapStep = 1.0f / (1 << grid.gridPower);
-                pos.x = grid.snapValue(pos.x, snapStep);
+                
+                // Only snap X if not an endpoint
+                if (index > 0 && index < numPoints - 1)
+                    pos.x = grid.snapValue(pos.x, snapStep);
+
                 pos.y = grid.snapValue(pos.y, snapStep);
             }
 
@@ -791,21 +818,15 @@ void GridSection::rebuildPointComponents()
             compPtr->setNormalizedPosition(pos);
 
             // ---- LIVE ANCHOR UPDATE ----
-            auto points = grid.envelope.getChildWithName("POINTS");
             auto segments = grid.envelope.getChildWithName("SEGMENTS");
-            if (!points.isValid() || !segments.isValid())
+            if (!segments.isValid())
                 return;
 
-            int index = points.indexOf(node);
-            if (index < 0)
-                return;
-
-            const int numPoints = points.getNumChildren();
-
+            // (index already calculated above)
             // Update anchor BEFORE this point
             if (index > 0 && (size_t)(index - 1) < grid.anchorComponents.size())
             {
-                auto prevPointNode = points.getChild(index - 1);
+                auto prevPointNode = pointsVT.getChild(index - 1);
                 auto segmentNode = segments.getChild(index - 1);
 
                 float x1 = (prevPointNode == grid.activeDragNode)
@@ -836,7 +857,7 @@ void GridSection::rebuildPointComponents()
             // Update anchor AFTER this point
             if (index < numPoints - 1 && (size_t)index < grid.anchorComponents.size())
             {
-                auto nextPointNode = points.getChild(index + 1);
+                auto nextPointNode = pointsVT.getChild(index + 1);
                 auto segmentNode = segments.getChild(index);
 
                 float x1 = pos.x;
