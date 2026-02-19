@@ -5,6 +5,19 @@
 #include "../components/ControlKnobComponent.h"
 #include "../components/SelectableLabel.h"
 #include "../utils/FlatKnobLookAndFeel.h"
+#include "../../Globals.h"
+
+class CompactTimingSlider : public juce::Slider
+{
+public:
+    CompactTimingSlider(const juce::String& label);
+    void paint(juce::Graphics& g) override;
+    void mouseDown(const juce::MouseEvent& e) override;
+
+private:
+    juce::String labelName;
+    void showValueEntryDialog();
+};
 
 class HeaderSection : public juce::Component
 {
@@ -45,8 +58,8 @@ private:
     SelectableLabel presetNameLabel;
     SelectableLabel brandLabel;
 
-    juce::Slider lookaheadSlider;
-    juce::Slider lookbehindSlider;
+    CompactTimingSlider lookaheadSlider;
+    CompactTimingSlider lookbehindSlider;
 
     std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
     std::unique_ptr<ControlKnobComponent> mixKnob;

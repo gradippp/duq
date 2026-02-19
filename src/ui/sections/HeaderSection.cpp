@@ -1,9 +1,69 @@
 #include "HeaderSection.h"
 #include "../utils/IconFactory.h"
 #include "../utils/FontManager.h"
-#include "../../Globals.h"
+
+CompactTimingSlider::CompactTimingSlider(const juce::String& label) : labelName(label)
+{
+    setSliderStyle(juce::Slider::LinearBarVertical);
+    setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
+    setRange(0.0, 100.0, 0.1);
+}
+
+void CompactTimingSlider::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    
+    // Background
+    g.setColour(Theme::Colours::background.withAlpha(0.4f));
+    g.fillRoundedRectangle(bounds, 2.0f);
+    
+    // Label
+    g.setColour(Theme::Colours::textLabel);
+    g.setFont(FontManager::getBarlowBold(10.0f));
+    auto labelArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f).reduced(4, 0);
+    g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
+    
+    // Value
+    g.setColour(Theme::Colours::textMain);
+    g.setFont(FontManager::getJetBrainsMono(11.0f));
+    g.drawFittedText(juce::String(getValue(), 1) + " ms", bounds.reduced(4, 0).toNearestInt(), juce::Justification::centredRight, 1);
+    
+    // Border
+    g.setColour(Theme::Colours::border.withAlpha(0.3f));
+    g.drawRoundedRectangle(getLocalBounds().toFloat(), 2.0f, 1.0f);
+}
+
+void CompactTimingSlider::mouseDown(const juce::MouseEvent& e)
+{
+    if (e.mods.isRightButtonDown())
+    {
+        showValueEntryDialog();
+        return;
+    }
+    juce::Slider::mouseDown(e);
+}
+
+void CompactTimingSlider::showValueEntryDialog()
+{
+    auto* window = new juce::AlertWindow("Enter Value", "Type a new value (ms):", juce::AlertWindow::NoIcon);
+    window->addTextEditor("value", juce::String(getValue()));
+    window->addButton("OK", 1);
+    window->addButton("Cancel", 0);
+    
+    window->enterModalState(true, juce::ModalCallbackFunction::create([this, window](int result) {
+        if (result == 1)
+        {
+            auto val = window->getTextEditor("value")->getText().getDoubleValue();
+            setValue(val, juce::sendNotification);
+        }
+        delete window;
+    }));
+}
 
 HeaderSection::HeaderSection()
+    : lookaheadSlider("LOOKAHEAD"),
+      lookbehindSlider("LOOKBEHIND")
 {
     auto setupIconButton = [](juce::DrawableButton& button,
         const juce::String& iconName)
@@ -63,18 +123,8 @@ HeaderSection::HeaderSection()
     initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
 
     // --- Lookahead / Lookbehind ---
-    auto setupTimingSlider = [this](juce::Slider& s, const juce::String& tooltip)
-    {
-        s.setSliderStyle(juce::Slider::LinearBarVertical);
-        s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-        s.setTooltip(tooltip);
-        s.setColour(juce::Slider::trackColourId, juce::Colours::transparentBlack);
-        s.setColour(juce::Slider::backgroundColourId, juce::Colours::transparentBlack);
-        addAndMakeVisible(s);
-    };
-
-    setupTimingSlider(lookaheadSlider, "Lookahead (ms) - Delays audio to duck earlier");
-    setupTimingSlider(lookbehindSlider, "Lookbehind (ms) - Delays envelope trigger");
+    addAndMakeVisible(lookaheadSlider);
+    addAndMakeVisible(lookbehindSlider);
 
     lookaheadSlider.onValueChange = [this] { repaint(); };
     lookbehindSlider.onValueChange = [this] { repaint(); };
@@ -153,28 +203,6 @@ void HeaderSection::paint(juce::Graphics& g)
     g.fillRoundedRectangle(centerArea, 2.0f);
     g.setColour(Theme::Colours::border.withAlpha(0.5f));
     g.drawRoundedRectangle(centerArea, 2.0f, 1.0f);
-
-    // ---------- Slider Labels ----------
-    g.setFont(FontManager::getBarlowBold(10.0f));
-    
-    auto drawInteractiveLabel = [&](juce::Slider& s, const juce::String& name)
-    {
-        if (!s.isVisible()) return;
-        
-        auto b = s.getBounds().toFloat();
-        
-        // Draw Name
-        g.setColour(Theme::Colours::textDimmed);
-        g.drawText(name, b.withY(b.getY() - 12).withHeight(12), juce::Justification::centred);
-        
-        // Draw Value
-        g.setColour(Theme::Colours::textMain.withAlpha(0.9f));
-        g.setFont(FontManager::getJetBrainsMono(12.0f));
-        g.drawText(juce::String(s.getValue(), 1) + " ms", b, juce::Justification::centred);
-    };
-
-    drawInteractiveLabel(lookaheadSlider, "LOOKAHEAD");
-    drawInteractiveLabel(lookbehindSlider, "LOOKBEHIND");
 }
 
 //==============================================================================
@@ -186,44 +214,37 @@ void HeaderSection::resized()
     // --- Left Brand ---
     brandLabel.setBounds(area.removeFromLeft(100).reduced(15, 0));
 
-    // --- Timing Sliders (between Brand and Center) ---
-    auto timingArea = area.removeFromLeft(120);
-    int sliderHeight = 12;
-    lookaheadSlider.setBounds(timingArea.removeFromTop(getHeight() / 2).withSizeKeepingCentre(100, sliderHeight).translated(0, 5));
-    lookbehindSlider.setBounds(timingArea.withSizeKeepingCentre(100, sliderHeight).translated(0, 5));
-
     const int buttonSize = 24;
-    const int spacing = 4;
+    const int spacing = 6;
+    const int timingWidth = 140;
+    const int timingHeight = 20;
+    const int timingGap = 2;
+    const int bayWidth = 280;
 
-    // --- Center Preset Group ---
-    // [Name Bay (280px)] [Init] [Save]
-    auto centerGroupArea = getLocalBounds().withSizeKeepingCentre(400, getHeight());
-    
-    // Name Bay centered
-    int bayWidth = 280;
-    auto bayRect = centerGroupArea.withSizeKeepingCentre(bayWidth, 28);
-    presetNameLabel.setBounds(bayRect);
-    
-    // Init and Save next to the bay
-    auto initPos = bayRect.getRelativePoint(1.0f, 0.5f).translated(spacing, -buttonSize/2);
-    initPresetButton.setBounds(initPos.x, initPos.y, buttonSize, buttonSize);
+    // Center Preset Group Rect
+    auto centerBay = getLocalBounds().withSizeKeepingCentre(bayWidth, 28);
+    presetNameLabel.setBounds(centerBay);
 
-    auto savePos = initPos.translated(buttonSize + spacing, 0);
-    saveProjectButton.setBounds(savePos.x, savePos.y, buttonSize, buttonSize);
+    // Timing Sliders stacked to the left of the bay
+    int stackX = centerBay.getX() - spacing - timingWidth;
+    int totalStackHeight = (timingHeight * 2) + timingGap;
+    int stackY = centerBay.getCentreY() - totalStackHeight / 2;
 
-    // --- Right Tools Area ---
+    lookaheadSlider.setBounds(stackX, stackY, timingWidth, timingHeight);
+    lookbehindSlider.setBounds(stackX, stackY + timingHeight + timingGap, timingWidth, timingHeight);
+
+    // Init/Save to the right of the bay
+    initPresetButton.setBounds(centerBay.getRight() + spacing, centerBay.getCentreY() - buttonSize/2, buttonSize, buttonSize);
+    saveProjectButton.setBounds(initPresetButton.getRight() + spacing, centerBay.getCentreY() - buttonSize/2, buttonSize, buttonSize);
+
+    // --- Right Area (Mix, Undo/Redo) ---
     auto rightArea = getLocalBounds().removeFromRight(200).reduced(10, 0);
     
-    // Mix Knob at the far right
     if (mixKnob)
-    {
-        auto knobArea = rightArea.removeFromRight(60);
-        mixKnob->setBounds(knobArea.reduced(0, 5));
-    }
+        mixKnob->setBounds(rightArea.removeFromRight(60).reduced(0, 5));
 
-    rightArea.removeFromRight(15); // Gap
+    rightArea.removeFromRight(15);
 
-    // Undo / Redo
     redoButton.setBounds(rightArea.removeFromRight(buttonSize).withSizeKeepingCentre(buttonSize, buttonSize));
     rightArea.removeFromRight(spacing);
     undoButton.setBounds(rightArea.removeFromRight(buttonSize).withSizeKeepingCentre(buttonSize, buttonSize));
