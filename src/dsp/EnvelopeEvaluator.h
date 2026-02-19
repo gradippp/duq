@@ -14,36 +14,50 @@ namespace EnvelopeEvaluator
         if (type == CurveType::Step)
             return (t >= 0.5f) ? 1.0f : 0.0f;
 
-        // Use 0.5 as neutral (linear). Map 0..1 to -1..1
-        float norm = std::max(-1.0f, std::min(1.0f, (curve - 0.5f) * 2.0f));
+        // Map 0..1 to -1..1
+        float ten = std::max(-1.0f, std::min(1.0f, (curve - 0.5f) * 2.0f));
 
-        if (std::abs(norm) < 0.001f)
+        if (std::abs(ten) < 0.001f)
             return t;
 
-        float k = norm * 4.0f; // scale aggression
+        // gate12-style power formula
+        float pwr = std::pow(1.1f, std::abs(ten * 50.0f));
 
         if (type == CurveType::Exponential)
         {
-            if (norm > 0)
-                return 1.0f - std::pow(1.0f - t, 1.0f + k);
+            if (ten >= 0)
+                return std::pow(t, pwr);
             else
-                return std::pow(t, 1.0f - k);
+                return 1.0f - std::pow(1.0f - t, pwr);
         }
         
         if (type == CurveType::Logarithmic)
         {
-            if (norm > 0)
-                return std::pow(t, 1.0f + k);
+            // Inverse of exponential logic
+            if (ten >= 0)
+                return 1.0f - std::pow(1.0f - t, pwr);
             else
-                return 1.0f - std::pow(1.0f - t, 1.0f - k);
+                return std::pow(t, pwr);
         }
 
         if (type == CurveType::SCurve)
         {
-            float s = 1.0f / (1.0f + std::exp(-k * (t - 0.5f) * 10.0f));
-            float s0 = 1.0f / (1.0f + std::exp(-k * (-0.5f) * 10.0f));
-            float s1 = 1.0f / (1.0f + std::exp(-k * (0.5f) * 10.0f));
-            return (s - s0) / (s1 - s0);
+            if (t < 0.5f)
+            {
+                float t2 = t * 2.0f;
+                if (ten >= 0)
+                    return std::pow(t2, pwr) * 0.5f;
+                else
+                    return (1.0f - std::pow(1.0f - t2, pwr)) * 0.5f;
+            }
+            else
+            {
+                float t2 = (t - 0.5f) * 2.0f;
+                if (ten >= 0)
+                    return 0.5f + (1.0f - std::pow(1.0f - t2, pwr)) * 0.5f;
+                else
+                    return 0.5f + std::pow(t2, pwr) * 0.5f;
+            }
         }
 
         return t;
@@ -63,6 +77,10 @@ namespace EnvelopeEvaluator
         // Find segment starting from lastIndex or search
         size_t segmentIndex = lastIndex;
         
+        // Safety: ensure lastIndex is valid for current points
+        if (segmentIndex >= env.points.size() - 1)
+            segmentIndex = 0;
+
         // If phase moved backwards or jump, reset search
         if (phase < (double)env.points[segmentIndex].x)
             segmentIndex = 0;

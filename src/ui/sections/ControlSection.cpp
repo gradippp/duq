@@ -77,6 +77,9 @@ ControlSection::ControlSection()
             envelope.setProperty("smooth", value, undoManager);
         };
 
+    depthKnob.getSlider().setRange(0.0, 100.0, 0.1);
+    smoothKnob.getSlider().setRange(0.0, 100.0, 0.1);
+
     addAndMakeVisible(rateKnob);
     addAndMakeVisible(depthKnob);
     addAndMakeVisible(smoothKnob);

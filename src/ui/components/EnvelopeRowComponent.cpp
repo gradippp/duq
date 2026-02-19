@@ -4,6 +4,7 @@
 #include "../utils/PresetManager.h"
 #include "../utils/FontManager.h"
 #include "../components/PianoModal.h"
+#include "../../PluginProcessor.h"
 
 EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     : envelope(envelopeTree)

@@ -36,14 +36,14 @@ void MeterComponent::timerCallback()
     }
     else if (mode == MeterMode::Envelope)
     {
-        // For reduction/envelope, we expect a value where 1.0 is full reduction
-        // and 0.0 is no reduction. We keep it linear for visual clarity of the shape.
+        // Direct linear mapping for reduction
         normalized = value;
     }
 
     normalized = juce::jlimit(0.0f, 1.0f, normalized);
 
-    smoothedLevel += (normalized - smoothedLevel) * 0.25f;
+    // Faster smoothing to catch blips
+    smoothedLevel += (normalized - smoothedLevel) * 0.4f;
 
     repaint();
 }

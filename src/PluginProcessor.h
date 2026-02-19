@@ -6,7 +6,8 @@
 
 //==============================================================================
 class DuqAudioProcessor : public juce::AudioProcessor,
-    private juce::ValueTree::Listener
+    private juce::ValueTree::Listener,
+    private juce::Timer
 {
 public:
     //==============================================================================
@@ -75,16 +76,21 @@ public:
         return activeNotes[note].load(std::memory_order_relaxed);
     }
 
+    void triggerEnvelope(int index) { manualTriggerIndex = index; }
+
 private:
     //==============================================================================
     void syncToDSP();
     void processMidi(juce::MidiBuffer& midi);
 
     // ValueTree::Listener
-    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { syncToDSP(); }
-    void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { syncToDSP(); }
-    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { syncToDSP(); }
-    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { syncToDSP(); }
+    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { requiresSync = true; }
+    void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { requiresSync = true; }
+    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; }
+    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { requiresSync = true; }
+
+    // Timer
+    void timerCallback() override;
 
     //==============================================================================
     juce::UndoManager undoManager{ 200 };
@@ -97,10 +103,14 @@ private:
     } dspState;
 
     juce::CriticalSection dspLock;
+    std::atomic<bool> requiresSync{ true };
+    std::atomic<int> manualTriggerIndex{ -1 };
+
     std::vector<EnvelopeVoice> voices;
     static constexpr int maxVoices = 32;
 
     juce::LinearSmoothedValue<float> masterGain{ 1.0f };
+    float reductionPeak = 0.0f;
 
     std::atomic<float> inputMeterLevel{ 0.0f };
     std::atomic<float> reductionMeterLevel{ 0.0f };
