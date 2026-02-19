@@ -185,6 +185,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         audioProcessor.getMonitorSamples(),
         audioProcessor.getMonitorBufferSize());
 
+    gridSection.setProcessor(&audioProcessor);
+
     addAndMakeVisible(gridSection);
 
     setSize(900, 600);

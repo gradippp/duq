@@ -403,6 +403,22 @@ juce::UndoManager& DuqAudioProcessor::getUndoManager()
     return undoManager;
 }
 
+std::vector<double> DuqAudioProcessor::getActivePhasesForEnvelope(int envelopeIndex) const
+{
+    std::vector<double> phases;
+    const juce::ScopedLock sl(dspLock);
+
+    for (const auto& v : voices)
+    {
+        if (v.isActive && v.envelopeIndex == envelopeIndex)
+        {
+            phases.push_back(v.currentPhase);
+        }
+    }
+
+    return phases;
+}
+
 //==============================================================================
 const juce::String DuqAudioProcessor::getName() const
 {

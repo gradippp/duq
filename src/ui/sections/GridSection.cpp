@@ -1,4 +1,5 @@
 #include "GridSection.h"
+#include "../../PluginProcessor.h"
 
 float applyCurve(float t, float curve, CurveType type)
 {
@@ -52,6 +53,8 @@ GridSection::GridSection()
     addAndMakeVisible(waveform);
     waveform.toBack();
     setOpaque(false);
+
+    startTimerHz(60); // 60fps animation
 }
 
 GridSection::~GridSection()
@@ -157,6 +160,9 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
     if (envelope.isValid())
     {
         envelope.addListener(this);
+
+        auto parent = envelope.getParent();
+        currentEnvelopeIndex = parent.isValid() ? parent.indexOf(envelope) : -1;
 
         // --- Data Integrity Check ---
         // Ensure SEGMENTS exists and matches point count (N-1)
@@ -523,29 +529,34 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e,
     repaint();
 
     // Debounce writing to the ValueTree to avoid rapid feedback loops.
-    // The actual properties will be committed by timerCallback().
     pendingZoomWrite = true;
+    zoomWriteCounter = 10; // ~160ms at 60Hz
     isUserZooming = true;
-    startTimer(100); // 100ms
 }
 
 void GridSection::timerCallback()
 {
-    stopTimer();
+    // High-frequency repaint for playhead animation
+    repaint();
 
-    if (!pendingZoomWrite || !envelope.isValid())
-        return;
-    if (persistZoomToTree)
+    // Debounced ValueTree write for zoom
+    if (pendingZoomWrite)
     {
-        envelope.setProperty("zoomX", zoomX, nullptr);
-        envelope.setProperty("zoomY", zoomY, nullptr);
-        envelope.setProperty("uniformZoom", uniformZoom, nullptr);
-        envelope.setProperty("offsetX", offsetX, nullptr);
-        envelope.setProperty("offsetY", offsetY, nullptr);
-    }
+        if (--zoomWriteCounter <= 0)
+        {
+            if (envelope.isValid() && persistZoomToTree)
+            {
+                envelope.setProperty("zoomX", zoomX, nullptr);
+                envelope.setProperty("zoomY", zoomY, nullptr);
+                envelope.setProperty("uniformZoom", uniformZoom, nullptr);
+                envelope.setProperty("offsetX", offsetX, nullptr);
+                envelope.setProperty("offsetY", offsetY, nullptr);
+            }
 
-    pendingZoomWrite = false;
-    isUserZooming = false;
+            pendingZoomWrite = false;
+            isUserZooming = false;
+        }
+    }
 }
 
 void GridSection::paint(juce::Graphics& g)
@@ -652,6 +663,28 @@ void GridSection::paintOverChildren(juce::Graphics& g)
                               juce::Colours::white.withAlpha(0.02f), 0, viewArea.getBottom(), false);
     g.setGradientFill(grad);
     g.fillPath(fillPath);
+
+    // ---- Playhead Animation ----
+    if (processor != nullptr && currentEnvelopeIndex >= 0)
+    {
+        auto phases = processor->getActivePhasesForEnvelope(currentEnvelopeIndex);
+        
+        for (auto phase : phases)
+        {
+            auto pixelX = normalizedToPixel({ (float)phase, 0.5f }).x;
+            
+            if (pixelX >= viewArea.getX() && pixelX <= viewArea.getRight())
+            {
+                // Glow
+                g.setColour(juce::Colours::white.withAlpha(0.1f));
+                g.drawVerticalLine((int)pixelX, (float)viewArea.getY(), (float)viewArea.getBottom());
+                
+                // Main line
+                g.setColour(juce::Colours::white.withAlpha(0.6f));
+                g.drawVerticalLine((int)pixelX, (float)viewArea.getY(), (float)viewArea.getBottom());
+            }
+        }
+    }
 }
 
 

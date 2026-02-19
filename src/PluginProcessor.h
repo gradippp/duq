@@ -78,6 +78,8 @@ public:
 
     void triggerEnvelope(int index) { manualTriggerIndex = index; }
 
+    std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
+
 private:
     //==============================================================================
     void syncToDSP();

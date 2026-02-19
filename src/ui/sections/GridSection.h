@@ -16,6 +16,7 @@ public:
 
     // Envelope
     void setEnvelope(juce::ValueTree newEnvelope);
+    void setProcessor(class DuqAudioProcessor* p) { processor = p; }
     void deletePoint(juce::ValueTree pointNode);
 
     void setDraggingAnchor(bool b) { isDraggingAnchor = b; }
@@ -120,8 +121,11 @@ private:
 
     // Data
     juce::ValueTree envelope;
+    class DuqAudioProcessor* processor = nullptr;
+    int currentEnvelopeIndex = -1;
 
     bool pendingZoomWrite = false;
+    int zoomWriteCounter = 0;
     bool isUserZooming = false;
     bool persistZoomToTree = false; // set true to re-enable writing zoom to ValueTree
 
