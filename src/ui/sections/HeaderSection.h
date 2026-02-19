@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "../components/ControlKnobComponent.h"
 #include "../components/SelectableLabel.h"
 #include "../utils/FlatKnobLookAndFeel.h"
@@ -25,6 +26,8 @@ public:
     void setInitPresetCallback(std::function<void()> cb) { onInitPreset = std::move(cb); }
     void setAboutCallback(std::function<void()> cb) { onAboutClicked = std::move(cb); }
 
+    void setupAttachments(juce::AudioProcessorValueTreeState& vts);
+
     void updateUndoState(bool canUndo, bool canRedo);
 
 private:
@@ -40,6 +43,11 @@ private:
     
     SelectableLabel presetNameLabel;
     SelectableLabel brandLabel;
+
+    juce::Slider lookaheadSlider;
+    juce::Slider lookbehindSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookaheadAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookbehindAttachment;
 
     std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
     std::unique_ptr<ControlKnobComponent> mixKnob;

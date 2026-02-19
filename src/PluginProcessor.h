@@ -102,6 +102,8 @@ private:
     struct InternalDSPState
     {
         std::vector<DSPEnvelope> envelopes;
+        int lookaheadSamples = 0;
+        int lookbehindSamples = 0;
     } dspState;
 
     juce::CriticalSection dspLock;
@@ -110,6 +112,9 @@ private:
 
     std::vector<EnvelopeVoice> voices;
     static constexpr int maxVoices = 32;
+
+    juce::AudioBuffer<float> delayBuffer;
+    int delayWritePos = 0;
 
     juce::LinearSmoothedValue<float> masterGain{ 1.0f };
     float reductionPeak = 0.0f;

@@ -60,6 +60,29 @@ HeaderSection::HeaderSection()
     redoButton.onClick = [this] { if (redoCallback) redoCallback(); };
     saveProjectButton.onClick = [this] { if (onSaveProject) onSaveProject(); };
     initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
+
+    // --- Lookahead / Lookbehind ---
+    auto setupTimingSlider = [this](juce::Slider& s, const juce::String& tooltip)
+    {
+        s.setSliderStyle(juce::Slider::LinearBarVertical);
+        s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        s.setTooltip(tooltip);
+        s.setColour(juce::Slider::trackColourId, juce::Colours::transparentBlack);
+        s.setColour(juce::Slider::backgroundColourId, juce::Colours::transparentBlack);
+        addAndMakeVisible(s);
+    };
+
+    setupTimingSlider(lookaheadSlider, "Lookahead (ms) - Delays audio to duck earlier");
+    setupTimingSlider(lookbehindSlider, "Lookbehind (ms) - Delays envelope trigger");
+
+    lookaheadSlider.onValueChange = [this] { repaint(); };
+    lookbehindSlider.onValueChange = [this] { repaint(); };
+}
+
+void HeaderSection::setupAttachments(juce::AudioProcessorValueTreeState& vts)
+{
+    lookaheadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookahead", lookaheadSlider);
+    lookbehindAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookbehind", lookbehindSlider);
 }
 
 //==============================================================================
@@ -126,6 +149,28 @@ void HeaderSection::paint(juce::Graphics& g)
     g.fillRoundedRectangle(centerArea, 2.0f);
     g.setColour(juce::Colours::white.withAlpha(0.05f));
     g.drawRoundedRectangle(centerArea, 2.0f, 1.0f);
+
+    // ---------- Slider Labels ----------
+    g.setFont(FontManager::getBarlowBold(10.0f));
+    
+    auto drawInteractiveLabel = [&](juce::Slider& s, const juce::String& name)
+    {
+        if (!s.isVisible()) return;
+        
+        auto b = s.getBounds().toFloat();
+        
+        // Draw Name
+        g.setColour(juce::Colours::white.withAlpha(0.3f));
+        g.drawText(name, b.withY(b.getY() - 12).withHeight(12), juce::Justification::centred);
+        
+        // Draw Value
+        g.setColour(juce::Colours::white.withAlpha(0.9f));
+        g.setFont(FontManager::getJetBrainsMono(12.0f));
+        g.drawText(juce::String(s.getValue(), 1) + " ms", b, juce::Justification::centred);
+    };
+
+    drawInteractiveLabel(lookaheadSlider, "LOOKAHEAD");
+    drawInteractiveLabel(lookbehindSlider, "LOOKBEHIND");
 }
 
 //==============================================================================
@@ -135,7 +180,13 @@ void HeaderSection::resized()
     auto area = getLocalBounds();
 
     // --- Left Brand ---
-    brandLabel.setBounds(area.removeFromLeft(120).reduced(24, 0));
+    brandLabel.setBounds(area.removeFromLeft(100).reduced(15, 0));
+
+    // --- Timing Sliders (between Brand and Center) ---
+    auto timingArea = area.removeFromLeft(120);
+    int sliderHeight = 12;
+    lookaheadSlider.setBounds(timingArea.removeFromTop(getHeight() / 2).withSizeKeepingCentre(100, sliderHeight).translated(0, 5));
+    lookbehindSlider.setBounds(timingArea.withSizeKeepingCentre(100, sliderHeight).translated(0, 5));
 
     const int buttonSize = 24;
     const int spacing = 4;

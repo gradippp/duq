@@ -76,6 +76,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             resized();
         });
 
+    header.setupAttachments(audioProcessor.parameters);
+
     aboutSection.setVisible(false);
     aboutSection.onClose = [this]
         {

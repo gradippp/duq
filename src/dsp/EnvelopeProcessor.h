@@ -42,4 +42,7 @@ struct EnvelopeVoice
     int noteNumber = -1;
     float currentGain = 1.0f;
     size_t lastSegmentIndex = 0;
+
+    int delaySamplesRemaining = 0;
+    bool isPending = false;
 };

@@ -177,6 +177,15 @@ void DuqAudioProcessor::syncToDSP()
     {
         const juce::ScopedLock sl(dspLock);
         dspState.envelopes = std::move(newEnvelopes);
+
+        float lookaheadMs = parameters.getRawParameterValue("lookahead")->load();
+        float lookbehindMs = parameters.getRawParameterValue("lookbehind")->load();
+        double srate = getSampleRate();
+
+        dspState.lookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
+        dspState.lookbehindSamples = (int)(lookbehindMs * srate / 1000.0);
+
+        setLatencySamples(dspState.lookaheadSamples);
     }
 }
 
@@ -184,8 +193,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
-    // Add real parameters here later.
-    // For now, empty layout is valid.
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ "lookahead", 1 },
+        "Lookahead",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
+        0.0f,
+        juce::AudioParameterFloatAttributes().withLabel("ms")));
+
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ "lookbehind", 1 },
+        "Lookbehind",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
+        0.0f,
+        juce::AudioParameterFloatAttributes().withLabel("ms")));
 
     return { params.begin(), params.end() };
 }
@@ -227,11 +247,21 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                     bool foundVoice = false;
                     for (auto& v : voices)
                     {
-                        if (v.isActive && v.envelopeIndex == i && v.noteNumber == note)
+                        if ((v.isActive || v.isPending) && v.envelopeIndex == i && v.noteNumber == note)
                         {
-                            v.currentPhase = 0.0;
-                            v.lastSegmentIndex = 0;
-                            // Do not reset currentGain, let it smooth to the new start value
+                            if (dspState.lookbehindSamples > 0)
+                            {
+                                v.isPending = true;
+                                v.isActive = false;
+                                v.delaySamplesRemaining = dspState.lookbehindSamples;
+                            }
+                            else
+                            {
+                                v.isPending = false;
+                                v.isActive = true;
+                                v.currentPhase = 0.0;
+                                v.lastSegmentIndex = 0;
+                            }
                             foundVoice = true;
                             break;
                         }
@@ -241,14 +271,25 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                     {
                         for (auto& v : voices)
                         {
-                            if (!v.isActive)
+                            if (!v.isActive && !v.isPending)
                             {
                                 v.envelopeIndex = i;
                                 v.currentPhase = 0.0;
                                 v.currentGain = 1.0f;
                                 v.lastSegmentIndex = 0;
-                                v.isActive = true;
                                 v.noteNumber = note;
+
+                                if (dspState.lookbehindSamples > 0)
+                                {
+                                    v.isPending = true;
+                                    v.isActive = false;
+                                    v.delaySamplesRemaining = dspState.lookbehindSamples;
+                                }
+                                else
+                                {
+                                    v.isPending = false;
+                                    v.isActive = true;
+                                }
                                 foundVoice = true;
                                 break;
                             }
@@ -294,25 +335,57 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     {
         for (auto& v : voices)
         {
-            if (!v.isActive)
+            if (!v.isActive && !v.isPending)
             {
                 v.envelopeIndex = mTrig;
                 v.currentPhase = 0.0;
                 v.currentGain = 1.0f;
                 v.lastSegmentIndex = 0;
-                v.isActive = true;
                 v.noteNumber = -1; // Manual
+
+                if (dspState.lookbehindSamples > 0)
+                {
+                    v.isPending = true;
+                    v.isActive = false;
+                    v.delaySamplesRemaining = dspState.lookbehindSamples;
+                }
+                else
+                {
+                    v.isPending = false;
+                    v.isActive = true;
+                }
                 break;
             }
         }
     }
 
+    const int delaySize = delayBuffer.getNumSamples();
+
     for (int i = 0; i < numSamples; ++i)
     {
+        // --- Write to Delay Buffer ---
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            delayBuffer.setSample(ch, delayWritePos, buffer.getReadPointer(ch)[i]);
+        }
+
+        // --- Read from Delay Buffer (Lookahead) ---
+        int readPos = (delayWritePos - dspState.lookaheadSamples + delaySize) % delaySize;
         float sampleGain = 1.0f;
 
         for (auto& v : voices)
         {
+            if (v.isPending)
+            {
+                if (--v.delaySamplesRemaining <= 0)
+                {
+                    v.isPending = false;
+                    v.isActive = true;
+                    v.currentPhase = 0.0;
+                    v.lastSegmentIndex = 0;
+                }
+            }
+
             if (v.isActive && v.envelopeIndex >= 0 && v.envelopeIndex < (int)dspState.envelopes.size())
             {
                 const auto& env = dspState.envelopes[v.envelopeIndex];
@@ -359,7 +432,7 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         for (int ch = 0; ch < numChannels; ++ch)
         {
             float* channelData = buffer.getWritePointer(ch);
-            float s = channelData[i];
+            float s = delayBuffer.getSample(ch, readPos); // Use delayed sample
             
             // Peak input (before modulation)
             if (ch == 0) inputPeak = std::max(inputPeak, std::abs(s));
@@ -382,6 +455,10 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         writeIndex++;
         if (writeIndex >= monitorBufferSize)
             writeIndex = 0;
+
+        delayWritePos++;
+        if (delayWritePos >= delaySize)
+            delayWritePos = 0;
     }
 
     monpos.store(writeIndex, std::memory_order_relaxed);
@@ -486,6 +563,12 @@ void DuqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     masterGain.reset(sampleRate, 0.001); // 1ms smoothing for punchy transients
     masterGain.setCurrentAndTargetValue(1.0f);
+
+    // Max lookahead is 100ms, size for 200ms to be safe
+    int delayBufferSize = (int)(0.2 * sampleRate);
+    delayBuffer.setSize(getTotalNumOutputChannels(), delayBufferSize);
+    delayBuffer.clear();
+    delayWritePos = 0;
 }
 
 void DuqAudioProcessor::releaseResources()
