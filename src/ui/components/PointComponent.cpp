@@ -22,31 +22,90 @@ juce::Point<float> PointComponent::getNormalizedPosition() const
 
 void PointComponent::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colours::white);
-    g.fillEllipse(getLocalBounds().toFloat());
+    auto bounds = getLocalBounds().toFloat();
+
+    if (isHovering)
+    {
+        g.setColour(juce::Colours::white.withAlpha(0.3f));
+        g.fillEllipse(bounds);
+        g.setColour(juce::Colours::white);
+        g.fillEllipse(bounds.reduced(2.0f));
+    }
+    else
+    {
+        g.setColour(juce::Colours::white);
+        g.fillEllipse(bounds.reduced(2.0f));
+    }
+}
+
+void PointComponent::mouseEnter(const juce::MouseEvent&)
+{
+    isHovering = true;
+    repaint();
+}
+
+void PointComponent::mouseExit(const juce::MouseEvent&)
+{
+    isHovering = false;
+    repaint();
 }
 
 void PointComponent::mouseDown(const juce::MouseEvent& e)
 {
     if (!point.isValid())
         return;
+
+    if (e.mods.isRightButtonDown())
+    {
+        auto points = point.getParent();
+        int index = points.indexOf(point);
+        bool isEndpoint = (index == 0 || index == points.getNumChildren() - 1);
+
+        juce::PopupMenu m;
+        m.addItem(1, "Edit Position...");
+        m.addItem(2, "Delete Point", !isEndpoint, false);
+
+        juce::Component::SafePointer<PointComponent> safeThis(this);
+
+        m.showMenuAsync(juce::PopupMenu::Options(), [safeThis](int result)
+        {
+            if (safeThis == nullptr)
+                return;
+
+            if (result == 1)
+            {
+                safeThis->showPositionDialog();
+            }
+            else if (result == 2)
+            {
+                safeThis->grid.deletePoint(safeThis->point);
+            }
+        });
+        return;
+    }
+
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.beginPanningAtScreenPosition(e.getScreenPosition());
         return;
     }
 
-    dragStartNormalized = normalized;
-    dragStartMouse = e.getScreenPosition();
+    if (e.mods.isLeftButtonDown())
+    {
+        isDragging = true;
+        dragStartNormalized = normalized;
+        dragStartMouse = e.getScreenPosition();
 
-    if (onDragStart)
-        onDragStart(point);
+        if (onDragStart)
+            onDragStart(point);
+    }
 }
 
 void PointComponent::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!point.isValid())
+    if (!point.isValid() || !isDragging)
         return;
+
     // If Alt is held, forward the drag to the grid for panning.
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
@@ -80,8 +139,12 @@ void PointComponent::mouseUp(const juce::MouseEvent& e)
         return;
     }
 
-    if (onDragEnd)
-        onDragEnd(point);
+    if (isDragging)
+    {
+        isDragging = false;
+        if (onDragEnd)
+            onDragEnd(point);
+    }
 }
 
 void PointComponent::mouseDoubleClick(const juce::MouseEvent& e)
@@ -96,4 +159,56 @@ void PointComponent::mouseDoubleClick(const juce::MouseEvent& e)
     {
         parent->deletePoint(point);
     }
+}
+
+void PointComponent::showPositionDialog()
+{
+    auto points = point.getParent();
+    if (!points.isValid()) return;
+
+    int index = points.indexOf(point);
+    int numPoints = points.getNumChildren();
+    bool isEndpoint = (index == 0 || index == numPoints - 1);
+
+    auto* aw = new juce::AlertWindow("Edit Position", "Enter normalized coordinates (0.0 - 1.0):", juce::MessageBoxIconType::NoIcon);
+
+    aw->addTextEditor("x", juce::String((float)point["x"], 3), "Time (X):");
+    aw->addTextEditor("y", juce::String((float)point["y"], 3), "Value (Y):");
+
+    // Disable X editing for endpoints
+    if (isEndpoint)
+    {
+        if (auto* editor = aw->getTextEditor("x"))
+        {
+            editor->setEnabled(false);
+            editor->setText(juce::String((float)point["x"], 1)); 
+        }
+    }
+
+    aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    juce::Component::SafePointer<GridSection> safeGrid(&grid);
+    juce::ValueTree pointTree = point;
+
+    aw->enterModalState(true, juce::ModalCallbackFunction::create([safeGrid, pointTree, isEndpoint, aw](int result) mutable
+    {
+        if (result == 1 && safeGrid != nullptr)
+        {
+            float x = aw->getTextEditorContents("x").getFloatValue();
+            float y = aw->getTextEditorContents("y").getFloatValue();
+
+            x = juce::jlimit(0.0f, 1.0f, x);
+            y = juce::jlimit(0.0f, 1.0f, y);
+
+            auto& um = safeGrid->getUndoManager();
+            um.beginNewTransaction("Edit Point Position");
+
+            if (!isEndpoint)
+                pointTree.setProperty("x", x, &um);
+
+            pointTree.setProperty("y", y, &um);
+        }
+        delete aw;
+    }));
 }

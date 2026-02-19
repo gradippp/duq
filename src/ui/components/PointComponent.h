@@ -25,11 +25,19 @@ public:
     void mouseDrag(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
+    void mouseEnter(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
+
 private:
+    void showPositionDialog();
+
     GridSection& grid;
     juce::ValueTree point;   // Stable identity
     juce::Point<float> normalized{ 0.0f, 0.0f };
 
     juce::Point<float> dragStartNormalized;
     juce::Point<int> dragStartMouse;
+
+    bool isHovering = false;
+    bool isDragging = false;
 };
