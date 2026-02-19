@@ -43,7 +43,7 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
 
             if (handle.getDistanceFrom(e.position) < 8.0f)
             {
-                segments[i].curve = 0.0f;
+                segments[i].curve = 0.5f;
                 repaint();
                 return;
             }
@@ -300,8 +300,9 @@ void EnvelopeGraphComponent::drawEnvelope(
 
         // limit max bend to avoid overshoot
         float maxStrength = segmentLength * 0.35f;
+        float normCurve = (curve - 0.5f) * 2.0f; // Map 0..1 to -1..1
         float strength = juce::jlimit(-maxStrength, maxStrength,
-            curve * segmentLength * curveStrength);
+            normCurve * segmentLength * curveStrength);
 
         p1.x += normal.x * strength;
         p1.y += normal.y * strength;
@@ -398,12 +399,13 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
 
     float segmentLength = direction.getDistanceFromOrigin();
     float strength = segmentLength * curveStrength;
+    float normCurve = (curve - 0.5f) * 2.0f; // Map 0..1 to -1..1
 
-    p1.x += normal.x * curve * strength;
-    p1.y += normal.y * curve * strength;
+    p1.x += normal.x * normCurve * strength;
+    p1.y += normal.y * normCurve * strength;
 
-    p2.x -= normal.x * curve * strength;
-    p2.y -= normal.y * curve * strength;
+    p2.x -= normal.x * normCurve * strength;
+    p2.y -= normal.y * normCurve * strength;
 
     // ---- Evaluate cubic at t = 0.5 ----
     float t = 0.5f;

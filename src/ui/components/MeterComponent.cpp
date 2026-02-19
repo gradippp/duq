@@ -34,10 +34,16 @@ void MeterComponent::timerCallback()
         float db = juce::Decibels::gainToDecibels(linear, -60.0f);
         normalized = juce::jmap(db, -60.0f, 0.0f, 0.0f, 1.0f);
     }
+    else if (mode == MeterMode::Envelope)
+    {
+        // For reduction/envelope, we expect a value where 1.0 is full reduction
+        // and 0.0 is no reduction. We keep it linear for visual clarity of the shape.
+        normalized = value;
+    }
 
     normalized = juce::jlimit(0.0f, 1.0f, normalized);
 
-    smoothedLevel += (normalized - smoothedLevel) * 0.15f;
+    smoothedLevel += (normalized - smoothedLevel) * 0.25f;
 
     repaint();
 }

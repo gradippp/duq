@@ -9,6 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "model/EnvelopeData.h"
+#include "dsp/EnvelopeEvaluator.h"
 
 static juce::ValueTree createDefaultEnvelope(const juce::String& name, int note)
 {
@@ -16,7 +17,7 @@ static juce::ValueTree createDefaultEnvelope(const juce::String& name, int note)
 
     env.setProperty("name", name, nullptr);
     env.setProperty("triggerNote", note, nullptr);
-    env.setProperty("rate", 20.0, nullptr);
+    env.setProperty("rate", 2.0, nullptr); // 2Hz or 1/4 note (index 2)
     env.setProperty("depth", 100.0, nullptr);
     env.setProperty("smooth", 0.0, nullptr);
     env.setProperty("rateIsFrequencyMode", true, nullptr);
@@ -25,20 +26,31 @@ static juce::ValueTree createDefaultEnvelope(const juce::String& name, int note)
 
     juce::ValueTree p1("POINT");
     p1.setProperty("x", 0.0f, nullptr);
-    p1.setProperty("y", 0.0f, nullptr);
+    p1.setProperty("y", 1.0f, nullptr);
 
     juce::ValueTree p2("POINT");
-    p2.setProperty("x", 1.0f, nullptr);
-    p2.setProperty("y", 1.0f, nullptr);
+    p2.setProperty("x", 0.5f, nullptr);
+    p2.setProperty("y", 0.0f, nullptr);
+
+    juce::ValueTree p3("POINT");
+    p3.setProperty("x", 1.0f, nullptr);
+    p3.setProperty("y", 1.0f, nullptr);
 
     points.addChild(p1, -1, nullptr);
     points.addChild(p2, -1, nullptr);
+    points.addChild(p3, -1, nullptr);
 
     juce::ValueTree segments("SEGMENTS");
+    
     juce::ValueTree s1("SEGMENT");
     s1.setProperty("curve", 0.5f, nullptr);
     s1.setProperty("type", (int)CurveType::Exponential, nullptr);
     segments.addChild(s1, -1, nullptr);
+
+    juce::ValueTree s2("SEGMENT");
+    s2.setProperty("curve", 0.5f, nullptr);
+    s2.setProperty("type", (int)CurveType::Exponential, nullptr);
+    segments.addChild(s2, -1, nullptr);
 
     env.addChild(points, -1, nullptr);
     env.addChild(segments, -1, nullptr);
@@ -66,15 +78,89 @@ DuqAudioProcessor::DuqAudioProcessor()
     parameters.state.getOrCreateChildWithName("ENVELOPES", &undoManager);
 
     auto envelopes = getEnvelopesTree();
+    envelopes.addListener(this);
 
     if (envelopes.getNumChildren() == 0)
     {
         addEnvelope("Env 1", 36);
     }
+
+    voices.resize(maxVoices);
+    for (auto& v : voices) v.isActive = false;
+
+    syncToDSP();
 }
 
 DuqAudioProcessor::~DuqAudioProcessor()
 {
+    getEnvelopesTree().removeListener(this);
+}
+
+void DuqAudioProcessor::syncToDSP()
+{
+    std::vector<DSPEnvelope> newEnvelopes;
+    auto envelopesTree = getEnvelopesTree();
+
+    for (int i = 0; i < envelopesTree.getNumChildren(); ++i)
+    {
+        auto envVT = envelopesTree.getChild(i);
+        DSPEnvelope de;
+        
+        float rawRate = envVT.getProperty("rate", 20.0);
+        bool isFreq = (bool)envVT.getProperty("rateIsFrequencyMode", true);
+
+        if (isFreq)
+        {
+            de.rate = (double)rawRate;
+        }
+        else
+        {
+            // rateDivisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
+            // We want cycles per BEAT.
+            // 1/1 (whole bar) = 0.25 cycles per beat
+            // 1/2 (half note) = 0.5 cycles per beat
+            // 1/4 (quarter note) = 1.0 cycles per beat
+            // ...
+            static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
+            int idx = juce::jlimit(0, 5, (int)rawRate);
+            de.rate = cycleMultipliers[idx];
+        }
+
+        de.depth = (float)envVT.getProperty("depth", 100.0) / 100.0f;
+        de.smooth = (float)envVT.getProperty("smooth", 0.0) / 100.0f;
+        de.triggerNote = envVT.getProperty("triggerNote", 60);
+        de.isFrequencyMode = (bool)envVT.getProperty("rateIsFrequencyMode", true);
+        de.isDisabled = (bool)envVT.getProperty("disabled", false);
+
+        auto pointsVT = envVT.getChildWithName("POINTS");
+        if (pointsVT.isValid())
+        {
+            for (int j = 0; j < pointsVT.getNumChildren(); ++j)
+            {
+                auto pVT = pointsVT.getChild(j);
+                de.points.push_back({ (float)pVT.getProperty("x", 0.0f), 
+                                      (float)pVT.getProperty("y", 0.0f) });
+            }
+        }
+
+        auto segmentsVT = envVT.getChildWithName("SEGMENTS");
+        if (segmentsVT.isValid())
+        {
+            for (int j = 0; j < segmentsVT.getNumChildren(); ++j)
+            {
+                auto sVT = segmentsVT.getChild(j);
+                de.segments.push_back({ (float)sVT.getProperty("curve", 0.5f), 
+                                        (CurveType)(int)sVT.getProperty("type", (int)CurveType::Exponential) });
+            }
+        }
+
+        newEnvelopes.push_back(std::move(de));
+    }
+
+    {
+        const juce::ScopedLock sl(dspLock);
+        dspState.envelopes = std::move(newEnvelopes);
+    }
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createParameterLayout()
@@ -101,46 +187,169 @@ void DuqAudioProcessor::addEnvelope(const juce::String& name, int note)
     envelopes.addChild(env, -1, &undoManager);
 }
 
-void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
-    juce::MidiBuffer& midi)
+void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
 {
+    const juce::ScopedLock sl(dspLock);
+
     for (const auto metadata : midi)
     {
         const auto msg = metadata.getMessage();
 
         if (msg.isNoteOn())
-            activeNotes[msg.getNoteNumber()].store(true, std::memory_order_relaxed);
+        {
+            int note = msg.getNoteNumber();
+            activeNotes[note].store(true, std::memory_order_relaxed);
 
+            // Find envelopes that match this note
+            for (int i = 0; i < (int)dspState.envelopes.size(); ++i)
+            {
+                const auto& env = dspState.envelopes[i];
+                if (!env.isDisabled && env.triggerNote == note)
+                {
+                    // Start a new voice or retrigger
+                    bool foundVoice = false;
+                    for (auto& v : voices)
+                    {
+                        if (v.isActive && v.envelopeIndex == i && v.noteNumber == note)
+                        {
+                            v.currentPhase = 0.0;
+                            v.lastSegmentIndex = 0;
+                            // Do not reset currentGain, let it smooth to the new start value
+                            foundVoice = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundVoice)
+                    {
+                        for (auto& v : voices)
+                        {
+                            if (!v.isActive)
+                            {
+                                v.envelopeIndex = i;
+                                v.currentPhase = 0.0;
+                                v.currentGain = 1.0f;
+                                v.lastSegmentIndex = 0;
+                                v.isActive = true;
+                                v.noteNumber = note;
+                                foundVoice = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         else if (msg.isNoteOff())
-            activeNotes[msg.getNoteNumber()].store(false, std::memory_order_relaxed);
+        {
+            int note = msg.getNoteNumber();
+            activeNotes[note].store(false, std::memory_order_relaxed);
+
+            // In ONE-SHOT mode, we do NOT deactivate voices on Note Off.
+            // They finish when currentPhase >= 1.0.
+        }
     }
+}
+
+void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
+    juce::MidiBuffer& midi)
+{
+    processMidi(midi);
 
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples = buffer.getNumSamples();
     const int numChannels = buffer.getNumChannels();
+    const double sampleRate = getSampleRate();
 
     float inputPeak = 0.0f;
+    float outputPeak = 0.0f;
+    float maxReduction = 0.0f;
 
     // --- Get write position ---
     int writeIndex = monpos.load(std::memory_order_relaxed);
 
+    const juce::ScopedLock sl(dspLock);
+
     for (int i = 0; i < numSamples; ++i)
     {
-        float mixedSample = 0.0f;
+        float aggregateGain = 1.0f;
 
-        // Mix all channels to mono
-        for (int ch = 0; ch < numChannels; ++ch)
+        for (auto& v : voices)
         {
-            float s = buffer.getReadPointer(ch)[i];
-            mixedSample += s;
-            inputPeak = std::max(inputPeak, std::abs(s));
+            if (v.isActive && v.envelopeIndex >= 0 && v.envelopeIndex < (int)dspState.envelopes.size())
+            {
+                const auto& env = dspState.envelopes[v.envelopeIndex];
+                
+                float envVal = EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex);
+                float targetGain = 1.0f - (1.0f - envVal) * env.depth;
+
+                // Smoothing (One-pole LPF)
+                float alpha = 1.0f;
+                if (env.smooth > 0.001f)
+                {
+                    double tc = 0.001 + (double)env.smooth * 0.5; // up to 500ms
+                    alpha = (float)(1.0 / (tc * sampleRate + 1.0));
+                }
+                v.currentGain += alpha * (targetGain - v.currentGain);
+                
+                aggregateGain *= v.currentGain;
+
+                // Advance phase
+                double currentRate = env.rate;
+                
+                if (!env.isFrequencyMode)
+                {
+                    if (auto* playhead = getPlayHead())
+                    {
+                        if (auto opt = playhead->getPosition())
+                        {
+                            if (auto bpm = opt->getBpm())
+                            {
+                                double beatsPerSecond = *bpm / 60.0;
+                                currentRate = env.rate * beatsPerSecond;
+                            }
+                        }
+                    }
+                }
+
+                v.currentPhase += currentRate / sampleRate;
+                
+                // One-Shot Deactivation
+                if (v.currentPhase >= 1.0)
+                {
+                    v.isActive = false;
+                }
+            }
         }
 
-        mixedSample /= (float)numChannels;
+        maxReduction = std::max(maxReduction, 1.0f - aggregateGain);
 
-        // Write into circular monitor buffer
-        monSamples[writeIndex] = mixedSample;
+        masterGain.setTargetValue(aggregateGain);
+        float currentSmoothedGain = masterGain.getNextValue();
+
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            float* channelData = buffer.getWritePointer(ch);
+            float s = channelData[i];
+            
+            // Peak input (before modulation)
+            if (ch == 0) inputPeak = std::max(inputPeak, std::abs(s));
+
+            s *= currentSmoothedGain;
+            channelData[i] = s;
+            
+            // Peak output
+            outputPeak = std::max(outputPeak, std::abs(s));
+        }
+
+        // Write processed (ducked) sample into monitor buffer
+        float monitorSample = 0.0f;
+        for (int ch = 0; ch < numChannels; ++ch)
+            monitorSample += buffer.getReadPointer(ch)[i];
+        monitorSample /= (float)numChannels;
+
+        monSamples[writeIndex] = monitorSample;
 
         writeIndex++;
         if (writeIndex >= monitorBufferSize)
@@ -150,6 +359,8 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     monpos.store(writeIndex, std::memory_order_relaxed);
 
     inputMeterLevel.store(inputPeak, std::memory_order_relaxed);
+    outputMeterLevel.store(outputPeak, std::memory_order_relaxed);
+    reductionMeterLevel.store(maxReduction, std::memory_order_relaxed);
 }
 
 juce::UndoManager& DuqAudioProcessor::getUndoManager()
@@ -222,8 +433,8 @@ void DuqAudioProcessor::changeProgramName (int index, const juce::String& newNam
 //==============================================================================
 void DuqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    masterGain.reset(sampleRate, 0.002); // Faster 2ms smoothing for aggregate gain
+    masterGain.setCurrentAndTargetValue(1.0f);
 }
 
 void DuqAudioProcessor::releaseResources()

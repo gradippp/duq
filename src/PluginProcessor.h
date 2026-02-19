@@ -2,9 +2,11 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include "dsp/EnvelopeProcessor.h"
 
 //==============================================================================
-class DuqAudioProcessor : public juce::AudioProcessor
+class DuqAudioProcessor : public juce::AudioProcessor,
+    private juce::ValueTree::Listener
 {
 public:
     //==============================================================================
@@ -75,8 +77,30 @@ public:
 
 private:
     //==============================================================================
+    void syncToDSP();
+    void processMidi(juce::MidiBuffer& midi);
+
+    // ValueTree::Listener
+    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { syncToDSP(); }
+    void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { syncToDSP(); }
+    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { syncToDSP(); }
+    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { syncToDSP(); }
+
+    //==============================================================================
     juce::UndoManager undoManager{ 200 };
     void addEnvelope(const juce::String& name, int note);
+
+    // DSP State
+    struct InternalDSPState
+    {
+        std::vector<DSPEnvelope> envelopes;
+    } dspState;
+
+    juce::CriticalSection dspLock;
+    std::vector<EnvelopeVoice> voices;
+    static constexpr int maxVoices = 32;
+
+    juce::LinearSmoothedValue<float> masterGain{ 1.0f };
 
     std::atomic<float> inputMeterLevel{ 0.0f };
     std::atomic<float> reductionMeterLevel{ 0.0f };

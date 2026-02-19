@@ -143,16 +143,18 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             juce::ValueTree env("ENVELOPE");
             env.setProperty("name", "Env 1", nullptr);
             env.setProperty("triggerNote", 36, nullptr);
-            env.setProperty("rate", 20.0, nullptr);
+            env.setProperty("rate", 2.0, nullptr);
             env.setProperty("depth", 100.0, nullptr);
             env.setProperty("smooth", 0.0, nullptr);
             env.setProperty("rateIsFrequencyMode", true, nullptr);
 
             juce::ValueTree points("POINTS");
-            juce::ValueTree p1("POINT"); p1.setProperty("x", 0.0f, nullptr); p1.setProperty("y", 0.0f, nullptr);
-            juce::ValueTree p2("POINT"); p2.setProperty("x", 1.0f, nullptr); p2.setProperty("y", 1.0f, nullptr);
+            juce::ValueTree p1("POINT"); p1.setProperty("x", 0.0f, nullptr); p1.setProperty("y", 1.0f, nullptr);
+            juce::ValueTree p2("POINT"); p2.setProperty("x", 0.5f, nullptr); p2.setProperty("y", 0.0f, nullptr);
+            juce::ValueTree p3("POINT"); p3.setProperty("x", 1.0f, nullptr); p3.setProperty("y", 1.0f, nullptr);
             points.addChild(p1, -1, nullptr);
             points.addChild(p2, -1, nullptr);
+            points.addChild(p3, -1, nullptr);
             env.addChild(points, -1, nullptr);
 
             juce::ValueTree segments("SEGMENTS");
@@ -160,6 +162,12 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             s1.setProperty("curve", 0.5f, nullptr);
             s1.setProperty("type", (int)CurveType::Exponential, nullptr);
             segments.addChild(s1, -1, nullptr);
+
+            juce::ValueTree s2("SEGMENT");
+            s2.setProperty("curve", 0.5f, nullptr);
+            s2.setProperty("type", (int)CurveType::Exponential, nullptr);
+            segments.addChild(s2, -1, nullptr);
+
             env.addChild(segments, -1, nullptr);
 
             envelopes.addChild(env, -1, &undoManager);
