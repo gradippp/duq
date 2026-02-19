@@ -147,8 +147,6 @@ void EnvelopeListSection::rebuildRowsFromModel()
         row->onSelected = [this, i]()
             {
                 selectEnvelope(i);
-                if (processor != nullptr)
-                    processor->triggerEnvelope(i);
             };
 
         rows.add(row);

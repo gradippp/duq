@@ -21,6 +21,7 @@ struct DSPEnvelope
     std::vector<DSPSegment> segments;
 
     double rate = 20.0;
+    double phaseIncrement = 0.0;
     float depth = 1.0f;
     float smooth = 0.0f;
 

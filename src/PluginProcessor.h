@@ -7,6 +7,7 @@
 //==============================================================================
 class DuqAudioProcessor : public juce::AudioProcessor,
     private juce::ValueTree::Listener,
+    private juce::AudioProcessorValueTreeState::Listener,
     private juce::Timer
 {
 public:
@@ -91,6 +92,9 @@ private:
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { requiresSync = true; }
     void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; }
     void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { requiresSync = true; }
+
+    // APVTS::Listener
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
     // Timer
     void timerCallback() override;

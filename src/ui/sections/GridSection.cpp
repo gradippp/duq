@@ -1,52 +1,6 @@
 #include "GridSection.h"
 #include "../../PluginProcessor.h"
-
-float applyCurve(float t, float curve, CurveType type)
-{
-    if (type == CurveType::Linear)
-        return t;
-
-    if (type == CurveType::Step)
-        return (t >= 0.5f) ? 1.0f : 0.0f;
-
-    // Use 0.5 as neutral (linear). Map 0..1 to -1..1
-    float norm = juce::jlimit(-1.0f, 1.0f, (curve - 0.5f) * 2.0f);
-
-    if (std::abs(norm) < 0.001f)
-        return t;
-
-    float k = norm * 4.0f; // scale aggression
-
-    if (type == CurveType::Exponential)
-    {
-        if (norm > 0)
-            return 1.0f - std::pow(1.0f - t, 1.0f + k);
-        else
-            return std::pow(t, 1.0f - k);
-    }
-    
-    if (type == CurveType::Logarithmic)
-    {
-        // Inverse of exponential
-        if (norm > 0)
-            return std::pow(t, 1.0f + k);
-        else
-            return 1.0f - std::pow(1.0f - t, 1.0f - k);
-    }
-
-    if (type == CurveType::SCurve)
-    {
-        // Simple sigmoid approximation
-        float s = 1.0f / (1.0f + std::exp(-k * (t - 0.5f) * 10.0f));
-        // Normalize s to [0, 1] range
-        float s0 = 1.0f / (1.0f + std::exp(-k * (-0.5f) * 10.0f));
-        float s1 = 1.0f / (1.0f + std::exp(-k * (0.5f) * 10.0f));
-        return (s - s0) / (s1 - s0);
-    }
-
-    return t;
-}
-
+#include "../../dsp/EnvelopeCurves.h"
 
 GridSection::GridSection()
 {
@@ -636,7 +590,7 @@ void GridSection::paintOverChildren(juce::Graphics& g)
         for (int s = 1; s <= resolution; ++s)
         {
             float t = (float)s / resolution;
-            float shapedT = applyCurve(t, curve, type);
+            float shapedT = EnvelopeCurves::applyCurve(t, curve, type);
 
             float x = juce::jmap(t, x1, x2);
             float y = juce::jmap(shapedT, y1, y2);
@@ -668,9 +622,12 @@ void GridSection::paintOverChildren(juce::Graphics& g)
     if (processor != nullptr && currentEnvelopeIndex >= 0)
     {
         auto phases = processor->getActivePhasesForEnvelope(currentEnvelopeIndex);
+        double phaseInc = processor->getPhaseIncrement(currentEnvelopeIndex);
         
-        for (auto phase : phases)
+        for (size_t pIdx = 0; pIdx < phases.size(); ++pIdx)
         {
+            auto phase = phases[pIdx];
+            
             auto pixelX = normalizedToPixel({ (float)phase, 0.5f }).x;
             
             if (pixelX >= viewArea.getX() && pixelX <= viewArea.getRight())
@@ -895,7 +852,7 @@ void GridSection::rebuildPointComponents()
                 CurveType type = (CurveType)(int)segmentNode["type"];
 
                 float t = 0.5f;
-                float shapedT = applyCurve(t, curve, type);
+                float shapedT = EnvelopeCurves::applyCurve(t, curve, type);
 
                 float ax = juce::jmap(t, x1, x2);
                 float ay = juce::jmap(shapedT, y1, y2);
@@ -926,7 +883,7 @@ void GridSection::rebuildPointComponents()
                 CurveType type = (CurveType)(int)segmentNode["type"];
 
                 float t = 0.5f;
-                float shapedT = applyCurve(t, curve, type);
+                float shapedT = EnvelopeCurves::applyCurve(t, curve, type);
 
                 float ax = juce::jmap(t, x1, x2);
                 float ay = juce::jmap(shapedT, y1, y2);
@@ -1087,7 +1044,7 @@ void GridSection::updatePointPositions()
         }
 
         float t = 0.5f;
-        float shapedT = applyCurve(t, curve, type);
+        float shapedT = EnvelopeCurves::applyCurve(t, curve, type);
 
         float x = juce::jmap(t, x1, x2);
         float y = juce::jmap(shapedT, y1, y2);

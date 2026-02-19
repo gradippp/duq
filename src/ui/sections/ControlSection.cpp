@@ -48,9 +48,25 @@ ControlSection::ControlSection()
             if (rateIsFrequencyMode)
                 return juce::String(value, 2) + " Hz";
 
-            int index = juce::jlimit(0, 5, (int)value);
+            // Map 0..100 to 0..5
+            int index = juce::jlimit(0, 5, (int)(value / 16.67f));
             return rateDivisions[index];
         };
+
+    rateKnob.onValueChanged = [this](double value) {
+        if (envelope.isValid() && rateAttachment == nullptr)
+            envelope.setProperty("rate", value, undoManager);
+    };
+
+    depthKnob.onValueChanged = [this](double value) {
+        if (envelope.isValid() && depthAttachment == nullptr)
+            envelope.setProperty("depth", value, undoManager);
+    };
+
+    smoothKnob.onValueChanged = [this](double value) {
+        if (envelope.isValid() && smoothAttachment == nullptr)
+            envelope.setProperty("smooth", value, undoManager);
+    };
 
     depthKnob.getSlider().setRange(0.0, 100.0, 0.1);
     smoothKnob.getSlider().setRange(0.0, 100.0, 0.1);
@@ -130,9 +146,14 @@ void ControlSection::refreshFromTree()
     rateIsFrequencyMode = (bool)envelope["rateIsFrequencyMode"];
     applyRateMode();
 
-    rateKnob.getSlider().setValue((double)envelope["rate"], juce::dontSendNotification);
-    depthKnob.getSlider().setValue((double)envelope["depth"], juce::dontSendNotification);
-    smoothKnob.getSlider().setValue((double)envelope["smooth"], juce::dontSendNotification);
+    if (rateAttachment == nullptr)
+        rateKnob.getSlider().setValue((double)envelope["rate"], juce::dontSendNotification);
+
+    if (depthAttachment == nullptr)
+        depthKnob.getSlider().setValue((double)envelope["depth"], juce::dontSendNotification);
+
+    if (smoothAttachment == nullptr)
+        smoothKnob.getSlider().setValue((double)envelope["smooth"], juce::dontSendNotification);
 
     rateKnob.refreshValueLabel();
     depthKnob.refreshValueLabel();
@@ -148,6 +169,9 @@ void ControlSection::valueTreePropertyChanged(
     juce::ValueTree&,
     const juce::Identifier&)
 {
+    if (isInitialising)
+        return;
+
     refreshFromTree();
 }
 
@@ -217,16 +241,14 @@ void ControlSection::applyRateMode()
     if (!envelope.isValid())
         return;
 
+    // Keep range consistent with APVTS parameter (0.1..100.0)
+    // The valueFormatter handles the "Sync" display (1/1, 1/2 etc).
+    rateKnob.getSlider().setRange(0.1, 100.0, 0.01);
+
     if (rateIsFrequencyMode)
-    {
-        rateKnob.getSlider().setRange(0.1, 100.0, 0.01);
         rateKnob.setLabel("Frequency");
-    }
     else
-    {
-        rateKnob.getSlider().setRange(0, 5, 1);
         rateKnob.setLabel("Rate");
-    }
 
     rateKnob.refreshValueLabel();
 }

@@ -82,6 +82,18 @@ DuqAudioProcessor::DuqAudioProcessor()
     // Listen to the ROOT state recursively to catch all envelope property changes
     parameters.state.addListener(this);
 
+    // Listen to all automation parameters
+    parameters.addParameterListener("mix", this);
+    parameters.addParameterListener("lookahead", this);
+    parameters.addParameterListener("lookbehind", this);
+    for (int i = 0; i < 12; ++i)
+    {
+        juce::String prefix = "env" + juce::String(i) + "_";
+        parameters.addParameterListener(prefix + "rate", this);
+        parameters.addParameterListener(prefix + "depth", this);
+        parameters.addParameterListener(prefix + "smooth", this);
+    }
+
     if (envelopes.getNumChildren() == 0)
     {
         addEnvelope("Env 1", 36);
@@ -98,6 +110,17 @@ DuqAudioProcessor::~DuqAudioProcessor()
 {
     stopTimer();
     parameters.state.removeListener(this);
+
+    parameters.removeParameterListener("mix", this);
+    parameters.removeParameterListener("lookahead", this);
+    parameters.removeParameterListener("lookbehind", this);
+    for (int i = 0; i < 12; ++i)
+    {
+        juce::String prefix = "env" + juce::String(i) + "_";
+        parameters.removeParameterListener(prefix + "rate", this);
+        parameters.removeParameterListener(prefix + "depth", this);
+        parameters.removeParameterListener(prefix + "smooth", this);
+    }
 }
 
 void DuqAudioProcessor::timerCallback()
@@ -128,11 +151,6 @@ void DuqAudioProcessor::syncToDSP()
             rawRate = parameters.getRawParameterValue(prefix + "rate")->load();
             rawDepth = parameters.getRawParameterValue(prefix + "depth")->load();
             rawSmooth = parameters.getRawParameterValue(prefix + "smooth")->load();
-            
-            // Push these back to ValueTree so UI stays in sync with automation
-            envVT.setProperty("rate", (double)rawRate, nullptr);
-            envVT.setProperty("depth", (double)rawDepth, nullptr);
-            envVT.setProperty("smooth", (double)rawSmooth, nullptr);
         }
         else
         {
@@ -149,9 +167,10 @@ void DuqAudioProcessor::syncToDSP()
         }
         else
         {
-            // rateDivisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
+            // Sync divisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
             static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
-            int idx = juce::jlimit(0, 5, (int)rawRate);
+            
+            int idx = juce::jlimit(0, 5, (int)(rawRate / 16.67f));
             de.rate = cycleMultipliers[idx];
         }
 
@@ -160,6 +179,23 @@ void DuqAudioProcessor::syncToDSP()
         de.triggerNote = envVT.getProperty("triggerNote", 60);
         de.isFrequencyMode = (bool)envVT.getProperty("rateIsFrequencyMode", true);
         de.isDisabled = (bool)envVT.getProperty("disabled", false);
+
+        // Pre-calculate phase increment
+        double srate = getSampleRate();
+        if (srate <= 0) srate = 44100.0; // Fallback
+
+        double currentRate = de.rate;
+        if (!de.isFrequencyMode)
+        {
+            double bpm = 120.0;
+            if (auto* playhead = getPlayHead()) {
+                if (auto opt = playhead->getPosition()) {
+                    if (auto b = opt->getBpm()) bpm = *b;
+                }
+            }
+            currentRate = de.rate * (bpm / 60.0);
+        }
+        de.phaseIncrement = currentRate / srate;
 
         auto pointsVT = envVT.getChildWithName("POINTS");
         if (pointsVT.isValid())
@@ -404,11 +440,6 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     const int delaySize = delayBuffer.getNumSamples();
 
-    // Pre-calculate increments for all envelopes
-    std::vector<double> increments;
-    for (int i = 0; i < (int)dspState.envelopes.size(); ++i)
-        increments.push_back(getPhaseIncrement(i));
-
     for (int i = 0; i < numSamples; ++i)
     {
         // --- Write to Delay Buffer ---
@@ -440,27 +471,39 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 
                 float envVal = EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex);
                 
-                // Directly use raw envelope value for now (ignoring depth/smooth as requested)
-                sampleGain *= juce::jlimit(0.0f, 1.0f, envVal);
+                // Map y -> y^2 for more natural volume control (logarithmic/dB-like feel)
+                float mappedVal = envVal * envVal;
+                
+                // Apply depth: If depth is 1.0, we use mappedVal. If depth is 0.0, we use 1.0.
+                float voiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
+                
+                sampleGain *= juce::jlimit(0.0f, 1.0f, voiceGain);
 
-                // Advance phase if not at end
-                if (v.currentPhase < 1.0)
+                // Advance phase
+                v.currentPhase += env.phaseIncrement;
+
+                // Advance phase
+                v.currentPhase += env.phaseIncrement;
+
+                if (v.currentPhase >= 1.0)
                 {
-                    v.currentPhase += increments[v.envelopeIndex];
-                    
-                    if (v.currentPhase >= 1.0)
+                    if (env.isFrequencyMode)
+                    {
+                        v.currentPhase = std::fmod(v.currentPhase, 1.0);
+
+                        // If note is released, stop at end of cycle (noteNumber < 0 means manual trigger, which loops)
+                        if (v.noteNumber >= 0 && !activeNotes[v.noteNumber].load(std::memory_order_relaxed))
+                        {
+                            v.isActive = false;
+                            v.currentPhase = 1.0;
+                        }
+                    }
+                    else
                     {
                         v.currentPhase = 1.0;
-                        // If the final gain is effectively 1.0, deactivate immediately to free voice.
-                        // Otherwise it stays active to hold the final ducking level.
-                        if (envVal >= 0.999f)
+                        if (voiceGain >= 0.999f)
                             v.isActive = false;
                     }
-                }
-                else if (envVal >= 0.999f)
-                {
-                    // Voice is at the end and not doing anything, free it.
-                    v.isActive = false;
                 }
             }
         }
@@ -544,31 +587,12 @@ std::vector<double> DuqAudioProcessor::getActivePhasesForEnvelope(int envelopeIn
 
 double DuqAudioProcessor::getPhaseIncrement(int envelopeIndex) const
 {
+    const juce::ScopedLock sl(dspLock);
+
     if (envelopeIndex < 0 || envelopeIndex >= (int)dspState.envelopes.size())
         return 0.0;
 
-    const auto& env = dspState.envelopes[envelopeIndex];
-    double sampleRate = getSampleRate();
-    if (sampleRate <= 0) return 0.0;
-
-    double currentRate = env.rate;
-
-    if (!env.isFrequencyMode)
-    {
-        if (auto* playhead = getPlayHead())
-        {
-            if (auto opt = playhead->getPosition())
-            {
-                if (auto bpm = opt->getBpm())
-                {
-                    double beatsPerSecond = *bpm / 60.0;
-                    currentRate = env.rate * beatsPerSecond;
-                }
-            }
-        }
-    }
-
-    return currentRate / sampleRate;
+    return dspState.envelopes[envelopeIndex].phaseIncrement;
 }
 
 //==============================================================================
@@ -639,6 +663,8 @@ void DuqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     masterGain.reset(sampleRate, 0.001); // 1ms smoothing for punchy transients
     masterGain.setCurrentAndTargetValue(1.0f);
 
+    syncToDSP();
+
     // Max lookahead is 100ms, size for 200ms to be safe
     int delayBufferSize = (int)(0.2 * sampleRate);
     delayBuffer.setSize(getTotalNumOutputChannels(), delayBufferSize);
@@ -707,6 +733,30 @@ void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
         parameters.replaceState(juce::ValueTree::fromXml(*xml));
         parameters.state.addListener(this);
         syncToDSP();
+    }
+}
+
+//==============================================================================
+void DuqAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+    requiresSync = true;
+
+    // Sync automated parameters back into the ValueTree for UI consistency
+    if (parameterID.startsWith("env"))
+    {
+        int underscorePos = parameterID.indexOf("_");
+        if (underscorePos > 3)
+        {
+            int envIndex = parameterID.substring(3, underscorePos).getIntValue();
+            juce::String propName = parameterID.substring(underscorePos + 1);
+
+            auto envelopes = getEnvelopesTree();
+            if (envIndex >= 0 && envIndex < envelopes.getNumChildren())
+            {
+                auto env = envelopes.getChild(envIndex);
+                env.setProperty(propName, (double)newValue, nullptr);
+            }
+        }
     }
 }
 

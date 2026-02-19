@@ -20,7 +20,7 @@ struct EnvelopeSegment
     const EnvelopePoint* startPoint = nullptr;
     const EnvelopePoint* endPoint = nullptr;
 
-    float curve = 0.0f;
+    float curve = 0.5f;
     CurveType type = CurveType::Exponential;
 };
 
