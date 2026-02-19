@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../components/ControlKnobComponent.h"
@@ -46,11 +47,13 @@ private:
 
     juce::Slider lookaheadSlider;
     juce::Slider lookbehindSlider;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookaheadAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookbehindAttachment;
 
     std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
     std::unique_ptr<ControlKnobComponent> mixKnob;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookaheadAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookbehindAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixAttachment;
 
     std::function<void()> undoCallback;
     std::function<void()> redoCallback;

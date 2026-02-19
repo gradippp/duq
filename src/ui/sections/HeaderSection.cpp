@@ -83,6 +83,9 @@ void HeaderSection::setupAttachments(juce::AudioProcessorValueTreeState& vts)
 {
     lookaheadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookahead", lookaheadSlider);
     lookbehindAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookbehind", lookbehindSlider);
+    
+    if (mixKnob)
+        mixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "mix", mixKnob->getSlider());
 }
 
 //==============================================================================

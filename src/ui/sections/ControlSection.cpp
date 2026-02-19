@@ -52,31 +52,6 @@ ControlSection::ControlSection()
             return rateDivisions[index];
         };
 
-    // Slider value changes
-    rateKnob.onValueChanged = [this](double value)
-        {
-            if (!envelope.isValid() || isInitialising)
-                return;
-
-            envelope.setProperty("rate", value, undoManager);
-        };
-
-    depthKnob.onValueChanged = [this](double value)
-        {
-            if (!envelope.isValid() || isInitialising)
-                return;
-
-            envelope.setProperty("depth", value, undoManager);
-        };
-
-    smoothKnob.onValueChanged = [this](double value)
-        {
-            if (!envelope.isValid() || isInitialising)
-                return;
-
-            envelope.setProperty("smooth", value, undoManager);
-        };
-
     depthKnob.getSlider().setRange(0.0, 100.0, 0.1);
     smoothKnob.getSlider().setRange(0.0, 100.0, 0.1);
 
@@ -99,6 +74,11 @@ void ControlSection::setEnvelope(juce::ValueTree env)
 
     envelope = env;
 
+    // Reset attachments first
+    rateAttachment.reset();
+    depthAttachment.reset();
+    smoothAttachment.reset();
+
     if (envelope.isValid())
     {
         envelope.addListener(this);
@@ -108,12 +88,36 @@ void ControlSection::setEnvelope(juce::ValueTree env)
         depthKnob.setVisible(true);
         smoothKnob.setVisible(true);
 
+        // Link to automation parameters if within the first 12 slots
+        if (processor != nullptr)
+        {
+            auto parent = envelope.getParent();
+            if (parent.isValid())
+            {
+                int index = parent.indexOf(envelope);
+                if (index >= 0 && index < 12)
+                {
+                    juce::String prefix = "env" + juce::String(index) + "_";
+                    auto& vts = processor->parameters;
+                    
+                    rateAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, prefix + "rate", rateKnob.getSlider());
+                    depthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, prefix + "depth", depthKnob.getSlider());
+                    smoothAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, prefix + "smooth", smoothKnob.getSlider());
+                }
+            }
+        }
+
         refreshFromTree();
     }
     else
     {
         clearEnvelope();
     }
+}
+
+void ControlSection::setProcessor(DuqAudioProcessor* p)
+{
+    processor = p;
 }
 
 void ControlSection::refreshFromTree()
@@ -160,6 +164,11 @@ void ControlSection::clearEnvelope()
 
     envelope = {};
     hasEnvelope = false;
+
+    // Reset attachments
+    rateAttachment.reset();
+    depthAttachment.reset();
+    smoothAttachment.reset();
 
     rateKnob.setVisible(false);
     depthKnob.setVisible(false);

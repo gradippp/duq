@@ -44,6 +44,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         };
 
     envelopeListSection.setProcessor(p);
+    controlSection.setProcessor(&p);
     presetSection.setUndoManager(undoManager);
 
     envelopeListSection.onReplaceRequested = [this](juce::ValueTree env)

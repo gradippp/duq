@@ -96,6 +96,7 @@ DuqAudioProcessor::DuqAudioProcessor()
 
 DuqAudioProcessor::~DuqAudioProcessor()
 {
+    stopTimer();
     parameters.state.removeListener(this);
 }
 
@@ -118,7 +119,28 @@ void DuqAudioProcessor::syncToDSP()
         auto envVT = envelopesTree.getChild(i);
         DSPEnvelope de;
         
-        float rawRate = envVT.getProperty("rate", 2.0);
+        float rawRate, rawDepth, rawSmooth;
+
+        // Priority: Use automated parameters for first 12 slots
+        if (i < 12)
+        {
+            juce::String prefix = "env" + juce::String(i) + "_";
+            rawRate = parameters.getRawParameterValue(prefix + "rate")->load();
+            rawDepth = parameters.getRawParameterValue(prefix + "depth")->load();
+            rawSmooth = parameters.getRawParameterValue(prefix + "smooth")->load();
+            
+            // Push these back to ValueTree so UI stays in sync with automation
+            envVT.setProperty("rate", (double)rawRate, nullptr);
+            envVT.setProperty("depth", (double)rawDepth, nullptr);
+            envVT.setProperty("smooth", (double)rawSmooth, nullptr);
+        }
+        else
+        {
+            rawRate = envVT.getProperty("rate", 2.0);
+            rawDepth = envVT.getProperty("depth", 100.0);
+            rawSmooth = envVT.getProperty("smooth", 0.0);
+        }
+
         bool isFreq = (bool)envVT.getProperty("rateIsFrequencyMode", true);
 
         if (isFreq)
@@ -133,8 +155,8 @@ void DuqAudioProcessor::syncToDSP()
             de.rate = cycleMultipliers[idx];
         }
 
-        de.depth = (float)envVT.getProperty("depth", 100.0) / 100.0f;
-        de.smooth = (float)envVT.getProperty("smooth", 0.0) / 100.0f;
+        de.depth = rawDepth / 100.0f;
+        de.smooth = rawSmooth / 100.0f;
         de.triggerNote = envVT.getProperty("triggerNote", 60);
         de.isFrequencyMode = (bool)envVT.getProperty("rateIsFrequencyMode", true);
         de.isDisabled = (bool)envVT.getProperty("disabled", false);
@@ -180,6 +202,7 @@ void DuqAudioProcessor::syncToDSP()
 
         float lookaheadMs = parameters.getRawParameterValue("lookahead")->load();
         float lookbehindMs = parameters.getRawParameterValue("lookbehind")->load();
+        dspState.mixPercent = parameters.getRawParameterValue("mix")->load();
         double srate = getSampleRate();
 
         dspState.lookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
@@ -192,6 +215,10 @@ void DuqAudioProcessor::syncToDSP()
 juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+    // --- Global Parameters ---
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ "mix", 1 }, "Mix", 0.0f, 100.0f, 100.0f));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ "lookahead", 1 },
@@ -206,6 +233,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
         0.0f,
         juce::AudioParameterFloatAttributes().withLabel("ms")));
+
+    // --- Envelope Parameters (12 slots) ---
+    for (int i = 0; i < 12; ++i)
+    {
+        juce::String prefix = "env" + juce::String(i) + "_";
+        
+        // Rate range is 0-100 (handles both Hz and Sync index)
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{ prefix + "rate", 1 }, "Env " + juce::String(i + 1) + " Rate", 0.0f, 100.0f, 2.0f));
+            
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{ prefix + "depth", 1 }, "Env " + juce::String(i + 1) + " Depth", 0.0f, 100.0f, 100.0f));
+            
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{ prefix + "smooth", 1 }, "Env " + juce::String(i + 1) + " Smooth", 0.0f, 100.0f, 0.0f));
+    }
 
     return { params.begin(), params.end() };
 }
@@ -428,6 +471,8 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         masterGain.setTargetValue(sampleGain);
         float currentSmoothedGain = masterGain.getNextValue();
 
+        float mixVal = dspState.mixPercent / 100.0f;
+
         // Write UNPROCESSED sample into monitor buffer for visualization
         float monitorSample = 0.0f;
         for (int ch = 0; ch < numChannels; ++ch)
@@ -439,16 +484,18 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         for (int ch = 0; ch < numChannels; ++ch)
         {
             float* channelData = buffer.getWritePointer(ch);
-            float s = delayBuffer.getSample(ch, readPos);
+            float s_orig = delayBuffer.getSample(ch, readPos);
             
             // Peak input (before modulation)
-            if (ch == 0) inputPeak = std::max(inputPeak, std::abs(s));
+            if (ch == 0) inputPeak = std::max(inputPeak, std::abs(s_orig));
 
-            s *= currentSmoothedGain;
-            channelData[i] = s;
+            float s_wet = s_orig * currentSmoothedGain;
+            float s_final = s_wet * mixVal + s_orig * (1.0f - mixVal);
+            
+            channelData[i] = s_final;
             
             // Peak output
-            outputPeak = std::max(outputPeak, std::abs(s));
+            outputPeak = std::max(outputPeak, std::abs(s_final));
         }
 
         writeIndex++;

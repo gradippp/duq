@@ -105,6 +105,7 @@ private:
         std::vector<DSPEnvelope> envelopes;
         int lookaheadSamples = 0;
         int lookbehindSamples = 0;
+        float mixPercent = 100.0f;
     } dspState;
 
     juce::CriticalSection dspLock;
