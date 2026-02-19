@@ -134,19 +134,19 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
             for (int i = 0; i < numPoints - 1; ++i)
             {
                 juce::ValueTree s("SEGMENT");
-                s.setProperty("curve", 0.5f, nullptr);
-                s.setProperty("type", (int)CurveType::Exponential, nullptr);
+                s.setProperty("curve", Theme::Defaults::curve, nullptr);
+                s.setProperty("type", Theme::Defaults::curveType, nullptr);
                 segments.addChild(s, -1, nullptr);
             }
         }
 
         // Load view state from tree
-        zoomX = (float)envelope.getProperty("zoomX", 1.0f);
-        zoomY = (float)envelope.getProperty("zoomY", 1.0f);
-        uniformZoom = (float)envelope.getProperty("uniformZoom", 1.0f);
-        offsetX = (float)envelope.getProperty("offsetX", 0.0f);
-        offsetY = (float)envelope.getProperty("offsetY", 0.0f);
-        gridPower = (int)envelope.getProperty("gridPower", 4);
+        zoomX = (float)envelope.getProperty("zoomX", Theme::Defaults::zoom);
+        zoomY = (float)envelope.getProperty("zoomY", Theme::Defaults::zoom);
+        uniformZoom = (float)envelope.getProperty("uniformZoom", Theme::Defaults::zoom);
+        offsetX = (float)envelope.getProperty("offsetX", Theme::Defaults::offset);
+        offsetY = (float)envelope.getProperty("offsetY", Theme::Defaults::offset);
+        gridPower = (int)envelope.getProperty("gridPower", Theme::Defaults::gridPower);
 
         waveform.setViewState(uniformZoom, offsetX, uniformZoom, offsetY);
     }
@@ -344,8 +344,8 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
     newPoint.setProperty("y", normalized.y, nullptr);
 
     juce::ValueTree newSegment("SEGMENT");
-    newSegment.setProperty("curve", 0.5f, nullptr);
-    newSegment.setProperty("type", (int)CurveType::Exponential, nullptr);
+    newSegment.setProperty("curve", Theme::Defaults::curve, nullptr);
+    newSegment.setProperty("type", Theme::Defaults::curveType, nullptr);
 
     int insertIndex = 0;
 
@@ -367,8 +367,8 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
         for (int i = 0; i < points.getNumChildren() - 1; ++i)
         {
             juce::ValueTree s("SEGMENT");
-            s.setProperty("curve", 0.5f, nullptr);
-            s.setProperty("type", (int)CurveType::Exponential, nullptr);
+            s.setProperty("curve", Theme::Defaults::curve, nullptr);
+            s.setProperty("type", Theme::Defaults::curveType, nullptr);
             segments.addChild(s, -1, undoManager);
         }
     }

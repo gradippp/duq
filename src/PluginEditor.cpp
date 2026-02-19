@@ -145,32 +145,31 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             
             // Add a single default envelope
             juce::ValueTree env("ENVELOPE");
-            env.setProperty("name", "Env 1", nullptr);
-            env.setProperty("triggerNote", 36, nullptr);
-            env.setProperty("rate", 2.0, nullptr);
-            env.setProperty("depth", 100.0, nullptr);
-            env.setProperty("smooth", 0.0, nullptr);
-            env.setProperty("rateIsFrequencyMode", true, nullptr);
+            env.setProperty("name", Theme::Defaults::envelopeName + " 1", nullptr);
+            env.setProperty("triggerNote", Theme::Defaults::triggerNote, nullptr);
+            env.setProperty("rate", Theme::Defaults::rate, nullptr);
+            env.setProperty("depth", (double)Theme::Defaults::depth, nullptr);
+            env.setProperty("smooth", (double)Theme::Defaults::smooth, nullptr);
+            env.setProperty("rateIsFrequencyMode", Theme::Defaults::rateIsFrequencyMode, nullptr);
 
             juce::ValueTree points("POINTS");
-            juce::ValueTree p1("POINT"); p1.setProperty("x", 0.0f, nullptr); p1.setProperty("y", 1.0f, nullptr);
-            juce::ValueTree p2("POINT"); p2.setProperty("x", 0.5f, nullptr); p2.setProperty("y", 0.0f, nullptr);
-            juce::ValueTree p3("POINT"); p3.setProperty("x", 1.0f, nullptr); p3.setProperty("y", 1.0f, nullptr);
-            points.addChild(p1, -1, nullptr);
-            points.addChild(p2, -1, nullptr);
-            points.addChild(p3, -1, nullptr);
+            for (int i = 0; i < Theme::Defaults::numDefaultPoints; ++i)
+            {
+                juce::ValueTree p("POINT");
+                p.setProperty("x", Theme::Defaults::defaultPoints[i].x, nullptr);
+                p.setProperty("y", Theme::Defaults::defaultPoints[i].y, nullptr);
+                points.addChild(p, -1, nullptr);
+            }
             env.addChild(points, -1, nullptr);
 
             juce::ValueTree segments("SEGMENTS");
-            juce::ValueTree s1("SEGMENT");
-            s1.setProperty("curve", 0.5f, nullptr);
-            s1.setProperty("type", (int)CurveType::Exponential, nullptr);
-            segments.addChild(s1, -1, nullptr);
-
-            juce::ValueTree s2("SEGMENT");
-            s2.setProperty("curve", 0.5f, nullptr);
-            s2.setProperty("type", (int)CurveType::Exponential, nullptr);
-            segments.addChild(s2, -1, nullptr);
+            for (int i = 0; i < Theme::Defaults::numDefaultPoints - 1; ++i)
+            {
+                juce::ValueTree s("SEGMENT");
+                s.setProperty("curve", Theme::Defaults::curve, nullptr);
+                s.setProperty("type", Theme::Defaults::curveType, nullptr);
+                segments.addChild(s, -1, nullptr);
+            }
 
             env.addChild(segments, -1, nullptr);
 

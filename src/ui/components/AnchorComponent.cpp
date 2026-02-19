@@ -57,7 +57,7 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
             {
                 auto& um = grid.getUndoManager();
                 um.beginNewTransaction("Reset Tension");
-                segment.setProperty("curve", 0.5f, &um);
+                segment.setProperty("curve", Theme::Defaults::curve, &um);
                 grid.repaint();
             }
         });
@@ -73,7 +73,7 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
     if (e.mods.isLeftButtonDown())
     {
         isDragging = true;
-        startCurve = (float)segment.getProperty("curve", 0.5f);
+        startCurve = (float)segment.getProperty("curve", Theme::Defaults::curve);
         dragStartMouse = e.getScreenPosition();
 
         if (onDragStart)
@@ -84,7 +84,7 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
 void AnchorComponent::showTensionDialog()
 {
     auto* aw = new juce::AlertWindow("Set Tension", "Enter tension value (0.0 to 1.0):", juce::MessageBoxIconType::NoIcon);
-    aw->addTextEditor("tension", juce::String((float)segment.getProperty("curve", 0.5f)), "Tension:");
+    aw->addTextEditor("tension", juce::String((float)segment.getProperty("curve", Theme::Defaults::curve)), "Tension:");
     aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
     aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
