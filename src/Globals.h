@@ -45,6 +45,12 @@ namespace Theme
         const juce::Colour meterBackground { 0xFF000000 };
         const juce::Colour meterFill       { accent };
         const juce::Colour meterReduction  { 0xFFFF4444 };
+
+        // Knobs
+        const juce::Colour knobTrack       { 0xFF1A1A1A };
+        const juce::Colour knobIndicator   { accent };
+        const juce::Colour knobAccent      { accent };
+        const juce::Colour knobShadow      { 0xFF000000 };
     }
 
     namespace Defaults

@@ -6,6 +6,7 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
     const juce::String& unitSuffix)
     : labelText(name), unit(unitSuffix)
 {
+    knob.setLookAndFeel(&lnf);
     knob.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     knob.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
 
@@ -36,13 +37,11 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
     addAndMakeVisible(valueLabel);
 
     valueLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain);
-    valueLabel.setJustificationType(juce::Justification::centredLeft);
+    valueLabel.setJustificationType(juce::Justification::centredRight);
     valueLabel.setFont(FontManager::getJetBrainsMono(13.0f));
 
     updateValueLabel();
 }
-
-
 
 void ControlKnobComponent::setLabel(const juce::String& text)
 {
@@ -138,34 +137,33 @@ void ControlKnobComponent::handleCustomMenuResult(int result)
 
 void ControlKnobComponent::resized()
 {
-    auto bounds = getLocalBounds().reduced(6);
+    auto bounds = getLocalBounds().reduced(6, 4);
 
-    constexpr int knobSize = 44;
-    constexpr int spacing = 10;
+    constexpr int knobSize = 40;
     constexpr int valueWidth = 60;
 
     auto knobArea = bounds.removeFromLeft(knobSize);
     knob.setBounds(knobArea);
-
-    bounds.removeFromLeft(spacing);
 
     valueLabel.setBounds(bounds.removeFromRight(valueWidth));
 }
 
 void ControlKnobComponent::paint(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().reduced(6);
+    auto bounds = getLocalBounds().reduced(6, 4);
 
-    constexpr int knobSize = 46;
-    constexpr int spacing = 10;
+    constexpr int knobSize = 40;
+    constexpr int spacing = 8;
 
     bounds.removeFromLeft(knobSize + spacing);
 
+    auto labelArea = bounds.removeFromLeft(bounds.getWidth() - 60);
+
     g.setColour(Theme::Colours::textLabel);
-    g.setFont(FontManager::getInterMedium(14.0f));
+    g.setFont(FontManager::getInterMedium(13.0f));
 
     g.drawText(labelText,
-        bounds,
+        labelArea,
         juce::Justification::centredLeft);
 }
 

@@ -15,23 +15,28 @@ void CompactTimingSlider::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
     
     // Background
-    g.setColour(Theme::Colours::background.withAlpha(0.4f));
+    g.setColour(Theme::Colours::sectionBackground.withAlpha(0.8f));
     g.fillRoundedRectangle(bounds, 2.0f);
     
+    // Fill based on value (Visual Progress)
+    auto fillWidth = bounds.getWidth() * static_cast<float>(getValue() / getMaximum());
+    g.setColour(Theme::Colours::accent.withAlpha(0.1f));
+    g.fillRoundedRectangle(bounds.withWidth(fillWidth), 2.0f);
+
     // Label
     g.setColour(Theme::Colours::textLabel);
     g.setFont(FontManager::getBarlowBold(10.0f));
-    auto labelArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f).reduced(4, 0);
+    auto labelArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f).reduced(6, 0);
     g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
     
     // Value
     g.setColour(Theme::Colours::textMain);
     g.setFont(FontManager::getJetBrainsMono(11.0f));
-    g.drawFittedText(juce::String(getValue(), 1) + " ms", bounds.reduced(4, 0).toNearestInt(), juce::Justification::centredRight, 1);
+    g.drawFittedText(juce::String(getValue(), 1) + " ms", bounds.reduced(6, 0).toNearestInt(), juce::Justification::centredRight, 1);
     
     // Border
-    g.setColour(Theme::Colours::border.withAlpha(0.3f));
-    g.drawRoundedRectangle(getLocalBounds().toFloat(), 2.0f, 1.0f);
+    g.setColour(Theme::Colours::border.withAlpha(0.5f));
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 2.0f, 1.0f);
 }
 
 void CompactTimingSlider::mouseDown(const juce::MouseEvent& e)
@@ -112,9 +117,7 @@ HeaderSection::HeaderSection()
     brandLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.9f));
     brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
 
-    knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
     mixKnob = std::make_unique<ControlKnobComponent>("", 100.0f, "%");
-    mixKnob->getSlider().setLookAndFeel(knobLookAndFeel.get());
     addAndMakeVisible(mixKnob.get());
 
     undoButton.onClick = [this] { if (undoCallback) undoCallback(); };

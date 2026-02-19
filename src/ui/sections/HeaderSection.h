@@ -61,7 +61,6 @@ private:
     CompactTimingSlider lookaheadSlider;
     CompactTimingSlider lookbehindSlider;
 
-    std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
     std::unique_ptr<ControlKnobComponent> mixKnob;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookaheadAttachment;

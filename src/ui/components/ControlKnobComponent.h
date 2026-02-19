@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../utils/FlatKnobLookAndFeel.h"
 
 class ContextSlider : public juce::Slider
 {
@@ -45,6 +46,7 @@ private:
     juce::String labelText;
     juce::String unit;
 
+    FlatKnobLookAndFeel lnf;
     ContextSlider knob;
     juce::Label valueLabel;
 
