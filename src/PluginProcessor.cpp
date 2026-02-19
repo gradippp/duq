@@ -428,10 +428,18 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         masterGain.setTargetValue(sampleGain);
         float currentSmoothedGain = masterGain.getNextValue();
 
+        // Write UNPROCESSED sample into monitor buffer for visualization
+        float monitorSample = 0.0f;
+        for (int ch = 0; ch < numChannels; ++ch)
+            monitorSample += delayBuffer.getSample(ch, readPos);
+        monitorSample /= (float)numChannels;
+
+        monSamples[writeIndex] = monitorSample;
+
         for (int ch = 0; ch < numChannels; ++ch)
         {
             float* channelData = buffer.getWritePointer(ch);
-            float s = delayBuffer.getSample(ch, readPos); // Use delayed sample
+            float s = delayBuffer.getSample(ch, readPos);
             
             // Peak input (before modulation)
             if (ch == 0) inputPeak = std::max(inputPeak, std::abs(s));
@@ -442,14 +450,6 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             // Peak output
             outputPeak = std::max(outputPeak, std::abs(s));
         }
-
-        // Write processed (ducked) sample into monitor buffer
-        float monitorSample = 0.0f;
-        for (int ch = 0; ch < numChannels; ++ch)
-            monitorSample += buffer.getReadPointer(ch)[i];
-        monitorSample /= (float)numChannels;
-
-        monSamples[writeIndex] = monitorSample;
 
         writeIndex++;
         if (writeIndex >= monitorBufferSize)
