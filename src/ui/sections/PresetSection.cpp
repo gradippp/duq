@@ -50,6 +50,7 @@ void PresetSection::setMode(Mode newMode)
         titleLabel.setText("IMPORT ENVELOPE PRESET", juce::dontSendNotification);
 
     refreshPresetList();
+    repaint();
 }
 
 void PresetSection::refreshPresetList()
@@ -251,14 +252,31 @@ void PresetSection::paint(juce::Graphics& g)
     g.setColour(juce::Colours::white.withAlpha(0.05f));
     g.drawRoundedRectangle(bounds.reduced(1.0f), 4.0f, 2.0f);
 
+    // Footer area
+    auto footerArea = getLocalBounds().removeFromBottom(32).toFloat();
+    g.setColour(juce::Colours::black.withAlpha(0.3f));
+    g.fillRoundedRectangle(footerArea.reduced(2.0f), 2.0f);
+    
+    g.setColour(juce::Colours::white.withAlpha(0.1f));
+    g.drawLine(footerArea.getX() + 10, footerArea.getY(), footerArea.getRight() - 10, footerArea.getY());
+
+    auto dir = (mode == Mode::Project) 
+        ? PresetManager::getProjectDirectory() 
+        : PresetManager::getEnvelopeDirectory();
+
+    g.setColour(Theme::Colours::textDimmed);
+    g.setFont(FontManager::getJetBrainsMono(10.0f));
+    g.drawText("Find your presets at: " + dir.getFullPathName(), footerArea.reduced(15, 0), juce::Justification::centredLeft);
+
     if (presetFiles.empty())
     {
         g.setColour(juce::Colours::grey.withAlpha(0.4f));
-        g.setFont(juce::Font("Segoe UI", 16.0f, juce::Font::plain));
-        g.drawFittedText("NO PRESETS FOUND IN\n" + PresetManager::getEnvelopeDirectory().getFullPathName(), 
-                          getLocalBounds(), 
+        g.setFont(FontManager::getBarlowBold(18.0f));
+        
+        g.drawFittedText("NO PRESETS FOUND", 
+                          getLocalBounds().withTrimmedBottom(32), 
                           juce::Justification::centred, 
-                          2);
+                          1);
     }
 }
 
@@ -267,6 +285,7 @@ void PresetSection::resized()
     auto area = getLocalBounds();
     
     auto headerArea = area.removeFromTop(60);
+    area.removeFromBottom(32); // Space for footer
     
     // Close button (X) in the top right
     const int xSize = 24;
