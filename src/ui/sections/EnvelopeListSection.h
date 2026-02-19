@@ -11,6 +11,7 @@ public:
     class CustomButtonLookAndFeel : public juce::LookAndFeel_V4
     {
     public:
+        void drawButtonText (juce::Graphics& g, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override;
         juce::Font getTextButtonFont(juce::TextButton&, int) override;
     };
 

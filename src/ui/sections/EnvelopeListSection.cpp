@@ -5,27 +5,63 @@
 #include "../../model/EnvelopeData.h"
 #include "../../Globals.h"
 #include "../utils/PresetManager.h"
+#include "../utils/IconFactory.h"
 
 juce::Font EnvelopeListSection::CustomButtonLookAndFeel::getTextButtonFont(juce::TextButton&, int)
 {
     return FontManager::getBarlowBold(12.0f);
 }
 
+void EnvelopeListSection::CustomButtonLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown)
+{
+    auto font = getTextButtonFont(button, button.getHeight());
+    g.setFont(font);
+
+    auto textColour = button.findColour(button.isEnabled() ? juce::TextButton::textColourOffId : juce::TextButton::textColourOnId);
+    g.setColour(textColour);
+
+    auto bounds = button.getLocalBounds().toFloat();
+    auto iconName = button.getComponentID();
+
+    if (iconName.isNotEmpty())
+    {
+        auto icon = Icons::load(iconName, textColour);
+        if (icon != nullptr)
+        {
+            float iconSize = 14.0f;
+            float spacing = 6.0f;
+            float textWidth = g.getCurrentFont().getStringWidthFloat(button.getButtonText());
+            float totalWidth = iconSize + spacing + textWidth;
+
+            auto startX = (bounds.getWidth() - totalWidth) * 0.5f;
+            auto iconArea = juce::Rectangle<float>(startX, (bounds.getHeight() - iconSize) * 0.5f, iconSize, iconSize);
+            icon->drawWithin(g, iconArea, juce::RectanglePlacement::centred, 1.0f);
+
+            auto textArea = bounds.withLeft(iconArea.getRight() + spacing);
+            g.drawFittedText(button.getButtonText(), textArea.toNearestInt(), juce::Justification::centredLeft, 2);
+            return;
+        }
+    }
+
+    g.drawFittedText(button.getButtonText(), bounds.toNearestInt(), juce::Justification::centred, 2);
+}
+
 EnvelopeListSection::EnvelopeListSection()
 {
-    auto setupButton = [this](juce::TextButton& button, const juce::String& text, const juce::String& tooltip)
-        {
-            button.setLookAndFeel(&buttonLnf);
-            button.setButtonText(text);
-            button.setTooltip(tooltip);
-            button.setColour(juce::TextButton::buttonColourId, Theme::Colours::background.withAlpha(0.4f));
-            button.setColour(juce::TextButton::buttonOnColourId, Theme::Colours::uiHover);
-            button.setColour(juce::TextButton::textColourOffId, Theme::Colours::textLabel);
-            button.setColour(juce::TextButton::textColourOnId, Theme::Colours::textMain);
-        };
+    auto setupButton = [this](juce::TextButton& button, const juce::String& text, const juce::String& iconName, const juce::String& tooltip)
+    {
+        button.setLookAndFeel(&buttonLnf);
+        button.setButtonText(text);
+        button.setComponentID(iconName);
+        button.setTooltip(tooltip);
+        button.setColour(juce::TextButton::buttonColourId, Theme::Colours::background.withAlpha(0.4f));
+        button.setColour(juce::TextButton::buttonOnColourId, Theme::Colours::uiHover);
+        button.setColour(juce::TextButton::textColourOffId, Theme::Colours::textLabel);
+        button.setColour(juce::TextButton::textColourOnId, Theme::Colours::textMain);
+    };
 
-    setupButton(addButton, "+ ADD", "Add a new default envelope");
-    setupButton(importButton, "IMPORT", "Import an envelope preset (.duq.env)");
+    setupButton(addButton, "ADD", "add", "Add a new default envelope");
+    setupButton(importButton, "IMPORT", "import", "Import an envelope preset (.duq.env)");
 
     addAndMakeVisible(addButton);
     addAndMakeVisible(importButton);
