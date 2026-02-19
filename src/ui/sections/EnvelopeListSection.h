@@ -8,6 +8,12 @@ class EnvelopeListSection : public juce::Component,
     private juce::ValueTree::Listener
 {
 public:
+    class CustomButtonLookAndFeel : public juce::LookAndFeel_V4
+    {
+    public:
+        juce::Font getTextButtonFont(juce::TextButton&, int) override;
+    };
+
     EnvelopeListSection();
     ~EnvelopeListSection() override;
 
@@ -47,7 +53,9 @@ private:
 
     juce::Viewport viewport;
     juce::Component rowContainer;
+    CustomButtonLookAndFeel buttonLnf;
     juce::TextButton addButton;
+    juce::TextButton importButton;
     juce::OwnedArray<EnvelopeRowComponent> rows;
 
     juce::UndoManager* undoManager = nullptr;

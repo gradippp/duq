@@ -1,15 +1,34 @@
+#include <memory>
 #include "EnvelopeListSection.h"
 #include "../../PluginProcessor.h"
 #include "../utils/FontManager.h"
 #include "../../model/EnvelopeData.h"
 #include "../../Globals.h"
+#include "../utils/PresetManager.h"
+
+juce::Font EnvelopeListSection::CustomButtonLookAndFeel::getTextButtonFont(juce::TextButton&, int)
+{
+    return FontManager::getBarlowBold(12.0f);
+}
 
 EnvelopeListSection::EnvelopeListSection()
 {
-    addButton.setButtonText("+");
-    addButton.setTooltip("Add a new envelope");
+    auto setupButton = [this](juce::TextButton& button, const juce::String& text, const juce::String& tooltip)
+        {
+            button.setLookAndFeel(&buttonLnf);
+            button.setButtonText(text);
+            button.setTooltip(tooltip);
+            button.setColour(juce::TextButton::buttonColourId, Theme::Colours::background.withAlpha(0.4f));
+            button.setColour(juce::TextButton::buttonOnColourId, Theme::Colours::uiHover);
+            button.setColour(juce::TextButton::textColourOffId, Theme::Colours::textLabel);
+            button.setColour(juce::TextButton::textColourOnId, Theme::Colours::textMain);
+        };
+
+    setupButton(addButton, "+ ADD", "Add a new default envelope");
+    setupButton(importButton, "IMPORT", "Import an envelope preset (.duq.env)");
 
     addAndMakeVisible(addButton);
+    addAndMakeVisible(importButton);
 
     viewport.setViewedComponent(&rowContainer, false);
     viewport.setScrollBarsShown(true, false);
@@ -55,10 +74,70 @@ EnvelopeListSection::EnvelopeListSection()
             envelopesTree.addChild(env, -1, undoManager);
             selectEnvelope(newIndex);
         };
+
+    importButton.onClick = [this]()
+        {
+            if (!undoManager || !envelopesTree.isValid())
+                return;
+
+            auto fc = std::make_unique<juce::FileChooser>(
+                "Import Envelope",
+                PresetManager::getEnvelopeDirectory(),
+                "*" + PresetManager::envelopeExtension);
+
+            fc->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                [this, fc_ptr = fc.release()](const juce::FileChooser& chooser) mutable
+                {
+                    std::unique_ptr<juce::FileChooser> fc(fc_ptr);
+                    auto file = chooser.getResult();
+                    if (file.existsAsFile())
+                    {
+                        auto importedEnv = PresetManager::loadEnvelope(file);
+                        if (importedEnv.isValid())
+                        {
+                            undoManager->beginNewTransaction("Import Envelope");
+                            
+                            // Ensure the name is unique if needed, or keep original
+                            if (importedEnv.hasProperty("name")) {
+                                auto baseName = importedEnv["name"].toString();
+                                int counter = 1;
+                                juce::String finalName = baseName;
+                                bool nameExists = true;
+                                while (nameExists) {
+                                    nameExists = false;
+                                    for (int i = 0; i < envelopesTree.getNumChildren(); ++i) {
+                                        if (envelopesTree.getChild(i)["name"].toString() == finalName) {
+                                            nameExists = true;
+                                            break;
+                                        }
+                                    }
+                                    if (nameExists) {
+                                        finalName = baseName + " " + juce::String(++counter);
+                                    }
+                                }
+                                importedEnv.setProperty("name", finalName, nullptr);
+                            }
+
+                            // Ensure trigger note is free
+                            importedEnv.setProperty("triggerNote", getNextFreeNote(Theme::Defaults::triggerNote), nullptr);
+
+                            const int newIndex = envelopesTree.getNumChildren();
+                            envelopesTree.addChild(importedEnv, -1, undoManager);
+                            selectEnvelope(newIndex);
+                        }
+                        else
+                        {
+                            PresetManager::showCorruptPresetAlert();
+                        }
+                    }
+                });
+        };
 }
 
 EnvelopeListSection::~EnvelopeListSection()
 {
+    addButton.setLookAndFeel(nullptr);
+    importButton.setLookAndFeel(nullptr);
 }
 
 void EnvelopeListSection::setProcessor(DuqAudioProcessor& p)
@@ -208,6 +287,11 @@ void EnvelopeListSection::paint(juce::Graphics& g)
     g.drawText("ENVELOPES",
         headerArea.reduced(10, 0),
         juce::Justification::centredLeft);
+
+    // Footer separator
+    auto footerBounds = getLocalBounds().removeFromBottom(40);
+    g.setColour(Theme::Colours::border.withAlpha(0.5f));
+    g.drawLine(0.0f, footerBounds.getY(), (float)getWidth(), footerBounds.getY(), 1.0f);
 }
 
 void EnvelopeListSection::resized()
@@ -215,15 +299,18 @@ void EnvelopeListSection::resized()
     auto bounds = getLocalBounds();
 
     constexpr int headerHeight = 32;
-    constexpr int addButtonHeight = 28;
+    constexpr int buttonHeight = 28;
     constexpr int rowHeight = 28;
 
     // Remove header
     bounds.removeFromTop(headerHeight);
 
-    // Bottom add button
-    auto buttonArea = bounds.removeFromBottom(addButtonHeight);
-    addButton.setBounds(buttonArea.reduced(6));
+    // Bottom buttons
+    auto footerArea = bounds.removeFromBottom(buttonHeight + 8).reduced(6, 4);
+    
+    addButton.setBounds(footerArea.removeFromLeft(footerArea.getWidth() / 2 - 2));
+    footerArea.removeFromLeft(4);
+    importButton.setBounds(footerArea);
 
     // Viewport takes remaining space
     viewport.setBounds(bounds);
