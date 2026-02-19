@@ -636,6 +636,22 @@ void GridSection::paintOverChildren(juce::Graphics& g)
 
     g.setColour(juce::Colours::white);
     g.strokePath(path, juce::PathStrokeType(2.0f));
+
+    // ---- Filled Overlay ----
+    juce::Path fillPath = path;
+    
+    auto lastNode = points.getChild(numPoints - 1);
+    float fillLastX = (lastNode == activeDragNode) ? activeDragPosition.x : (float)lastNode["x"];
+    float fillFirstX = (firstNode == activeDragNode) ? activeDragPosition.x : (float)firstNode["x"];
+
+    fillPath.lineTo(normalizedToPixel({ fillLastX, 0.0f }));
+    fillPath.lineTo(normalizedToPixel({ fillFirstX, 0.0f }));
+    fillPath.closeSubPath();
+
+    juce::ColourGradient grad(juce::Colours::white.withAlpha(0.15f), 0, viewArea.getY(),
+                              juce::Colours::white.withAlpha(0.02f), 0, viewArea.getBottom(), false);
+    g.setGradientFill(grad);
+    g.fillPath(fillPath);
 }
 
 
