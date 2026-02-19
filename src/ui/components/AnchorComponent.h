@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../../model/EnvelopeData.h"
 
 class GridSection;
 
@@ -15,11 +16,14 @@ public:
     std::function<void(juce::ValueTree)> onDragEnd;
 
 private:
+    void showTensionDialog();
+
     GridSection& grid;
-    juce::ValueTree point;     // Stable identity
-    float startCurve = 0.0f;
+    juce::ValueTree segment;     // Stable identity
+    float startCurve = 0.5f;
 
     juce::Point<int> dragStartMouse;
+    bool isDragging = false;
 
     void paint(juce::Graphics&) override;
     void mouseDown(const juce::MouseEvent&) override;

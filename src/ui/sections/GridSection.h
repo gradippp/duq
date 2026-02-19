@@ -4,6 +4,7 @@
 #include "../components/PointComponent.h"
 #include "../components/AnchorComponent.h"
 #include "../components/WaveformComponent.h"
+#include "../../model/EnvelopeData.h"
 
 class GridSection : public juce::Component,
     private juce::ValueTree::Listener,

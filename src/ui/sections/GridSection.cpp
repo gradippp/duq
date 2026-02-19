@@ -1,16 +1,49 @@
 #include "GridSection.h"
 
-float applyCurve(float t, float curve)
+float applyCurve(float t, float curve, CurveType type)
 {
-    if (curve == 0.0f)
+    if (type == CurveType::Linear)
         return t;
 
-    float k = curve * 4.0f; // scale aggression
+    if (type == CurveType::Step)
+        return (t >= 0.5f) ? 1.0f : 0.0f;
 
-    if (curve > 0)
-        return 1.0f - std::pow(1.0f - t, 1.0f + k);
-    else
-        return std::pow(t, 1.0f - k);
+    // Use 0.5 as neutral (linear). Map 0..1 to -1..1
+    float norm = juce::jlimit(-1.0f, 1.0f, (curve - 0.5f) * 2.0f);
+
+    if (std::abs(norm) < 0.001f)
+        return t;
+
+    float k = norm * 4.0f; // scale aggression
+
+    if (type == CurveType::Exponential)
+    {
+        if (norm > 0)
+            return 1.0f - std::pow(1.0f - t, 1.0f + k);
+        else
+            return std::pow(t, 1.0f - k);
+    }
+    
+    if (type == CurveType::Logarithmic)
+    {
+        // Inverse of exponential
+        if (norm > 0)
+            return std::pow(t, 1.0f + k);
+        else
+            return 1.0f - std::pow(1.0f - t, 1.0f - k);
+    }
+
+    if (type == CurveType::SCurve)
+    {
+        // Simple sigmoid approximation
+        float s = 1.0f / (1.0f + std::exp(-k * (t - 0.5f) * 10.0f));
+        // Normalize s to [0, 1] range
+        float s0 = 1.0f / (1.0f + std::exp(-k * (-0.5f) * 10.0f));
+        float s1 = 1.0f / (1.0f + std::exp(-k * (0.5f) * 10.0f));
+        return (s - s0) / (s1 - s0);
+    }
+
+    return t;
 }
 
 
@@ -125,6 +158,27 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
     {
         envelope.addListener(this);
 
+        // --- Data Integrity Check ---
+        // Ensure SEGMENTS exists and matches point count (N-1)
+        auto points = envelope.getOrCreateChildWithName("POINTS", nullptr);
+        auto segments = envelope.getOrCreateChildWithName("SEGMENTS", nullptr);
+
+        int numPoints = points.getNumChildren();
+        int numSegments = segments.getNumChildren();
+
+        if (numPoints >= 2 && numSegments != numPoints - 1)
+        {
+            // Re-sync segments if count is wrong
+            segments.removeAllChildren(nullptr);
+            for (int i = 0; i < numPoints - 1; ++i)
+            {
+                juce::ValueTree s("SEGMENT");
+                s.setProperty("curve", 0.5f, nullptr);
+                s.setProperty("type", (int)CurveType::Exponential, nullptr);
+                segments.addChild(s, -1, nullptr);
+            }
+        }
+
         // Load view state from tree
         zoomX = (float)envelope.getProperty("zoomX", 1.0f);
         zoomY = (float)envelope.getProperty("zoomY", 1.0f);
@@ -162,6 +216,12 @@ void GridSection::deletePoint(juce::ValueTree pointNode)
     if (undoManager)
         undoManager->beginNewTransaction("Delete Envelope Point");
 
+    auto segments = envelope.getChildWithName("SEGMENTS");
+    if (segments.isValid() && index < segments.getNumChildren())
+    {
+        segments.removeChild(index, undoManager);
+    }
+
     points.removeChild(pointNode, undoManager);
 }
 
@@ -177,11 +237,11 @@ float GridSection::getCurveForSegment(int index) const
     if (!envelope.isValid())
         return 0.0f;
 
-    auto points = envelope.getChildWithName("POINTS");
-    if (!points.isValid() || index >= points.getNumChildren())
+    auto segments = envelope.getChildWithName("SEGMENTS");
+    if (!segments.isValid() || index >= segments.getNumChildren())
         return 0.0f;
 
-    return (float)points.getChild(index)["curve"];
+    return (float)segments.getChild(index)["curve"];
 }
 
 void GridSection::mouseMove(const juce::MouseEvent&)
@@ -315,14 +375,16 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
     if (normalized.x <= 0.0f || normalized.x >= 1.0f)
         return;
 
-    auto points = envelope.getChildWithName("POINTS");
-    if (!points.isValid())
-        return;
+    auto points = envelope.getOrCreateChildWithName("POINTS", undoManager);
+    auto segments = envelope.getOrCreateChildWithName("SEGMENTS", undoManager);
 
     juce::ValueTree newPoint("POINT");
     newPoint.setProperty("x", normalized.x, nullptr);
     newPoint.setProperty("y", normalized.y, nullptr);
-    newPoint.setProperty("curve", 0.0f, nullptr);
+
+    juce::ValueTree newSegment("SEGMENT");
+    newSegment.setProperty("curve", 0.5f, nullptr);
+    newSegment.setProperty("type", (int)CurveType::Exponential, nullptr);
 
     int insertIndex = 0;
 
@@ -337,7 +399,21 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
     if (undoManager)
         undoManager->beginNewTransaction("Add Envelope Point");
 
+    // Ensure we have N-1 segments before adding new ones if they were missing
+    if (segments.getNumChildren() < points.getNumChildren() - 1 && points.getNumChildren() >= 2)
+    {
+        segments.removeAllChildren(undoManager);
+        for (int i = 0; i < points.getNumChildren() - 1; ++i)
+        {
+            juce::ValueTree s("SEGMENT");
+            s.setProperty("curve", 0.5f, nullptr);
+            s.setProperty("type", (int)CurveType::Exponential, nullptr);
+            segments.addChild(s, -1, undoManager);
+        }
+    }
+
     points.addChild(newPoint, insertIndex, undoManager);
+    segments.addChild(newSegment, std::max(0, insertIndex - 1), undoManager);
 }
 
 juce::Point<float> GridSection::normalizedToPixel(juce::Point<float> p) const
@@ -509,6 +585,8 @@ void GridSection::paintOverChildren(juce::Graphics& g)
     );
 
     // ---- Segments ----
+    auto segments = envelope.getChildWithName("SEGMENTS");
+
     for (int i = 0; i < numPoints - 1; ++i)
     {
         auto p1 = points.getChild(i);
@@ -530,16 +608,24 @@ void GridSection::paintOverChildren(juce::Graphics& g)
             ? activeDragPosition.y
             : (float)p2["y"];
 
-        float curve = (p1 == activeAnchorNode)
-            ? activeDragCurve
-            : (float)p1["curve"];
+        float curve = 0.0f;
+        CurveType type = CurveType::Exponential;
+
+        if (segments.isValid() && i < segments.getNumChildren())
+        {
+            auto sNode = segments.getChild(i);
+            curve = (sNode == activeAnchorNode)
+                ? activeDragCurve
+                : (float)sNode["curve"];
+            type = (CurveType)(int)sNode["type"];
+        }
 
         const int resolution = 40;
 
         for (int s = 1; s <= resolution; ++s)
         {
             float t = (float)s / resolution;
-            float shapedT = applyCurve(t, curve);
+            float shapedT = applyCurve(t, curve, type);
 
             float x = juce::jmap(t, x1, x2);
             float y = juce::jmap(shapedT, y1, y2);
@@ -706,7 +792,8 @@ void GridSection::rebuildPointComponents()
 
             // ---- LIVE ANCHOR UPDATE ----
             auto points = grid.envelope.getChildWithName("POINTS");
-            if (!points.isValid())
+            auto segments = grid.envelope.getChildWithName("SEGMENTS");
+            if (!points.isValid() || !segments.isValid())
                 return;
 
             int index = points.indexOf(node);
@@ -718,23 +805,27 @@ void GridSection::rebuildPointComponents()
             // Update anchor BEFORE this point
             if (index > 0 && (size_t)(index - 1) < grid.anchorComponents.size())
             {
-                auto prevNode = points.getChild(index - 1);
+                auto prevPointNode = points.getChild(index - 1);
+                auto segmentNode = segments.getChild(index - 1);
 
-                float x1 = (prevNode == grid.activeDragNode)
+                float x1 = (prevPointNode == grid.activeDragNode)
                     ? grid.activeDragPosition.x
-                    : (float)prevNode["x"];
+                    : (float)prevPointNode["x"];
 
-                float y1 = (prevNode == grid.activeDragNode)
+                float y1 = (prevPointNode == grid.activeDragNode)
                     ? grid.activeDragPosition.y
-                    : (float)prevNode["y"];
+                    : (float)prevPointNode["y"];
 
                 float x2 = pos.x;
                 float y2 = pos.y;
 
-                float curve = (float)prevNode["curve"];
+                float curve = (segmentNode == grid.activeAnchorNode)
+                    ? grid.activeDragCurve
+                    : (float)segmentNode["curve"];
+                CurveType type = (CurveType)(int)segmentNode["type"];
 
                 float t = 0.5f;
-                float shapedT = applyCurve(t, curve);
+                float shapedT = applyCurve(t, curve, type);
 
                 float ax = juce::jmap(t, x1, x2);
                 float ay = juce::jmap(shapedT, y1, y2);
@@ -745,23 +836,27 @@ void GridSection::rebuildPointComponents()
             // Update anchor AFTER this point
             if (index < numPoints - 1 && (size_t)index < grid.anchorComponents.size())
             {
-                auto nextNode = points.getChild(index + 1);
+                auto nextPointNode = points.getChild(index + 1);
+                auto segmentNode = segments.getChild(index);
 
                 float x1 = pos.x;
                 float y1 = pos.y;
 
-                float x2 = (nextNode == grid.activeDragNode)
+                float x2 = (nextPointNode == grid.activeDragNode)
                     ? grid.activeDragPosition.x
-                    : (float)nextNode["x"];
+                    : (float)nextPointNode["x"];
 
-                float y2 = (nextNode == grid.activeDragNode)
+                float y2 = (nextPointNode == grid.activeDragNode)
                     ? grid.activeDragPosition.y
-                    : (float)nextNode["y"];
+                    : (float)nextPointNode["y"];
 
-                float curve = (float)node["curve"];
+                float curve = (segmentNode == grid.activeAnchorNode)
+                    ? grid.activeDragCurve
+                    : (float)segmentNode["curve"];
+                CurveType type = (CurveType)(int)segmentNode["type"];
 
                 float t = 0.5f;
-                float shapedT = applyCurve(t, curve);
+                float shapedT = applyCurve(t, curve, type);
 
                 float ax = juce::jmap(t, x1, x2);
                 float ay = juce::jmap(shapedT, y1, y2);
@@ -801,70 +896,74 @@ void GridSection::rebuildPointComponents()
     // ANCHOR COMPONENTS
     // ============================
 
-    for (int i = 0; i < numPoints - 1; ++i)
+    auto segments = envelope.getChildWithName("SEGMENTS");
+    if (segments.isValid())
     {
-        auto node = points.getChild(i);
-        auto anchor = std::make_unique<AnchorComponent>(*this, node);
+        for (int i = 0; i < segments.getNumChildren(); ++i)
+        {
+            auto node = segments.getChild(i);
+            auto anchor = std::make_unique<AnchorComponent>(*this, node);
 
-        juce::Component::SafePointer<GridSection> safeThisAnchor(this);
+            juce::Component::SafePointer<GridSection> safeThisAnchor(this);
 
-        anchor->onDragStart =
-            [safeThisAnchor, i](juce::ValueTree node)
-            {
-                if (safeThisAnchor == nullptr)
-                    return;
+            anchor->onDragStart =
+                [safeThisAnchor, i](juce::ValueTree node)
+                {
+                    if (safeThisAnchor == nullptr)
+                        return;
 
-                auto& grid = *safeThisAnchor;
+                    auto& grid = *safeThisAnchor;
 
-                grid.isDraggingAnchor = true;
-                grid.activeAnchorNode = node;
-                grid.activeDragCurve = (float)node["curve"];
-                grid.activeAnchorIndex = i;
+                    grid.isDraggingAnchor = true;
+                    grid.activeAnchorNode = node;
+                    grid.activeDragCurve = (float)node["curve"];
+                    grid.activeAnchorIndex = i;
 
-                if (grid.undoManager)
-                    grid.undoManager->beginNewTransaction("Move Curve");
-            };
+                    if (grid.undoManager)
+                        grid.undoManager->beginNewTransaction("Move Curve");
+                };
 
-        anchor->onDragMove =
-            [safeThisAnchor, i](juce::ValueTree node, float newCurve)
-            {
-                if (safeThisAnchor == nullptr)
-                    return;
+            anchor->onDragMove =
+                [safeThisAnchor, i](juce::ValueTree node, float newCurve)
+                {
+                    if (safeThisAnchor == nullptr)
+                        return;
 
-                if (!node.isValid())
-                    return;
+                    if (!node.isValid())
+                        return;
 
-                auto& grid = *safeThisAnchor;
+                    auto& grid = *safeThisAnchor;
 
-                grid.activeAnchorNode = node;
-                grid.activeAnchorIndex = i;
-                grid.activeDragCurve = juce::jlimit(-1.0f, 1.0f, newCurve);
+                    grid.activeAnchorNode = node;
+                    grid.activeAnchorIndex = i;
+                    grid.activeDragCurve = juce::jlimit(-1.0f, 1.0f, newCurve);
 
-                grid.updatePointPositions();
-                grid.repaint();
-            };
+                    grid.updatePointPositions();
+                    grid.repaint();
+                };
 
-        anchor->onDragEnd =
-            [safeThisAnchor](juce::ValueTree node)
-            {
-                if (safeThisAnchor == nullptr)
-                    return;
+            anchor->onDragEnd =
+                [safeThisAnchor](juce::ValueTree node)
+                {
+                    if (safeThisAnchor == nullptr)
+                        return;
 
-                auto& grid = *safeThisAnchor;
+                    auto& grid = *safeThisAnchor;
 
-                if (!node.isValid())
-                    return;
+                    if (!node.isValid())
+                        return;
 
-                // Commit the edited curve to the exact node that was dragged.
-                node.setProperty("curve", grid.activeDragCurve, grid.undoManager);
+                    // Commit the edited curve to the exact node that was dragged.
+                    node.setProperty("curve", grid.activeDragCurve, grid.undoManager);
 
-                grid.activeAnchorNode = {};
-                grid.activeAnchorIndex = -1;
-                grid.isDraggingAnchor = false;
-            };
+                    grid.activeAnchorNode = {};
+                    grid.activeAnchorIndex = -1;
+                    grid.isDraggingAnchor = false;
+                };
 
-        addAndMakeVisible(anchor.get());
-        anchorComponents.push_back(std::move(anchor));
+            addAndMakeVisible(anchor.get());
+            anchorComponents.push_back(std::move(anchor));
+        }
     }
 
     updatePointPositions();
@@ -893,6 +992,8 @@ void GridSection::updatePointPositions()
         pointComponents[i]->setNormalizedPosition({ x, y });
     }
 
+    auto segments = envelope.getChildWithName("SEGMENTS");
+
     for (int i = 0; i < numPoints - 1 && i < (int)anchorComponents.size(); ++i)
     {
         auto p1 = points.getChild(i);
@@ -902,13 +1003,21 @@ void GridSection::updatePointPositions()
         float y1 = (float)p1["y"];
         float x2 = (float)p2["x"];
         float y2 = (float)p2["y"];
-        float curve = (p1 == activeAnchorNode)
-            ? activeDragCurve
-            : (float)p1["curve"];
 
+        float curve = 0.0f;
+        CurveType type = CurveType::Exponential;
+
+        if (segments.isValid() && i < segments.getNumChildren())
+        {
+            auto sNode = segments.getChild(i);
+            curve = (sNode == activeAnchorNode)
+                ? activeDragCurve
+                : (float)sNode["curve"];
+            type = (CurveType)(int)sNode["type"];
+        }
 
         float t = 0.5f;
-        float shapedT = applyCurve(t, curve);
+        float shapedT = applyCurve(t, curve, type);
 
         float x = juce::jmap(t, x1, x2);
         float y = juce::jmap(shapedT, y1, y2);

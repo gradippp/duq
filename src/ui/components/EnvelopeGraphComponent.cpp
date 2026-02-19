@@ -34,13 +34,16 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
     // ---- Right click: reset curve ----
     if (e.mods.isRightButtonDown())
     {
-        for (size_t i = 0; i < points.size() - 1; ++i)
+        currentEnvelope->rebuildSegments();
+        auto& segments = currentEnvelope->segments;
+
+        for (size_t i = 0; i < segments.size(); ++i)
         {
             auto handle = getHandlePosition(i, area);
 
             if (handle.getDistanceFrom(e.position) < 8.0f)
             {
-                points[i].curve = 0.0f;
+                segments[i].curve = 0.0f;
                 repaint();
                 return;
             }
@@ -61,7 +64,10 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
     }
 
     // ---- Curve handle hit test ----
-    for (size_t i = 0; i < points.size() - 1; ++i)
+    currentEnvelope->rebuildSegments();
+    auto& segments = currentEnvelope->segments;
+
+    for (size_t i = 0; i < segments.size(); ++i)
     {
         auto handle = getHandlePosition(i, area);
 
@@ -69,7 +75,7 @@ void EnvelopeGraphComponent::mouseDown(const juce::MouseEvent& e)
         {
             draggedCurveIndex = (int)i;
             draggedPointIndex = -1;
-            dragStartCurveValue = points[i].curve;
+            dragStartCurveValue = segments[i].curve;
             return;
         }
     }
@@ -147,8 +153,11 @@ void EnvelopeGraphComponent::mouseDrag(const juce::MouseEvent& e)
     // ---- Drag curve handle ----
     if (draggedCurveIndex >= 0)
     {
-        const auto& a = points[draggedCurveIndex];
-        const auto& b = points[draggedCurveIndex + 1];
+        currentEnvelope->rebuildSegments();
+        auto& segments = currentEnvelope->segments;
+
+        const auto& a = *segments[draggedCurveIndex].startPoint;
+        const auto& b = *segments[draggedCurveIndex].endPoint;
 
         juce::Point<float> p0 = toPixel(a, area);
         juce::Point<float> p3 = toPixel(b, area);
@@ -187,7 +196,7 @@ void EnvelopeGraphComponent::mouseDrag(const juce::MouseEvent& e)
             dragVec.x * normal.x +
             dragVec.y * normal.y;
 
-        points[draggedCurveIndex].curve =
+        segments[draggedCurveIndex].curve =
             juce::jlimit(-1.0f, 1.0f,
                 dragStartCurveValue + projected * curveSensitivity);
 
@@ -240,17 +249,20 @@ void EnvelopeGraphComponent::drawEnvelope(
     if (!currentEnvelope)
         return;
 
+    currentEnvelope->rebuildSegments();
     auto& points = currentEnvelope->points;
+    auto& segments = currentEnvelope->segments;
 
     if (points.size() < 2)
         return;
 
     juce::Path path;
 
-    for (size_t i = 0; i < points.size() - 1; ++i)
+    for (size_t i = 0; i < segments.size(); ++i)
     {
-        const auto& a = points[i];
-        const auto& b = points[i + 1];
+        const auto& a = *segments[i].startPoint;
+        const auto& b = *segments[i].endPoint;
+        float curve = segments[i].curve;
 
         juce::Point<float> p0 = toPixel(a, area);
         juce::Point<float> p3 = toPixel(b, area);
@@ -289,7 +301,7 @@ void EnvelopeGraphComponent::drawEnvelope(
         // limit max bend to avoid overshoot
         float maxStrength = segmentLength * 0.35f;
         float strength = juce::jlimit(-maxStrength, maxStrength,
-            a.curve * segmentLength * curveStrength);
+            curve * segmentLength * curveStrength);
 
         p1.x += normal.x * strength;
         p1.y += normal.y * strength;
@@ -348,8 +360,11 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
     size_t index,
     juce::Rectangle<int> area) const
 {
-    const auto& a = currentEnvelope->points[index];
-    const auto& b = currentEnvelope->points[index + 1];
+    currentEnvelope->rebuildSegments();
+    const auto& segment = currentEnvelope->segments[index];
+    const auto& a = *segment.startPoint;
+    const auto& b = *segment.endPoint;
+    float curve = segment.curve;
 
     juce::Point<float> p0 = toPixel(a, area);
     juce::Point<float> p3 = toPixel(b, area);
@@ -384,11 +399,11 @@ juce::Point<float> EnvelopeGraphComponent::getHandlePosition(
     float segmentLength = direction.getDistanceFromOrigin();
     float strength = segmentLength * curveStrength;
 
-    p1.x += normal.x * a.curve * strength;
-    p1.y += normal.y * a.curve * strength;
+    p1.x += normal.x * curve * strength;
+    p1.y += normal.y * curve * strength;
 
-    p2.x -= normal.x * a.curve * strength;
-    p2.y -= normal.y * a.curve * strength;
+    p2.x -= normal.x * curve * strength;
+    p2.y -= normal.y * curve * strength;
 
     // ---- Evaluate cubic at t = 0.5 ----
     float t = 0.5f;

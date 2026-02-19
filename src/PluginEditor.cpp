@@ -9,6 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "ui/utils/PresetManager.h"
+#include "model/EnvelopeData.h"
 
 //==============================================================================
 DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
@@ -148,11 +149,18 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             env.setProperty("rateIsFrequencyMode", true, nullptr);
 
             juce::ValueTree points("POINTS");
-            juce::ValueTree p1("POINT"); p1.setProperty("x", 0.0f, nullptr); p1.setProperty("y", 0.0f, nullptr); p1.setProperty("curve", 0.0f, nullptr);
-            juce::ValueTree p2("POINT"); p2.setProperty("x", 1.0f, nullptr); p2.setProperty("y", 1.0f, nullptr); p2.setProperty("curve", 0.0f, nullptr);
+            juce::ValueTree p1("POINT"); p1.setProperty("x", 0.0f, nullptr); p1.setProperty("y", 0.0f, nullptr);
+            juce::ValueTree p2("POINT"); p2.setProperty("x", 1.0f, nullptr); p2.setProperty("y", 1.0f, nullptr);
             points.addChild(p1, -1, nullptr);
             points.addChild(p2, -1, nullptr);
             env.addChild(points, -1, nullptr);
+
+            juce::ValueTree segments("SEGMENTS");
+            juce::ValueTree s1("SEGMENT");
+            s1.setProperty("curve", 0.5f, nullptr);
+            s1.setProperty("type", (int)CurveType::Exponential, nullptr);
+            segments.addChild(s1, -1, nullptr);
+            env.addChild(segments, -1, nullptr);
 
             envelopes.addChild(env, -1, &undoManager);
             header.setPresetName("Default Project");

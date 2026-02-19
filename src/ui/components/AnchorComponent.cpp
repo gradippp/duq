@@ -1,9 +1,10 @@
 #include "AnchorComponent.h"
 #include "../sections/GridSection.h"
+#include "../../model/EnvelopeData.h"
 
 AnchorComponent::AnchorComponent(GridSection& owner,
     juce::ValueTree node)
-    : grid(owner), point(node)
+    : grid(owner), segment(node)
 {
     setSize(10, 10);
 }
@@ -22,8 +23,45 @@ void AnchorComponent::paint(juce::Graphics& g)
 
 void AnchorComponent::mouseDown(const juce::MouseEvent& e)
 {
-    if (!point.isValid())
+    if (!segment.isValid())
         return;
+
+    if (e.mods.isRightButtonDown())
+    {
+        juce::PopupMenu m;
+        m.addItem((int)CurveType::Exponential + 1, "Exponential", true, (int)segment.getProperty("type", (int)CurveType::Exponential) == (int)CurveType::Exponential);
+        m.addItem((int)CurveType::Linear + 1, "Linear", true, (int)segment.getProperty("type", (int)CurveType::Exponential) == (int)CurveType::Linear);
+        m.addItem((int)CurveType::Logarithmic + 1, "Logarithmic", true, (int)segment.getProperty("type", (int)CurveType::Exponential) == (int)CurveType::Logarithmic);
+        m.addItem((int)CurveType::SCurve + 1, "S-Curve", true, (int)segment.getProperty("type", (int)CurveType::Exponential) == (int)CurveType::SCurve);
+        m.addItem((int)CurveType::Step + 1, "Step", true, (int)segment.getProperty("type", (int)CurveType::Exponential) == (int)CurveType::Step);
+
+        m.addSeparator();
+        m.addItem(10, "Set Tension...");
+        m.addItem(11, "Reset Tension");
+
+        m.showMenuAsync(juce::PopupMenu::Options(), [this](int result)
+        {
+            if (result >= 1 && result <= 5)
+            {
+                auto& um = grid.getUndoManager();
+                um.beginNewTransaction("Change Curve Type");
+                segment.setProperty("type", result - 1, &um);
+                grid.repaint();
+            }
+            else if (result == 10)
+            {
+                showTensionDialog();
+            }
+            else if (result == 11)
+            {
+                auto& um = grid.getUndoManager();
+                um.beginNewTransaction("Reset Tension");
+                segment.setProperty("curve", 0.5f, &um);
+                grid.repaint();
+            }
+        });
+        return;
+    }
 
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
@@ -31,17 +69,43 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
         return;
     }
 
-    startCurve = (float)point["curve"];
-    dragStartMouse = e.getScreenPosition();
+    if (e.mods.isLeftButtonDown())
+    {
+        isDragging = true;
+        startCurve = (float)segment.getProperty("curve", 0.5f);
+        dragStartMouse = e.getScreenPosition();
 
-    if (onDragStart)
-        onDragStart(point);
+        if (onDragStart)
+            onDragStart(segment);
+    }
+}
+
+void AnchorComponent::showTensionDialog()
+{
+    auto* aw = new juce::AlertWindow("Set Tension", "Enter tension value (0.0 to 1.0):", juce::MessageBoxIconType::NoIcon);
+    aw->addTextEditor("tension", juce::String((float)segment.getProperty("curve", 0.5f)), "Tension:");
+    aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    aw->enterModalState(true, juce::ModalCallbackFunction::create([this, aw](int result)
+    {
+        if (result == 1)
+        {
+            float val = aw->getTextEditorContents("tension").getFloatValue();
+            auto& um = grid.getUndoManager();
+            um.beginNewTransaction("Set Tension");
+            segment.setProperty("curve", juce::jlimit(0.0f, 1.0f, val), &um);
+            grid.repaint();
+        }
+        delete aw;
+    }));
 }
 
 void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!point.isValid())
+    if (!segment.isValid() || !isDragging)
         return;
+
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
     {
         grid.mouseDrag(e.getEventRelativeTo(&grid));
@@ -50,15 +114,15 @@ void AnchorComponent::mouseDrag(const juce::MouseEvent& e)
 
     auto deltaPixels = e.getScreenPosition() - dragStartMouse;
     const float sensitivity = 0.005f;
-    float newCurve = juce::jlimit(-1.0f, 1.0f, startCurve - deltaPixels.y * sensitivity);
+    float newCurve = juce::jlimit(0.0f, 1.0f, startCurve - deltaPixels.y * sensitivity);
 
     if (onDragMove)
-        onDragMove(point, newCurve);
+        onDragMove(segment, newCurve);
 }
 
 void AnchorComponent::mouseUp(const juce::MouseEvent& e)
 {
-    if (!point.isValid())
+    if (!segment.isValid())
         return;
 
     if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
@@ -67,6 +131,10 @@ void AnchorComponent::mouseUp(const juce::MouseEvent& e)
         return;
     }
 
-    if (onDragEnd)
-        onDragEnd(point);
+    if (isDragging)
+    {
+        isDragging = false;
+        if (onDragEnd)
+            onDragEnd(segment);
+    }
 }

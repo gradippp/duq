@@ -1,11 +1,27 @@
 #pragma once
 
+enum class CurveType
+{
+    Exponential = 0,
+    Linear,
+    Logarithmic,
+    SCurve,
+    Step
+};
+
 struct EnvelopePoint
 {
     float x = 0.0f;
     float y = 0.0f;
+};
+
+struct EnvelopeSegment
+{
+    const EnvelopePoint* startPoint = nullptr;
+    const EnvelopePoint* endPoint = nullptr;
 
     float curve = 0.0f;
+    CurveType type = CurveType::Exponential;
 };
 
 struct EnvelopeViewState
@@ -36,4 +52,31 @@ struct EnvelopeData
         {0.0f, 0.0f},
         {1.0f, 1.0f}
     };
+
+    std::vector<EnvelopeSegment> segments;
+
+    void rebuildSegments()
+    {
+        if (points.size() < 2)
+        {
+            segments.clear();
+            return;
+        }
+
+        const size_t numSegments = points.size() - 1;
+
+        // If the number of segments changed, we might need to reallocate/shift.
+        // For simplicity, if it changed, we reset. 
+        // In a real app we'd handle insertion/deletion more gracefully.
+        if (segments.size() != numSegments)
+        {
+            segments.resize(numSegments);
+        }
+
+        for (size_t i = 0; i < numSegments; ++i)
+        {
+            segments[i].startPoint = &points[i];
+            segments[i].endPoint = &points[i + 1];
+        }
+    }
 };
