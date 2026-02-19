@@ -1,6 +1,7 @@
 #include "AnchorComponent.h"
 #include "../sections/GridSection.h"
 #include "../../model/EnvelopeData.h"
+#include "../../Globals.h"
 
 AnchorComponent::AnchorComponent(GridSection& owner,
     juce::ValueTree node)
@@ -17,7 +18,7 @@ void AnchorComponent::setNormalizedPosition(juce::Point<float> p)
 
 void AnchorComponent::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colours::orange);
+    g.setColour(Theme::Colours::anchor);
     g.drawEllipse(getLocalBounds().toFloat(), 2.0f);
 }
 

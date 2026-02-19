@@ -10,6 +10,7 @@
 #include "PluginEditor.h"
 #include "ui/utils/PresetManager.h"
 #include "model/EnvelopeData.h"
+#include "Globals.h"
 
 //==============================================================================
 DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
@@ -233,7 +234,7 @@ void DuqAudioProcessorEditor::timerCallback()
 //==============================================================================
 void DuqAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll(juce::Colours::black);
+    g.fillAll(Theme::Colours::background);
 }
 
 void DuqAudioProcessorEditor::resized()

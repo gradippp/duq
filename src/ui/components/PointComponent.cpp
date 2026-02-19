@@ -1,5 +1,6 @@
 #include "PointComponent.h"
 #include "../sections/GridSection.h"
+#include "../../Globals.h"
 
 PointComponent::PointComponent(GridSection& owner, juce::ValueTree node)
     : grid(owner), point(node)
@@ -26,14 +27,14 @@ void PointComponent::paint(juce::Graphics& g)
 
     if (isHovering)
     {
-        g.setColour(juce::Colours::white.withAlpha(0.3f));
+        g.setColour(Theme::Colours::point.withAlpha(0.3f));
         g.fillEllipse(bounds);
-        g.setColour(juce::Colours::white);
+        g.setColour(Theme::Colours::point);
         g.fillEllipse(bounds.reduced(2.0f));
     }
     else
     {
-        g.setColour(juce::Colours::white);
+        g.setColour(Theme::Colours::point);
         g.fillEllipse(bounds.reduced(2.0f));
     }
 }

@@ -1,6 +1,7 @@
 #include "GridSection.h"
 #include "../../PluginProcessor.h"
 #include "../../dsp/EnvelopeCurves.h"
+#include "../../Globals.h"
 
 GridSection::GridSection()
 {
@@ -599,7 +600,7 @@ void GridSection::paintOverChildren(juce::Graphics& g)
         }
     }
 
-    g.setColour(juce::Colours::white);
+    g.setColour(Theme::Colours::envelopeLine);
     g.strokePath(path, juce::PathStrokeType(2.0f));
 
     // ---- Filled Overlay ----
@@ -613,8 +614,8 @@ void GridSection::paintOverChildren(juce::Graphics& g)
     fillPath.lineTo(normalizedToPixel({ fillFirstX, 0.0f }));
     fillPath.closeSubPath();
 
-    juce::ColourGradient grad(juce::Colours::white.withAlpha(0.15f), 0, viewArea.getY(),
-                              juce::Colours::white.withAlpha(0.02f), 0, viewArea.getBottom(), false);
+    juce::ColourGradient grad(Theme::Colours::envelopeFillTop, 0, viewArea.getY(),
+                              Theme::Colours::envelopeFillBot, 0, viewArea.getBottom(), false);
     g.setGradientFill(grad);
     g.fillPath(fillPath);
 
@@ -622,7 +623,6 @@ void GridSection::paintOverChildren(juce::Graphics& g)
     if (processor != nullptr && currentEnvelopeIndex >= 0)
     {
         auto phases = processor->getActivePhasesForEnvelope(currentEnvelopeIndex);
-        double phaseInc = processor->getPhaseIncrement(currentEnvelopeIndex);
         
         for (size_t pIdx = 0; pIdx < phases.size(); ++pIdx)
         {
@@ -633,11 +633,11 @@ void GridSection::paintOverChildren(juce::Graphics& g)
             if (pixelX >= viewArea.getX() && pixelX <= viewArea.getRight())
             {
                 // Glow
-                g.setColour(juce::Colours::white.withAlpha(0.1f));
+                g.setColour(Theme::Colours::playheadGlow);
                 g.drawVerticalLine((int)pixelX, (float)viewArea.getY(), (float)viewArea.getBottom());
                 
                 // Main line
-                g.setColour(juce::Colours::white.withAlpha(0.6f));
+                g.setColour(Theme::Colours::playhead);
                 g.drawVerticalLine((int)pixelX, (float)viewArea.getY(), (float)viewArea.getBottom());
             }
         }
@@ -689,8 +689,8 @@ void GridSection::drawGrid(juce::Graphics& g)
         bool isMajor = (i % 4 == 0);
 
         g.setColour(isMajor
-            ? juce::Colours::white.withAlpha(0.15f)
-            : juce::Colours::white.withAlpha(0.05f));
+            ? Theme::Colours::gridMajor
+            : Theme::Colours::gridMinor);
 
         g.drawLine(p.x,
             viewArea.getY(),
@@ -713,8 +713,8 @@ void GridSection::drawGrid(juce::Graphics& g)
         bool isMajor = (i % 4 == 0);
 
         g.setColour(isMajor
-            ? juce::Colours::white.withAlpha(0.15f)
-            : juce::Colours::white.withAlpha(0.05f));
+            ? Theme::Colours::gridMajor
+            : Theme::Colours::gridMinor);
 
         g.drawLine(viewArea.getX(),
             p.y,

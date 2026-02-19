@@ -1,6 +1,7 @@
 #include "HeaderSection.h"
 #include "../utils/IconFactory.h"
 #include "../utils/FontManager.h"
+#include "../../Globals.h"
 
 HeaderSection::HeaderSection()
 {
@@ -13,11 +14,11 @@ HeaderSection::HeaderSection()
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                juce::Colours::white.withAlpha(0.08f));
+                Theme::Colours::uiHover);
 
-            auto normal = Icons::load(iconName, juce::Colours::white);
-            auto over = Icons::load(iconName, juce::Colours::white.withAlpha(0.85f));
-            auto down = Icons::load(iconName, juce::Colours::white.withAlpha(0.6f));
+            auto normal = Icons::load(iconName, Theme::Colours::textMain);
+            auto over = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.85f));
+            auto down = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.6f));
 
             if (normal != nullptr)
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -41,14 +42,14 @@ HeaderSection::HeaderSection()
     addAndMakeVisible(presetNameLabel);
     presetNameLabel.setJustificationType(juce::Justification::centred);
     presetNameLabel.setFont(FontManager::getJetBrainsMono(15.0f));
-    presetNameLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.85f));
+    presetNameLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.85f));
     presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
     presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
 
     addAndMakeVisible(brandLabel);
     brandLabel.setText("DUQ", juce::dontSendNotification);
     brandLabel.setFont(FontManager::getInterBold(28.0f));
-    brandLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.9f));
+    brandLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.9f));
     brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
 
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
@@ -134,23 +135,23 @@ void HeaderSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    // ---------- Background: Modern Dark Charcoal ----------
-    g.setColour(juce::Colour(0xff0d0d0d));
+    // ---------- Background ----------
+    g.setColour(Theme::Colours::headerBackground);
     g.fillAll();
 
     // Subtle metallic top highlight
-    g.setColour(juce::Colours::white.withAlpha(0.03f));
+    g.setColour(Theme::Colours::accent.withAlpha(0.03f));
     g.fillRect(bounds.removeFromTop(1.0f));
 
     // ---------- Bottom Divider ----------
-    g.setColour(juce::Colours::black);
+    g.setColour(Theme::Colours::border);
     g.drawLine(0.0f, bounds.getBottom() - 1.0f, bounds.getRight(), bounds.getBottom() - 1.0f, 1.0f);
 
     // ---------- Preset "Bay" (Center) ----------
     auto centerArea = getLocalBounds().withSizeKeepingCentre(280, 28).toFloat();
-    g.setColour(juce::Colours::black.withAlpha(0.4f));
+    g.setColour(Theme::Colours::background.withAlpha(0.4f));
     g.fillRoundedRectangle(centerArea, 2.0f);
-    g.setColour(juce::Colours::white.withAlpha(0.05f));
+    g.setColour(Theme::Colours::border.withAlpha(0.5f));
     g.drawRoundedRectangle(centerArea, 2.0f, 1.0f);
 
     // ---------- Slider Labels ----------
@@ -163,11 +164,11 @@ void HeaderSection::paint(juce::Graphics& g)
         auto b = s.getBounds().toFloat();
         
         // Draw Name
-        g.setColour(juce::Colours::white.withAlpha(0.3f));
+        g.setColour(Theme::Colours::textDimmed);
         g.drawText(name, b.withY(b.getY() - 12).withHeight(12), juce::Justification::centred);
         
         // Draw Value
-        g.setColour(juce::Colours::white.withAlpha(0.9f));
+        g.setColour(Theme::Colours::textMain.withAlpha(0.9f));
         g.setFont(FontManager::getJetBrainsMono(12.0f));
         g.drawText(juce::String(s.getValue(), 1) + " ms", b, juce::Justification::centred);
     };

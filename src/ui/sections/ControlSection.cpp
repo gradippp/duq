@@ -1,4 +1,5 @@
 #include "ControlSection.h"
+#include "../../Globals.h"
 
 static const std::vector<juce::String> rateDivisions =
 {
@@ -205,18 +206,18 @@ void ControlSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
 
-    g.fillAll(juce::Colours::black);
+    g.fillAll(Theme::Colours::sectionBackground);
 
-    g.setColour(juce::Colours::grey);
+    g.setColour(Theme::Colours::border);
     g.drawRect(bounds, 1);
 
     constexpr int headerHeight = 32;
     auto headerArea = bounds.removeFromTop(headerHeight);
 
-    g.setColour(juce::Colours::darkgrey.withAlpha(0.15f));
+    g.setColour(Theme::Colours::headerBackground);
     g.fillRect(headerArea);
 
-    g.setColour(juce::Colours::white);
+    g.setColour(Theme::Colours::textMain);
     g.setFont(juce::Font(14.0f, juce::Font::bold));
 
     g.drawText("Controls",
@@ -225,7 +226,7 @@ void ControlSection::paint(juce::Graphics& g)
 
     if (!hasEnvelope)
     {
-        g.setColour(juce::Colours::white.withAlpha(0.5f));
+        g.setColour(Theme::Colours::textDimmed);
         g.setFont(juce::Font(14.0f));
 
         g.drawText("Add an envelope",

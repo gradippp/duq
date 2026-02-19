@@ -5,6 +5,7 @@
 #include "../utils/FontManager.h"
 #include "../components/PianoModal.h"
 #include "../../PluginProcessor.h"
+#include "../../Globals.h"
 
 EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     : envelope(envelopeTree)
@@ -20,11 +21,11 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                juce::Colours::darkgrey.withAlpha(0.2f));
+                Theme::Colours::uiHover);
 
-            auto normal = Icons::load(iconName, juce::Colours::white);
-            auto over = Icons::load(iconName, juce::Colours::white.withAlpha(0.85f));
-            auto down = Icons::load(iconName, juce::Colours::white.withAlpha(0.6f));
+            auto normal = Icons::load(iconName, Theme::Colours::textMain);
+            auto over = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.85f));
+            auto down = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.6f));
 
             if (normal != nullptr)
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -37,7 +38,7 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     // ===============================
 
     nameLabel.setEditable(false, true, false);
-    nameLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    nameLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain);
     nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
     nameLabel.setJustificationType(juce::Justification::centredLeft);
     nameLabel.setFont(FontManager::getInterRegular(13.0f));
@@ -71,11 +72,11 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     noteButton.setClickingTogglesState(false);
     noteButton.setTooltip("Trigger MIDI note");
     noteButton.setColour(juce::TextButton::buttonColourId,
-        juce::Colours::darkgrey.withAlpha(0.3f));
+        Theme::Colours::uiHover);
     noteButton.setColour(juce::TextButton::textColourOffId,
-        juce::Colours::white);
+        Theme::Colours::textMain);
     noteButton.setColour(juce::TextButton::buttonOnColourId,
-        juce::Colours::darkgrey.withAlpha(0.5f));
+        Theme::Colours::uiSelected);
     noteButton.getLookAndFeel().setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
 
     noteButton.onClick = [this]
@@ -162,7 +163,7 @@ void EnvelopeRowComponent::refreshFromTree()
     bool isDisabled = (bool)envelope.getProperty("disabled", false);
 
     nameLabel.setColour(juce::Label::textColourId,
-        isDisabled ? juce::Colours::grey : juce::Colours::white);
+        isDisabled ? Theme::Colours::textDimmed : Theme::Colours::textMain);
 
     float alpha = isDisabled ? 0.4f : 1.0f;
     noteButton.setAlpha(alpha);
@@ -251,12 +252,12 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Background
     // ===============================
 
-    juce::Colour bgColour = juce::Colours::darkgrey.withAlpha(0.2f);
+    juce::Colour bgColour = Theme::Colours::sectionBackground;
 
     if (isSelected)
-        bgColour = juce::Colours::darkgrey.withAlpha(0.5f);  // lighter when selected
+        bgColour = Theme::Colours::uiSelected;
     else if (isHovered)
-        bgColour = juce::Colours::darkgrey.withAlpha(0.35f);
+        bgColour = Theme::Colours::uiHover;
 
     if (isDisabled)
         bgColour = bgColour.withAlpha(0.1f);
@@ -268,7 +269,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Envelope name
     // ===============================
 
-    g.setColour(isDisabled ? juce::Colours::grey : juce::Colours::white);
+    g.setColour(isDisabled ? Theme::Colours::textDimmed : Theme::Colours::textMain);
     g.setFont(FontManager::getInterRegular(13.0f));
 
     auto nameArea = bounds;
@@ -289,7 +290,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
             .removeFromRight(20)
             .withSizeKeepingCentre(dotSize, dotSize);
 
-        g.setColour(juce::Colours::limegreen);
+        g.setColour(Theme::Colours::midiIndicator);
         g.fillEllipse(dotArea.toFloat());
     }
 
@@ -297,7 +298,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Bottom separator
     // ===============================
 
-    g.setColour(juce::Colours::grey.withAlpha(0.3f));
+    g.setColour(Theme::Colours::border.withAlpha(0.3f));
     g.drawLine(0.0f,
         (float)getHeight() - 1.0f,
         (float)getWidth(),
@@ -306,7 +307,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Overlay for disabled state
     if (isDisabled)
     {
-        g.setColour(juce::Colours::black.withAlpha(0.2f));
+        g.setColour(Theme::Colours::uiDisabledOverlay.withAlpha(0.2f));
         g.fillRect(bounds);
     }
 }

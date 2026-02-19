@@ -1,4 +1,5 @@
 #include "WaveformComponent.h"
+#include "../../Globals.h"
 
 WaveformComponent::WaveformComponent()
 {
@@ -34,7 +35,7 @@ void WaveformComponent::timerCallback()
 
 void WaveformComponent::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff111111));
+    g.fillAll(Theme::Colours::background);
 
     if (!samples || bufferLength <= 0)
         return;
@@ -96,13 +97,13 @@ void WaveformComponent::paint(juce::Graphics& g)
         }
     }
 
-    g.setColour(juce::Colours::azure);
+    g.setColour(Theme::Colours::waveform);
     g.strokePath(waveformPath, juce::PathStrokeType(1.0f));
 
     // subtle center line (0.0 amplitude -> normY = 0.5)
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;
     float yCenter = (1.0f - nyCenter) * height;
-    g.setColour(juce::Colours::white.withAlpha(0.06f));
+    g.setColour(Theme::Colours::gridMinor);
     g.drawLine(0, yCenter, width, yCenter);
 }
 
