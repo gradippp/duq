@@ -53,10 +53,37 @@ bool PresetManager::saveEnvelope(const juce::ValueTree& envelope, const juce::Fi
 
 bool PresetManager::saveProject(const juce::ValueTree& state, const juce::File& file)
 {
-    if (!state.isValid() || state.getType() != juce::Identifier("ENVELOPES"))
+    if (!state.isValid())
         return false;
 
-    juce::ValueTree cleanProject = state.createCopy();
+    juce::ValueTree envelopes;
+    juce::ValueTree root;
+
+    if (state.getType() == juce::Identifier("ENVELOPES"))
+    {
+        envelopes = state;
+    }
+    else
+    {
+        root = state;
+        envelopes = state.getChildWithName("ENVELOPES");
+    }
+
+    if (!envelopes.isValid())
+        return false;
+
+    juce::ValueTree cleanProject = envelopes.createCopy();
+
+    // Copy global properties if we have the root
+    if (root.isValid())
+    {
+        const juce::Identifier props[] = { "mix", "lookahead", "lookbehind" };
+        for (const auto& id : props)
+        {
+            if (root.hasProperty(id))
+                cleanProject.setProperty(id, root.getProperty(id), nullptr);
+        }
+    }
 
     // Add metadata
     juce::ValueTree metadata("METADATA");

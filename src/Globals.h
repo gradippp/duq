@@ -55,6 +55,9 @@ namespace Theme
         const bool rateIsFrequencyMode = true;
         const int triggerNote = 36;
         
+        const float lookahead = 0.0f;
+        const float lookbehind = 0.0f;
+        
         const float curve = 0.5f;
         const int curveType = 0; // CurveType::Exponential
 

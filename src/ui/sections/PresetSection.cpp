@@ -134,6 +134,21 @@ void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
             if (undoManager)
                 undoManager->beginNewTransaction("Load Project: " + fileName);
 
+            // Apply global parameters if present in the preset
+            auto& vts = processor.parameters;
+            const juce::Identifier props[] = { "mix", "lookahead", "lookbehind" };
+            for (const auto& id : props)
+            {
+                if (loaded.hasProperty(id))
+                {
+                    if (auto* p = vts.getParameter(id.toString()))
+                    {
+                        float val = (float)loaded.getProperty(id);
+                        p->setValueNotifyingHost(vts.getParameterRange(id.toString()).convertTo0to1(val));
+                    }
+                }
+            }
+
             processor.getEnvelopesTree().copyPropertiesAndChildrenFrom(loaded, undoManager);
             
             if (onProjectLoaded)

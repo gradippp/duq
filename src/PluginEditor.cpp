@@ -121,7 +121,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                                 if (file == juce::File())
                                     return;
             
-                                if (PresetManager::saveProject(audioProcessor.getEnvelopesTree(), file))
+                                if (PresetManager::saveProject(audioProcessor.parameters.state, file))
                                 {
                                     header.setPresetName(file.getFileNameWithoutExtension());
                                 }
@@ -140,6 +140,13 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     header.setInitPresetCallback([this]
         {
             undoManager.beginNewTransaction("Init Project");
+            
+            // Reset global parameters
+            auto& vts = audioProcessor.parameters;
+            if (auto* p = vts.getParameter("mix")) p->setValueNotifyingHost(p->getDefaultValue());
+            if (auto* p = vts.getParameter("lookahead")) p->setValueNotifyingHost(vts.getParameterRange("lookahead").convertTo0to1(Theme::Defaults::lookahead));
+            if (auto* p = vts.getParameter("lookbehind")) p->setValueNotifyingHost(vts.getParameterRange("lookbehind").convertTo0to1(Theme::Defaults::lookbehind));
+
             auto envelopes = audioProcessor.getEnvelopesTree();
             envelopes.removeAllChildren(&undoManager);
             

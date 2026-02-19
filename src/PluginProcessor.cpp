@@ -249,14 +249,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
         juce::ParameterID{ "lookahead", 1 },
         "Lookahead",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
-        0.0f,
+        Theme::Defaults::lookahead,
         juce::AudioParameterFloatAttributes().withLabel("ms")));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ "lookbehind", 1 },
         "Lookbehind",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
-        0.0f,
+        Theme::Defaults::lookbehind,
         juce::AudioParameterFloatAttributes().withLabel("ms")));
 
     // --- Envelope Parameters (12 slots) ---
