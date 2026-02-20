@@ -144,7 +144,13 @@ void EnvelopeListSection::valueTreeChildRemoved(juce::ValueTree&, juce::ValueTre
     rebuildRowsFromModel();
 }
 
-void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, const juce::Identifier&)
+void EnvelopeListSection::valueTreeChildOrderChanged(juce::ValueTree& v, int, int)
+{
+    if (v == envelopesTree)
+        rebuildRowsFromModel();
+}
+
+void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, const juce::Identifier& i)
 {
     if (v == envelopesTree)
         rebuildRowsFromModel();
@@ -231,7 +237,11 @@ void EnvelopeListSection::rebuildRowsFromModel()
 
     selectEnvelope(selectedIndex);
     resized();
+    
+    rowContainer.repaint();
+    repaint();
 }
+
 
 
 void EnvelopeListSection::setUndoManager(juce::UndoManager& um)
@@ -278,11 +288,26 @@ void EnvelopeListSection::paint(juce::Graphics& g)
         headerArea.reduced(10, 0),
         juce::Justification::centredLeft);
 
-    // Footer separator
     auto footerBounds = getLocalBounds().removeFromBottom(40);
     g.setColour(Theme::Colours::border.withAlpha(0.5f));
     g.drawLine(0.0f, footerBounds.getY(), (float)getWidth(), footerBounds.getY(), 1.0f);
+
+    // Drop Indicator
+    if (isDragging && dropIndex >= 0)
+    {
+        constexpr int headerHeight = 32;
+        constexpr int rowHeight = 28;
+        
+        float dropY = (float)(headerHeight + dropIndex * rowHeight) - viewport.getViewPosition().y;
+
+        if (dropY >= headerHeight && dropY < footerBounds.getY())
+        {
+            g.setColour(Theme::Colours::accent);
+            g.drawLine(0.0f, dropY, (float)getWidth(), dropY, 2.0f);
+        }
+    }
 }
+
 
 void EnvelopeListSection::resized()
 {
@@ -390,3 +415,74 @@ void EnvelopeListSection::updateMidiActivity(DuqAudioProcessor& processor)
         rows[i]->setActive(isActive);
     }
 }
+
+// ==============================================================================
+// Drag and Drop Target
+// ==============================================================================
+
+bool EnvelopeListSection::isInterestedInDragSource(const juce::DragAndDropTarget::SourceDetails& details)
+{
+    return dynamic_cast<EnvelopeRowComponent*>(details.sourceComponent.get()) != nullptr;
+}
+
+void EnvelopeListSection::itemDragEnter(const juce::DragAndDropTarget::SourceDetails&)
+{
+    isDragging = true;
+    repaint();
+}
+
+void EnvelopeListSection::itemDragMove(const juce::DragAndDropTarget::SourceDetails& details)
+{
+    auto localPos = getLocalPoint(nullptr, details.localPosition.toFloat());
+    
+    // Header is 32px
+    float y = localPos.y - 32.0f + viewport.getViewPosition().y;
+    int index = juce::roundToInt(y / 28.0f); // rowHeight is 28
+
+    index = juce::jlimit(0, envelopesTree.getNumChildren(), index);
+
+    if (index != dropIndex)
+    {
+        dropIndex = index;
+        repaint();
+    }
+}
+
+void EnvelopeListSection::itemDragExit(const juce::DragAndDropTarget::SourceDetails&)
+{
+    isDragging = false;
+    dropIndex = -1;
+    repaint();
+}
+
+void EnvelopeListSection::itemDropped(const juce::DragAndDropTarget::SourceDetails& details)
+{
+    auto* sourceRow = dynamic_cast<EnvelopeRowComponent*>(details.sourceComponent.get());
+    if (sourceRow != nullptr && envelopesTree.isValid())
+    {
+        int currentIndex = rows.indexOf(sourceRow);
+        int newIndex = dropIndex;
+
+        if (currentIndex >= 0 && newIndex >= 0)
+        {
+            // If dropping below the current item, the new index shifts
+            if (newIndex > currentIndex)
+                newIndex--;
+
+            if (currentIndex != newIndex)
+            {
+                if (undoManager != nullptr)
+                    undoManager->beginNewTransaction("Reorder Envelopes");
+
+                selectedIndex = newIndex;
+                envelopesTree.moveChild(currentIndex, newIndex, undoManager);
+            }
+        }
+    }
+
+    isDragging = false;
+    dropIndex = -1;
+    repaint();
+    rowContainer.repaint();
+}
+

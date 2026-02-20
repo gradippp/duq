@@ -48,8 +48,11 @@ private:
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
 
     void mouseDown(const juce::MouseEvent& e) override;
+    void mouseDrag(const juce::MouseEvent& e) override;
     void mouseEnter(const juce::MouseEvent&) override;
     void mouseExit(const juce::MouseEvent&) override;
+
+    juce::Point<int> mouseDownPos;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EnvelopeRowComponent)
 };

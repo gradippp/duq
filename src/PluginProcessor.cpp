@@ -68,8 +68,10 @@ DuqAudioProcessor::DuqAudioProcessor()
 
     auto envelopes = getEnvelopesTree();
     
-    // Listen to the ROOT state recursively to catch all envelope property changes
+    // Listen to the ROOT state for global params
     parameters.state.addListener(this);
+    // Listen to ENVELOPES for reordering and additions
+    envelopes.addListener(this);
 
     // Listen to all automation parameters
     parameters.addParameterListener("mix", this);
@@ -99,6 +101,7 @@ DuqAudioProcessor::~DuqAudioProcessor()
 {
     stopTimer();
     parameters.state.removeListener(this);
+    getEnvelopesTree().removeListener(this);
 
     parameters.removeParameterListener("mix", this);
     parameters.removeParameterListener("lookahead", this);
@@ -579,6 +582,17 @@ double DuqAudioProcessor::getPhaseIncrement(int envelopeIndex) const
         return 0.0;
 
     return dspState.envelopes[envelopeIndex].phaseIncrement;
+}
+
+void DuqAudioProcessor::resetVoices()
+{
+    const juce::ScopedLock sl(dspLock);
+    for (auto& v : voices)
+    {
+        v.isActive = false;
+        v.isPending = false;
+        v.envelopeIndex = -1;
+    }
 }
 
 //==============================================================================

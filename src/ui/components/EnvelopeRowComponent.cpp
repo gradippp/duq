@@ -180,6 +180,8 @@ void EnvelopeRowComponent::setActive(bool shouldBeActive)
 
 void EnvelopeRowComponent::mouseDown(const juce::MouseEvent& e)
 {
+    mouseDownPos = e.getPosition();
+
     if (e.mods.isRightButtonDown())
     {
         showContextMenu();
@@ -188,6 +190,29 @@ void EnvelopeRowComponent::mouseDown(const juce::MouseEvent& e)
     {
         if (onSelected)
             onSelected();
+    }
+}
+
+void EnvelopeRowComponent::mouseDrag(const juce::MouseEvent& e)
+{
+    if (e.mouseWasDraggedSinceMouseDown())
+    {
+        auto distance = e.getOffsetFromDragStart();
+        if (std::abs(distance.x) > 5 || std::abs(distance.y) > 5)
+        {
+            if (auto* container = juce::DragAndDropContainer::findParentDragContainerFor(this))
+            {
+                if (!container->isDragAndDropActive())
+                {
+                    juce::Image preview(juce::Image::ARGB, getWidth(), getHeight(), true);
+                    juce::Graphics g(preview);
+                    paint(g);
+
+                    auto desc = juce::var(envelope["name"].toString());
+                    container->startDragging(desc, this, preview);
+                }
+            }
+        }
     }
 }
 
@@ -251,6 +276,21 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     g.fillRect(bounds);
 
     // ===============================
+    // Drag Handle
+    // ===============================
+    {
+        auto handleArea = bounds.removeFromLeft(12).reduced(4, 8);
+        g.setColour(Theme::Colours::textDimmed.withAlpha(0.3f));
+        
+        for (int i = 0; i < 3; ++i)
+        {
+            float y = handleArea.getY() + (float)i * 4.0f;
+            g.fillEllipse(handleArea.getX(), y, 2.0f, 2.0f);
+            g.fillEllipse(handleArea.getX() + 3.0f, y, 2.0f, 2.0f);
+        }
+    }
+
+    // ===============================
     // Envelope name
     // ===============================
 
@@ -300,6 +340,9 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
 void EnvelopeRowComponent::resized()
 {
     auto bounds = getLocalBounds().reduced(4);
+    
+    // Drag handle space
+    bounds.removeFromLeft(14);
 
     auto buttonArea = bounds.removeFromRight(90);
 

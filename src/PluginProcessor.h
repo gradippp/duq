@@ -78,6 +78,7 @@ public:
     }
 
     void triggerEnvelope(int index) { manualTriggerIndex = index; }
+    void resetVoices();
 
     std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
     double getPhaseIncrement(int envelopeIndex) const;
@@ -90,8 +91,8 @@ private:
     // ValueTree::Listener
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { requiresSync = true; }
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { requiresSync = true; }
-    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; }
-    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { requiresSync = true; }
+    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; resetVoices(); }
+    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { requiresSync = true; resetVoices(); }
 
     // APVTS::Listener
     void parameterChanged(const juce::String& parameterID, float newValue) override;

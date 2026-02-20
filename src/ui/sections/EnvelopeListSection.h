@@ -5,6 +5,8 @@
 class DuqAudioProcessor;
 
 class EnvelopeListSection : public juce::Component,
+    public juce::DragAndDropContainer,
+    public juce::DragAndDropTarget,
     private juce::ValueTree::Listener
 {
 public:
@@ -43,10 +45,18 @@ public:
 
     void updateMidiActivity(DuqAudioProcessor& processor);
 
+    // Drag and Drop Target
+    bool isInterestedInDragSource(const juce::DragAndDropTarget::SourceDetails& details) override;
+    void itemDragEnter(const juce::DragAndDropTarget::SourceDetails& details) override;
+    void itemDragMove(const juce::DragAndDropTarget::SourceDetails& details) override;
+    void itemDragExit(const juce::DragAndDropTarget::SourceDetails& details) override;
+    void itemDropped(const juce::DragAndDropTarget::SourceDetails& details) override;
+
 private:
     // ValueTree listener
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override;
     void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override;
+    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override;
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
 
     void rebuildRowsFromModel();
@@ -64,6 +74,8 @@ private:
     juce::UndoManager* undoManager = nullptr;
 
     int selectedIndex = -1;
+    int dropIndex = -1;
+    bool isDragging = false;
 
     bool isNoteAlreadyUsed(int note) const;
 

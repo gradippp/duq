@@ -22,4 +22,10 @@ public:
 
         juce::Label::mouseDown(e);
     }
+
+    void mouseDrag(const juce::MouseEvent& e) override
+    {
+        if (auto* parent = getParentComponent())
+            parent->mouseDrag(e.getEventRelativeTo(parent));
+    }
 };
