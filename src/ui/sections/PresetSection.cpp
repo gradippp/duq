@@ -17,62 +17,42 @@ PresetSection::PresetSection(DuqAudioProcessor& p)
     auto over = Icons::load("close", juce::Colours::white);
     auto down = Icons::load("close", juce::Colours::white.withAlpha(0.4f));
     closeButton.setImages(normal.get(), over.get(), down.get());
-
     addAndMakeVisible(closeButton);
-    closeButton.setTooltip("Close Preset Selection");
-    
-    closeButton.onClick = [this]() {
-        if (onClose)
-            onClose();
-    };
+    closeButton.onClick = [this]() { if (onClose) onClose(); };
 
+    // Search Bar
+    addAndMakeVisible(searchEditor);
+    searchEditor.setTextToShowWhenEmpty("SEARCH PRESETS...", juce::Colours::white.withAlpha(0.3f));
+    searchEditor.setJustification(juce::Justification::centred);
+    searchEditor.setFont(FontManager::getInterRegular(14.0f));
+    searchEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colours::black.withAlpha(0.2f));
+    searchEditor.setColour(juce::TextEditor::outlineColourId, juce::Colours::white.withAlpha(0.1f));
+    searchEditor.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::white.withAlpha(0.3f));
+    searchEditor.onTextChange = [this]() { searchText = searchEditor.getText(); filterPresets(); };
+
+    // List
     addAndMakeVisible(presetList);
     presetList.setModel(this);
     presetList.setColour(juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
-    presetList.setRowHeight(32);
+    presetList.setRowHeight(36);
 
     setOpaque(true);
 }
 
-PresetSection::~PresetSection()
-{
-}
+PresetSection::~PresetSection() {}
 
 void PresetSection::setMode(Mode newMode)
 {
     mode = newMode;
-    
-    if (mode == Mode::Envelope)
-        titleLabel.setText("SELECT ENVELOPE PRESET", juce::dontSendNotification);
-    else if (mode == Mode::Project)
-        titleLabel.setText("SELECT PROJECT PRESET", juce::dontSendNotification);
-    else if (mode == Mode::Import)
-        titleLabel.setText("IMPORT ENVELOPE PRESET", juce::dontSendNotification);
-
+    titleLabel.setText(mode == Mode::Project ? "PROJECT BROWSER" : "ENVELOPE BROWSER", juce::dontSendNotification);
+    searchEditor.setText("", juce::dontSendNotification);
     refreshPresetList();
-    repaint();
 }
 
-void PresetSection::refreshPresetList()
+void PresetSection::setTargetEnvelope(juce::ValueTree envelope)
 {
-    presetFiles.clear();
-    
-    auto dir = (mode == Mode::Project) 
-        ? PresetManager::getProjectDirectory() 
-        : PresetManager::getEnvelopeDirectory();
-
-    auto extension = (mode == Mode::Project)
-        ? PresetManager::projectExtension
-        : PresetManager::envelopeExtension;
-    
-    if (dir.exists() && dir.isDirectory())
-    {
-        auto files = dir.findChildFiles(juce::File::findFiles, false, "*" + extension);
-        for (auto& f : files)
-            presetFiles.push_back(f);
-    }
-    
-    presetList.updateContent();
+    targetEnvelope = envelope;
+    refreshPresetList();
 }
 
 void PresetSection::setUndoManager(juce::UndoManager& um)
@@ -80,162 +60,85 @@ void PresetSection::setUndoManager(juce::UndoManager& um)
     undoManager = &um;
 }
 
-int PresetSection::getNumRows()
+void PresetSection::refreshPresetList()
 {
-    return (int)presetFiles.size();
+    allFiles.clear();
+    auto dir = (mode == Mode::Project) ? PresetManager::getProjectDirectory() : PresetManager::getEnvelopeDirectory();
+    auto extension = (mode == Mode::Project) ? PresetManager::projectExtension : PresetManager::envelopeExtension;
+    
+    if (dir.exists() && dir.isDirectory()) {
+        auto files = dir.findChildFiles(juce::File::findFiles, false, "*" + extension);
+        for (auto f : files)
+            allFiles.push_back(f);
+    }
+    filterPresets();
 }
 
-void PresetSection::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected)
+void PresetSection::filterPresets()
 {
-    if (rowNumber >= (int)presetFiles.size())
-        return;
-
-    auto area = juce::Rectangle<int>(0, 0, width, height).toFloat();
-
-    if (rowIsSelected)
-    {
-        g.setColour(juce::Colours::white.withAlpha(0.1f));
-        g.fillRoundedRectangle(area.reduced(2.0f), 4.0f);
+    filteredFiles.clear();
+    if (searchText.isEmpty()) {
+        filteredFiles = allFiles;
+    } else {
+        for (const auto& f : allFiles) {
+            if (f.getFileNameWithoutExtension().containsIgnoreCase(searchText))
+                filteredFiles.push_back(f);
+        }
     }
+    presetList.updateContent();
+}
 
-    g.setColour(juce::Colours::white.withAlpha(0.8f));
-    g.setFont(FontManager::getInterRegular(14.0f));
+void PresetSection::deletePreset(int index)
+{
+    if (index < 0 || index >= (int)filteredFiles.size()) return;
     
-    juce::String fileName = presetFiles[rowNumber].getFileNameWithoutExtension();
-    if ((mode == Mode::Envelope || mode == Mode::Import) && fileName.endsWith(".duq")) 
-         fileName = fileName.substring(0, fileName.length() - 4);
+    auto file = filteredFiles[index];
+    if (file.deleteFile()) {
+        refreshPresetList();
+    }
+}
 
-    g.drawText(fileName, area.reduced(10, 0), juce::Justification::centredLeft, true);
+int PresetSection::getNumRows() { return (int)filteredFiles.size(); }
+
+void PresetSection::paintListBoxItem(int, juce::Graphics&, int, int, bool) {}
+
+juce::Component* PresetSection::refreshComponentForRow(int rowNumber, bool isSelected, juce::Component* existingComponentToUpdate)
+{
+    auto* row = static_cast<PresetRowComponent*>(existingComponentToUpdate);
+    if (row == nullptr) row = new PresetRowComponent(*this, rowNumber);
+    row->update(rowNumber, isSelected);
+    return row;
 }
 
 void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
 {
-    if (rowNumber >= (int)presetFiles.size())
-        return;
+    if (rowNumber < 0 || rowNumber >= (int)filteredFiles.size()) return;
+    auto file = filteredFiles[rowNumber];
 
-    if (mode == Mode::Envelope)
-    {
-        if (!targetEnvelope.isValid())
-            return;
-
-        auto loaded = PresetManager::loadEnvelope(presetFiles[rowNumber]);
-        if (loaded.isValid())
-        {
-            if (undoManager)
-                undoManager->beginNewTransaction("Load Envelope: " + presetFiles[rowNumber].getFileNameWithoutExtension());
-
+    if (mode == Mode::Envelope) {
+        if (!targetEnvelope.isValid()) return;
+        auto loaded = PresetManager::loadEnvelope(file);
+        if (loaded.isValid()) {
+            if (undoManager) undoManager->beginNewTransaction("Load Envelope: " + file.getFileNameWithoutExtension());
             targetEnvelope.copyPropertiesAndChildrenFrom(loaded, undoManager);
-            
-            if (onClose)
-                onClose();
+            if (onClose) onClose();
         }
-        else
-        {
-            PresetManager::showCorruptPresetAlert();
-        }
-    }
-    else if (mode == Mode::Import)
-    {
-        auto loaded = PresetManager::loadEnvelope(presetFiles[rowNumber]);
-        if (loaded.isValid())
-        {
+    } else if (mode == Mode::Import) {
+        auto loaded = PresetManager::loadEnvelope(file);
+        if (loaded.isValid()) {
             auto envelopesTree = processor.getEnvelopesTree();
-            
-            if (undoManager)
-                undoManager->beginNewTransaction("Import Envelope: " + presetFiles[rowNumber].getFileNameWithoutExtension());
-
-            // 1. Handle name collisions
-            auto baseName = loaded.getProperty("name", presetFiles[rowNumber].getFileNameWithoutExtension()).toString();
-            int counter = 1;
-            juce::String finalName = baseName;
-            bool nameExists = true;
-            
-            while (nameExists) 
-            {
-                nameExists = false;
-                for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 
-                {
-                    if (envelopesTree.getChild(i)["name"].toString() == finalName) 
-                    {
-                        nameExists = true;
-                        break;
-                    }
-                }
-                if (nameExists) 
-                    finalName = baseName + " " + juce::String(++counter);
-            }
-            loaded.setProperty("name", finalName, nullptr);
-
-            // 2. Find next free trigger note
-            int nextNote = Theme::Defaults::triggerNote;
-            for (int n = Theme::Defaults::triggerNote; n <= 127; ++n) 
-            {
-                bool isNoteUsed = false;
-                for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 
-                {
-                    if ((int)envelopesTree.getChild(i)["triggerNote"] == n) 
-                    {
-                        isNoteUsed = true;
-                        break;
-                    }
-                }
-                if (!isNoteUsed) 
-                {
-                    nextNote = n;
-                    break;
-                }
-            }
-            loaded.setProperty("triggerNote", nextNote, nullptr);
-
-            const int newIndex = envelopesTree.getNumChildren();
+            if (undoManager) undoManager->beginNewTransaction("Import Envelope: " + file.getFileNameWithoutExtension());
             envelopesTree.addChild(loaded, -1, undoManager);
-            
-            if (onEnvelopeImported)
-                onEnvelopeImported(newIndex);
-
-            if (onClose)
-                onClose();
+            if (onEnvelopeImported) onEnvelopeImported(envelopesTree.getNumChildren() - 1);
+            if (onClose) onClose();
         }
-        else
-        {
-            PresetManager::showCorruptPresetAlert();
-        }
-    }
-    else // Mode::Project
-    {
-        auto loaded = PresetManager::loadProject(presetFiles[rowNumber]);
-        if (loaded.isValid())
-        {
-            auto fileName = presetFiles[rowNumber].getFileNameWithoutExtension();
-            if (undoManager)
-                undoManager->beginNewTransaction("Load Project: " + fileName);
-
-            // Apply global parameters if present in the preset
-            auto& vts = processor.parameters;
-            const juce::Identifier props[] = { "mix", "lookahead", "lookbehind" };
-            for (const auto& id : props)
-            {
-                if (loaded.hasProperty(id))
-                {
-                    if (auto* p = vts.getParameter(id.toString()))
-                    {
-                        float val = (float)loaded.getProperty(id);
-                        p->setValueNotifyingHost(vts.getParameterRange(id.toString()).convertTo0to1(val));
-                    }
-                }
-            }
-
+    } else { // Project
+        auto loaded = PresetManager::loadProject(file);
+        if (loaded.isValid()) {
+            if (undoManager) undoManager->beginNewTransaction("Load Project: " + file.getFileNameWithoutExtension());
             processor.getEnvelopesTree().copyPropertiesAndChildrenFrom(loaded, undoManager);
-            
-            if (onProjectLoaded)
-                onProjectLoaded(fileName);
-
-            if (onClose)
-                onClose();
-        }
-        else
-        {
-            PresetManager::showCorruptPresetAlert();
+            if (onProjectLoaded) onProjectLoaded(file.getFileNameWithoutExtension());
+            if (onClose) onClose();
         }
     }
 }
@@ -266,39 +169,74 @@ void PresetSection::paint(juce::Graphics& g)
 
     g.setColour(Theme::Colours::textDimmed);
     g.setFont(FontManager::getJetBrainsMono(10.0f));
-    g.drawText("Find your presets at: " + dir.getFullPathName(), footerArea.reduced(15, 0), juce::Justification::centredLeft);
+    g.drawText("Presets location: " + dir.getFullPathName(), footerArea.reduced(15, 0), juce::Justification::centredLeft);
 
-    if (presetFiles.empty())
+    if (filteredFiles.empty())
     {
         g.setColour(juce::Colours::grey.withAlpha(0.4f));
         g.setFont(FontManager::getBarlowBold(18.0f));
-        
-        g.drawFittedText("NO PRESETS FOUND", 
-                          getLocalBounds().withTrimmedBottom(32), 
-                          juce::Justification::centred, 
-                          1);
+        g.drawFittedText("NO PRESETS FOUND", getLocalBounds().withTrimmedBottom(32), juce::Justification::centred, 1);
     }
 }
 
 void PresetSection::resized()
 {
     auto area = getLocalBounds();
-    
-    auto headerArea = area.removeFromTop(60);
-    area.removeFromBottom(32); // Space for footer
-    
-    // Close button (X) in the top right
-    const int xSize = 24;
-    closeButton.setBounds(headerArea.removeFromRight(50).withSizeKeepingCentre(xSize, xSize));
-    
-    // Title is centered in the header area
-    titleLabel.setBounds(headerArea.withLeft(50));
+    auto header = area.removeFromTop(60);
+    closeButton.setBounds(header.removeFromRight(50).withSizeKeepingCentre(24, 24));
+    titleLabel.setBounds(header.withLeft(50));
 
-    presetList.setBounds(area.reduced(20, 10));
+    auto searchArea = area.removeFromTop(40).reduced(20, 5);
+    searchEditor.setBounds(searchArea);
+
+    area.removeFromBottom(32); // Footer height
+    presetList.setBounds(area.reduced(20, 5));
 }
 
-void PresetSection::setTargetEnvelope(juce::ValueTree envelope)
+// ===== PresetRowComponent Implementation =====
+
+PresetSection::PresetRowComponent::PresetRowComponent(PresetSection& o, int idx) : owner(o), rowDataIndex(idx)
 {
-    targetEnvelope = envelope;
-    refreshPresetList();
+    auto delIcon = Icons::load("delete", juce::Colours::white.withAlpha(0.4f));
+    auto delIconOver = Icons::load("delete", Theme::Colours::danger);
+    deleteButton.setImages(delIcon.get(), delIconOver.get(), delIcon.get());
+    addAndMakeVisible(deleteButton);
+    deleteButton.onClick = [this]() { owner.deletePreset(rowDataIndex); };
+}
+
+void PresetSection::PresetRowComponent::update(int idx, bool sel)
+{
+    rowDataIndex = idx;
+    isSelected = sel;
+    repaint();
+}
+
+void PresetSection::PresetRowComponent::paint(juce::Graphics& g)
+{
+    auto area = getLocalBounds().toFloat();
+    if (isSelected) {
+        g.setColour(juce::Colours::white.withAlpha(0.1f));
+        g.fillRoundedRectangle(area.reduced(4, 2), 4.0f);
+    } else if (isHovering) {
+        g.setColour(juce::Colours::white.withAlpha(0.03f));
+        g.fillRoundedRectangle(area.reduced(4, 2), 4.0f);
+    }
+
+    if (rowDataIndex < (int)owner.filteredFiles.size()) {
+        auto name = owner.filteredFiles[rowDataIndex].getFileNameWithoutExtension();
+        g.setColour(isSelected ? Theme::Colours::textMain : Theme::Colours::textDimmed);
+        g.setFont(FontManager::getInterRegular(14.0f));
+        g.drawText(name, area.reduced(15, 0), juce::Justification::centredLeft, true);
+    }
+}
+
+void PresetSection::PresetRowComponent::resized()
+{
+    deleteButton.setBounds(getWidth() - 40, (getHeight() - 20) / 2, 20, 20);
+}
+
+void PresetSection::PresetRowComponent::mouseDown(const juce::MouseEvent& e)
+{
+    owner.presetList.selectRow(rowDataIndex);
+    owner.listBoxItemClicked(rowDataIndex, e);
 }

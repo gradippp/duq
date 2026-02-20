@@ -40,6 +40,7 @@ namespace Theme
         const juce::Colour uiSelected      { accent.withAlpha (0.3f) };
         const juce::Colour uiDisabledOverlay { 0xFF000000 };
         const juce::Colour midiIndicator   { 0xFF32CD32 }; // LimeGreen
+        const juce::Colour danger          { 0xFFFF4444 }; // Red
 
         // Meters
         const juce::Colour meterBackground { 0xFF000000 };

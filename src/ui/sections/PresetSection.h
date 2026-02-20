@@ -33,9 +33,12 @@ public:
     int getNumRows() override;
     void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
     void listBoxItemClicked(int rowNumber, const juce::MouseEvent& e) override;
+    juce::Component* refreshComponentForRow(int rowNumber, bool isSelected, juce::Component* existingComponentToUpdate) override;
 
 private:
     void refreshPresetList();
+    void filterPresets();
+    void deletePreset(int index);
 
     DuqAudioProcessor& processor;
     Mode mode = Mode::Envelope;
@@ -46,8 +49,34 @@ private:
     juce::DrawableButton closeButton{ "close", juce::DrawableButton::ImageFitted };
     juce::Label titleLabel{ "title", "SELECT PRESET" };
 
+    // Search
+    juce::TextEditor searchEditor;
+    juce::String searchText;
+
+    // List
     juce::ListBox presetList;
-    std::vector<juce::File> presetFiles;
+    std::vector<juce::File> allFiles;
+    std::vector<juce::File> filteredFiles;
+
+    class PresetRowComponent : public juce::Component
+    {
+    public:
+        PresetRowComponent(PresetSection& owner, int index);
+        void paint(juce::Graphics& g) override;
+        void resized() override;
+        void mouseEnter(const juce::MouseEvent&) override { isHovering = true; repaint(); }
+        void mouseExit(const juce::MouseEvent&) override { isHovering = false; repaint(); }
+        void mouseDown(const juce::MouseEvent& e) override;
+
+        void update(int newIndex, bool isSelected);
+
+    private:
+        PresetSection& owner;
+        int rowDataIndex;
+        bool isSelected = false;
+        bool isHovering = false;
+        juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
+    };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PresetSection)
 };
