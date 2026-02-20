@@ -41,6 +41,21 @@ public:
         g.drawText(label, controlBounds.getX(), controlBounds.getY() - 20, controlBounds.getWidth(), 20, juce::Justification::centredLeft);
     }
 
+    /** Calculates the required height based on the bottom-most child component. */
+    virtual int getRequiredHeight()
+    {
+        // Default implementation based on child positions
+        int maxBottom = 0;
+        for (auto* child : getChildren())
+        {
+            if (child->isVisible())
+                maxBottom = juce::jmax(maxBottom, child->getBottom());
+        }
+        
+        // Ensure a minimum height so it doesn't look squashed
+        return juce::jmax(400, maxBottom + 40); 
+    }
+
 protected:
     juce::String title;
 

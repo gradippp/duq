@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "ui/sections/settings/WorkflowPage.h"
 #include "utils/PresetManager.h"
 #include "model/EnvelopeData.h"
 #include "Globals.h"
@@ -83,13 +84,47 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     presetSection.onClose = [this]()
         {
             presetSection.setVisible(false);
-            gridSection.setVisible(true);
+            if (settingsSection.isVisible()) {
+                // Keep settings visible
+            } else {
+                gridSection.setVisible(true);
+            }
             resized();
         };
 
     presetSection.onEnvelopeImported = [this](int newIndex)
         {
-            envelopeListSection.selectEnvelope(newIndex);
+            if (presetSection.getMode() == PresetSection::Mode::Import && settingsSection.isVisible())
+            {
+                auto envelopes = audioProcessor.getEnvelopesTree();
+                auto env = envelopes.getChild(newIndex);
+                if (env.isValid())
+                {
+                    auto points = env.getChildWithName("POINTS");
+                    auto segments = env.getChildWithName("SEGMENTS");
+                    
+                    juce::ValueTree shape("SHAPE");
+                    if (points.isValid()) shape.addChild(points.createCopy(), -1, nullptr);
+                    if (segments.isValid()) shape.addChild(segments.createCopy(), -1, nullptr);
+
+                    if (auto xml = shape.createXml())
+                    {
+                        juce::SharedResourcePointer<ConfigManager> config;
+                        config->setDefaultPoints(xml->toString());
+                    }
+                    
+                    // Remove the temporary imported envelope
+                    envelopes.removeChild(env, &undoManager);
+                }
+                
+                presetSection.setVisible(false);
+                settingsSection.setVisible(true);
+                resized();
+            }
+            else
+            {
+                envelopeListSection.selectEnvelope(newIndex);
+            }
         };
 
     presetSection.onProjectLoaded = [this](juce::String name)
@@ -121,7 +156,18 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             resized();
         };
 
-    header.setupAttachments(audioProcessor.parameters);
+    settingsSection.setProcessor(&p);
+    if (auto* workflow = settingsSection.getWorkflowPage())
+    {
+        workflow->onImportFromBrowser = [this]
+        {
+            presetSection.setMode(PresetSection::Mode::Import);
+            gridSection.setVisible(false);
+            settingsSection.setVisible(false);
+            presetSection.setVisible(true);
+            resized();
+        };
+    }
 
     aboutSection.setVisible(false);
     aboutSection.onClose = [this]

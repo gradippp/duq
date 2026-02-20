@@ -23,6 +23,7 @@ public:
 
     void setTargetEnvelope(juce::ValueTree envelope);
     void setMode(Mode newMode);
+    Mode getMode() const { return mode; }
     void setUndoManager(juce::UndoManager& um);
 
     void startSavingProcess();

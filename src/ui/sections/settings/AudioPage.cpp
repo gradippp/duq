@@ -29,11 +29,23 @@ void AudioPage::paint(juce::Graphics& g)
 
 void AudioPage::resized()
 {
-    auto area = getContentArea();
-    latencyToggle.setBounds(area.removeFromTop(30));
-    area.removeFromTop(40);
-    globalMixSlider.setBounds(area.removeFromTop(30).withWidth(200));
-    area.removeFromTop(45);
+    const int startY = 80;
+    const int rowHeight = 30;
+    const int spacingY = 40;
+
+    auto area = getLocalBounds().withTrimmedTop(startY).reduced(20, 0);
+
+    // Row 1: Latency Mode
+    latencyToggle.setBounds(area.removeFromTop(rowHeight));
+    
+    area.removeFromTop(spacingY);
+
+    // Row 2: Global Mix
+    globalMixSlider.setBounds(area.removeFromTop(rowHeight).withWidth(200));
+    
+    area.removeFromTop(spacingY + 5);
+
+    // Row 3: Sample Rate
     sampleRateLabel.setBounds(area.removeFromTop(20).withWidth(200));
 }
 

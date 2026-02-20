@@ -36,13 +36,22 @@ void GeneralPage::paint(juce::Graphics& g)
 
 void GeneralPage::resized()
 {
-    auto area = getContentArea();
+    const int startY = 80;
+    const int rowHeight = 30;
+    const int spacingY = 40;
+
+    auto area = getLocalBounds().withTrimmedTop(startY).reduced(20, 0);
     
-    waveformQualityCombo.setBounds(area.removeFromTop(30).withWidth(150));
-    area.removeFromTop(40);
-    tooltipsToggle.setBounds(area.removeFromTop(30));
-    area.removeFromTop(40);
-    themeCombo.setBounds(area.removeFromTop(30).withWidth(150));
+    // Row 1: Waveform Quality and UI Theme
+    auto row1 = area.removeFromTop(rowHeight);
+    waveformQualityCombo.setBounds(row1.removeFromLeft(150));
+    row1.removeFromLeft(40);
+    themeCombo.setBounds(row1.removeFromLeft(150));
+
+    area.removeFromTop(spacingY);
+
+    // Row 2: Tooltips
+    tooltipsToggle.setBounds(area.removeFromTop(rowHeight));
 }
 
 void GeneralPage::comboBoxChanged(juce::ComboBox* cb)

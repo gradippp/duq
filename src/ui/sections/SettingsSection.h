@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../../Globals.h"
+#include "../utils/ViewportLookAndFeel.h"
 
 class SettingsSection : public juce::Component
 {
@@ -13,6 +14,8 @@ public:
     void resized() override;
 
     void setPage(int index);
+    void setProcessor(class DuqAudioProcessor* p);
+    class WorkflowPage* getWorkflowPage();
     
     std::function<void()> onClose;
 
@@ -37,8 +40,10 @@ private:
     std::vector<std::unique_ptr<SidebarButton>> sidebarButtons;
     std::vector<std::unique_ptr<juce::Component>> pages;
     
-    juce::Component pageContainer;
+    juce::Viewport viewport;
+    ViewportLookAndFeel viewportLNF;
     int activePageIndex = 0;
+    int lastViewportWidth = 0;
 
     juce::DrawableButton backButton{ "back", juce::DrawableButton::ImageFitted };
 

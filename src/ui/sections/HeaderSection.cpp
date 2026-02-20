@@ -74,7 +74,7 @@ CompactKnob::CompactKnob(const juce::String& label) : labelName(label)
     setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     setRotaryParameters(juce::degreesToRadians(135.0f), juce::degreesToRadians(405.0f), true);
-    setRange(0.0, 1.0);
+    setRange(0.0, 100.0);
 }
 
 CompactKnob::~CompactKnob()

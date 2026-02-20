@@ -1,4 +1,5 @@
 #include "SettingsSection.h"
+#include "settings/SettingsPageBase.h"
 #include "settings/GeneralPage.h"
 #include "settings/WorkflowPage.h"
 #include "settings/AudioPage.h"
@@ -29,7 +30,10 @@ void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouse
 
 SettingsSection::SettingsSection()
 {
-    addAndMakeVisible(pageContainer);
+    viewport.setLookAndFeel(&viewportLNF);
+    addAndMakeVisible(viewport);
+    viewport.setScrollBarsShown(true, false, true, false);
+    viewport.setScrollBarThickness(10);
 
     auto setupIconButton = [](juce::DrawableButton& button, const juce::String& iconName)
     {
@@ -54,12 +58,6 @@ SettingsSection::SettingsSection()
     pages.push_back(std::make_unique<WorkflowPage>());
     pages.push_back(std::make_unique<AudioPage>());
 
-    for (auto& p : pages)
-    {
-        p->setVisible(false);
-        pageContainer.addAndMakeVisible(p.get());
-    }
-
     // Create Sidebar Buttons
     juce::StringArray names = { "GENERAL", "WORKFLOW", "AUDIO" };
     for (int i = 0; i < names.size(); ++i)
@@ -73,7 +71,10 @@ SettingsSection::SettingsSection()
     setPage(0);
 }
 
-SettingsSection::~SettingsSection() {}
+SettingsSection::~SettingsSection() 
+{
+    viewport.setLookAndFeel(nullptr);
+}
 
 void SettingsSection::setPage(int index)
 {
@@ -81,12 +82,34 @@ void SettingsSection::setPage(int index)
 
     for (int i = 0; i < (int)pages.size(); ++i)
     {
-        pages[i]->setVisible(i == index);
         sidebarButtons[i]->setToggleState(i == index, juce::dontSendNotification);
     }
 
+    if (index == 1) // Workflow page
+    {
+        if (auto* workflow = dynamic_cast<WorkflowPage*>(pages[1].get()))
+            workflow->updateEnvelopeList();
+    }
+
     activePageIndex = index;
+    viewport.setViewedComponent(pages[activePageIndex].get(), false);
+    
+    // Ensure the new page is correctly sized immediately
+    resized(); 
     repaint();
+}
+
+void SettingsSection::setProcessor(DuqAudioProcessor* p)
+{
+    if (auto* workflow = getWorkflowPage())
+        workflow->setProcessor(p);
+}
+
+WorkflowPage* SettingsSection::getWorkflowPage()
+{
+    if (pages.size() > 1)
+        return dynamic_cast<WorkflowPage*>(pages[1].get());
+    return nullptr;
 }
 
 void SettingsSection::paint(juce::Graphics& g)
@@ -122,7 +145,19 @@ void SettingsSection::resized()
 
     backButton.setBounds(sidebarArea.getX() + 15, getHeight() - 50, 24, 24);
 
-    pageContainer.setBounds(bounds);
-    for (auto& p : pages)
-        p->setBounds(pageContainer.getLocalBounds());
+    viewport.setBounds(bounds);
+    
+    if (auto* currentPage = pages[activePageIndex].get())
+    {
+        int width = viewport.getMaximumVisibleWidth();
+        
+        // Pass 1: Set width and a sufficiently large height to allow absolute layout logic to run
+        currentPage->setSize(width, 1500); 
+        
+        // Pass 2: Now that components are positioned, get the actual bottom and set final size
+        if (auto* basePage = dynamic_cast<SettingsPageBase*>(currentPage))
+        {
+            currentPage->setSize(width, basePage->getRequiredHeight());
+        }
+    }
 }
