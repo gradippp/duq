@@ -45,6 +45,8 @@ private:
     juce::String labelText;
 
     float smoothedLevel = 0.0f;
+    float peakLevel = 0.0f;
+    int peakHoldCount = 0;
 
     static constexpr float clipThreshold = 0.99f;
     static constexpr int clipHoldFrames = 30;

@@ -46,6 +46,21 @@ void MeterComponent::timerCallback()
     // Faster smoothing to catch blips
     smoothedLevel += (normalized - smoothedLevel) * 0.4f;
 
+    // Peak Logic
+    if (normalized >= peakLevel)
+    {
+        peakLevel = normalized;
+        peakHoldCount = clipHoldFrames;
+    }
+    else if (peakHoldCount > 0)
+    {
+        peakHoldCount--;
+    }
+    else
+    {
+        peakLevel *= 0.95f; // Faster decay for peak when not held
+    }
+
     repaint();
 }
 
@@ -56,14 +71,13 @@ void MeterComponent::paint(juce::Graphics& g)
     // ----- Layout -----
     const float labelWidth = 100.0f;
     auto labelArea = bounds.removeFromLeft(labelWidth).reduced(8.0f, 0.0f);
-    // Taller meter: reduce the vertical padding (from 6.0f to 2.0f)
-    auto meterBounds = bounds.reduced(8.0f, 2.0f);
+    auto meterBounds = bounds.reduced(8.0f, 6.0f); // More vertical padding for a slimmer, more modern look
 
     // ----- Draw Label -----
     if (labelText.isNotEmpty())
     {
         g.setColour(Theme::Colours::textLabel);
-        g.setFont(FontManager::getBarlowBold(15.0f));
+        g.setFont(FontManager::getBarlowBold(14.0f));
         g.drawFittedText(labelText.toUpperCase(),
             labelArea.toNearestInt(),
             juce::Justification::centredLeft,
@@ -71,68 +85,79 @@ void MeterComponent::paint(juce::Graphics& g)
     }
 
     // ----- Meter Track (Background) -----
-    // Very dark background for the bar track to provide high contrast
-    g.setColour(Theme::Colours::meterBackground.withAlpha(0.6f));
+    g.setColour(Theme::Colours::sectionBackground);
     g.fillRoundedRectangle(meterBounds, 2.0f);
+    
+    g.setColour(Theme::Colours::border.withAlpha(0.3f));
+    g.drawRoundedRectangle(meterBounds, 2.0f, 1.0f);
 
     // ----- Filled Meter -----
-    if (smoothedLevel > 0.001f)
+    if (smoothedLevel > 0.001f || peakLevel > 0.001f)
     {
-        auto fillArea = meterBounds;
-        float levelWidth = meterBounds.getWidth() * smoothedLevel;
+        auto fillArea = meterBounds.reduced(2.0f); // Leave a small gap from border
+        float maxAvailableWidth = fillArea.getWidth();
+        float levelWidth = maxAvailableWidth * smoothedLevel;
+        float peakX = fillArea.getX() + (maxAvailableWidth * peakLevel);
         
-        if (meterDirection == Direction::LeftToRight)
+        if (meterDirection == Direction::RightToLeft)
         {
-            fillArea = meterBounds.withWidth(levelWidth);
-        }
-        else
-        {
-            fillArea = meterBounds.withLeft(meterBounds.getRight() - levelWidth);
+            peakX = fillArea.getRight() - (maxAvailableWidth * peakLevel);
         }
 
-        juce::ColourGradient grad;
-        if (mode == MeterMode::Envelope)
+        // --- Main Fill ---
+        if (smoothedLevel > 0.001f)
         {
-            // Modern Amber/Orange for envelope/reduction
-            grad = juce::ColourGradient(Theme::Colours::meterReduction.withMultipliedSaturation(0.8f), meterBounds.getX(), 0,
-                                        Theme::Colours::meterReduction, meterBounds.getRight(), 0, false);
-        }
-        else
-        {
-            // Modern Cyan -> Green -> Red for audio levels
-            grad = juce::ColourGradient(juce::Colour(0xff2ec4b6), meterBounds.getX(), 0,
-                                        Theme::Colours::meterFill, meterBounds.getRight(), 0, false);
-            grad.addColour(0.6, juce::Colour(0xffcbf3f0));
-            grad.addColour(0.8, Theme::Colours::meterReduction);
+            auto currentFill = fillArea;
+            if (meterDirection == Direction::LeftToRight)
+            {
+                currentFill = fillArea.withWidth(levelWidth);
+            }
+            else
+            {
+                currentFill = fillArea.withLeft(fillArea.getRight() - levelWidth);
+            }
+
+            juce::Colour baseColor = (mode == MeterMode::Envelope) ? 
+                                    Theme::Colours::meterReduction : 
+                                    Theme::Colours::waveform;
+
+            juce::ColourGradient grad(baseColor.withAlpha(0.6f), fillArea.getX(), 0,
+                                      baseColor, fillArea.getRight(), 0, false);
+            
+            if (mode == MeterMode::AudioLevel)
+            {
+                grad.addColour(0.7, baseColor);
+                grad.addColour(0.9, Theme::Colours::meterReduction);
+            }
+
+            g.setGradientFill(grad);
+            g.fillRoundedRectangle(currentFill, 1.5f);
+
+            // Subtle Glow at the tip
+            g.setColour(baseColor.withAlpha(0.3f));
+            if (meterDirection == Direction::LeftToRight)
+                g.fillRoundedRectangle(currentFill.withLeft(currentFill.getRight() - 2.0f).expanded(1.0f, 2.0f), 1.0f);
+            else
+                g.fillRoundedRectangle(currentFill.withWidth(2.0f).expanded(1.0f, 2.0f), 1.0f);
         }
 
-        g.setGradientFill(grad);
-        g.fillRoundedRectangle(fillArea, 2.0f);
-
-        // Subtle Glow
-        g.setColour(grad.getColourAtPosition(smoothedLevel).withAlpha(0.15f));
-        g.fillRoundedRectangle(fillArea.expanded(1.0f), 2.0f);
+        // --- Peak Indicator ---
+        if (peakLevel > 0.001f)
+        {
+            g.setColour(Theme::Colours::accent.withAlpha(0.8f));
+            g.fillRect(peakX - 1.0f, fillArea.getY(), 2.0f, fillArea.getHeight());
+        }
     }
 
-    // ----- Modern LED Overlay (Grid) -----
-    // This gives it a "digital hardware" feel without being too chunky
-    g.setColour(Theme::Colours::background.withAlpha(0.8f));
-    constexpr int gridCount = 40;
-    float gridStep = meterBounds.getWidth() / gridCount;
-    for (int i = 1; i < gridCount; ++i)
+    // ----- Modern Tick Marks -----
+    g.setColour(Theme::Colours::border.withAlpha(0.5f));
+    const int numTicks = 10;
+    for (int i = 1; i < numTicks; ++i)
     {
-        float x = meterBounds.getX() + i * gridStep;
-        g.drawVerticalLine((int)x, meterBounds.getY(), meterBounds.getBottom());
+        float x = meterBounds.getX() + (meterBounds.getWidth() * (float)i / (float)numTicks);
+        g.drawVerticalLine(juce::roundToInt(x), meterBounds.getBottom() - 3.0f, meterBounds.getBottom());
+        g.drawVerticalLine(juce::roundToInt(x), meterBounds.getY(), meterBounds.getY() + 3.0f);
     }
-
-    // ----- Glass Highlight -----
-    auto highlightArea = meterBounds.withHeight(meterBounds.getHeight() * 0.4f);
-    g.setGradientFill(juce::ColourGradient(Theme::Colours::accent.withAlpha(0.05f), 0, highlightArea.getY(),
-                                           juce::Colours::transparentWhite, 0, highlightArea.getBottom(), false));
-    g.fillRoundedRectangle(highlightArea, 2.0f);
-
-    // ----- Border -----
-    g.setColour(Theme::Colours::border.withAlpha(0.4f));
-    g.drawRoundedRectangle(meterBounds, 2.0f, 1.0f);
 }
+
 
