@@ -81,6 +81,8 @@ public:
     void triggerEnvelope(int index) { manualTriggerIndex = index; }
     void resetVoices();
 
+    void addEnvelope(const juce::String& name, int note);
+
     std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
     double getPhaseIncrement(int envelopeIndex) const;
 
@@ -92,7 +94,7 @@ private:
     void processMidi(juce::MidiBuffer& midi);
 
     // ValueTree::Listener
-    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { requiresSync = true; }
+    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { requiresSync = true; }
     void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; resetVoices(); }
     void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { requiresSync = true; resetVoices(); }
@@ -105,7 +107,6 @@ private:
 
     //==============================================================================
     juce::UndoManager undoManager{ 200 };
-    void addEnvelope(const juce::String& name, int note);
 
     // DSP State
     struct InternalDSPState

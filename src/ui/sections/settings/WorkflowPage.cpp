@@ -179,15 +179,7 @@ void WorkflowPage::comboBoxChanged(juce::ComboBox* cb)
         auto env = envelopes.getChild(cb->getSelectedItemIndex());
         if (env.isValid())
         {
-            auto points = env.getChildWithName("POINTS");
-            auto segments = env.getChildWithName("SEGMENTS");
-            
-            juce::ValueTree shape("SHAPE");
-            if (points.isValid()) shape.addChild(points.createCopy(), -1, nullptr);
-            if (segments.isValid()) shape.addChild(segments.createCopy(), -1, nullptr);
-
-            if (auto xml = shape.createXml())
-                config->setDefaultPoints(xml->toString());
+            config->setDefaultShape(EnvelopeShape::fromValueTree(env));
         }
     }
 }

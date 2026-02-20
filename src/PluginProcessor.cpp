@@ -14,35 +14,20 @@
 
 static juce::ValueTree createDefaultEnvelope(const juce::String& name, int note)
 {
+    juce::SharedResourcePointer<ConfigManager> config;
     juce::ValueTree env("ENVELOPE");
 
+    auto controls = config->getDefaultControls();
+    auto shape = config->getDefaultShape();
+
     env.setProperty("name", name, nullptr);
-    env.setProperty("triggerNote", note, nullptr);
-    env.setProperty("rate", Theme::Defaults::rate, nullptr);
-    env.setProperty("depth", (double)Theme::Defaults::depth, nullptr);
-    env.setProperty("smooth", (double)Theme::Defaults::smooth, nullptr);
-    env.setProperty("rateIsFrequencyMode", Theme::Defaults::rateIsFrequencyMode, nullptr);
+    env.setProperty("triggerNote", note >= 0 ? note : controls.triggerNote, nullptr);
+    env.setProperty("rate", controls.rate, nullptr);
+    env.setProperty("depth", (double)controls.depth, nullptr);
+    env.setProperty("smooth", (double)controls.smooth, nullptr);
+    env.setProperty("rateIsFrequencyMode", controls.rateIsFrequencyMode, nullptr);
 
-    juce::ValueTree points("POINTS");
-    for (int i = 0; i < Theme::Defaults::numDefaultPoints; ++i)
-    {
-        juce::ValueTree p("POINT");
-        p.setProperty("x", Theme::Defaults::defaultPoints[i].x, nullptr);
-        p.setProperty("y", Theme::Defaults::defaultPoints[i].y, nullptr);
-        points.addChild(p, -1, nullptr);
-    }
-
-    juce::ValueTree segments("SEGMENTS");
-    for (int i = 0; i < Theme::Defaults::numDefaultPoints - 1; ++i)
-    {
-        juce::ValueTree s("SEGMENT");
-        s.setProperty("curve", Theme::Defaults::curve, nullptr);
-        s.setProperty("type", Theme::Defaults::curveType, nullptr);
-        segments.addChild(s, -1, nullptr);
-    }
-
-    env.addChild(points, -1, nullptr);
-    env.addChild(segments, -1, nullptr);
+    shape.applyToValueTree(env);
 
     return env;
 }
@@ -162,7 +147,7 @@ void DuqAudioProcessor::syncToDSP()
             // Sync divisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
             static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
             
-            int idx = juce::jlimit(0, 5, (int)(rawRate / 16.67f));
+            int idx = juce::jlimit(0, 5, (int)(rawRate / 16.66f));
             de.rate = cycleMultipliers[idx];
         }
 
@@ -733,6 +718,37 @@ void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
         parameters.replaceState(juce::ValueTree::fromXml(*xml));
         parameters.state.addListener(this);
         syncToDSP();
+    }
+}
+
+void DuqAudioProcessor::valueTreePropertyChanged(juce::ValueTree& v, const juce::Identifier& i)
+{
+    requiresSync = true;
+
+    // Sync from ValueTree back to Parameter if modified externally (e.g. Preset Load)
+    if (v.hasType("ENVELOPE"))
+    {
+        auto envelopes = getEnvelopesTree();
+        int envIndex = envelopes.indexOf(v);
+
+        if (envIndex >= 0 && envIndex < 12)
+        {
+            juce::String propName = i.toString();
+            if (propName == "rate" || propName == "depth" || propName == "smooth")
+            {
+                juce::String paramID = "env" + juce::String(envIndex) + "_" + propName;
+                if (auto* param = parameters.getParameter(paramID))
+                {
+                    float newValue = (float)(double)v.getProperty(i);
+                    
+                    // Only update if significantly different to avoid loops
+                    if (std::abs(param->getValue() - parameters.getParameterRange(paramID).convertTo0to1(newValue)) > 0.0001f)
+                    {
+                        param->setValueNotifyingHost(parameters.getParameterRange(paramID).convertTo0to1(newValue));
+                    }
+                }
+            }
+        }
     }
 }
 

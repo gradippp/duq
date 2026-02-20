@@ -50,7 +50,7 @@ ControlSection::ControlSection()
                 return juce::String(value, 2) + " Hz";
 
             // Map 0..100 to 0..5
-            int index = juce::jlimit(0, 5, (int)(value / 16.67f));
+            int index = juce::jlimit(0, 5, (int)(value / 16.66f));
             return rateDivisions[index];
         };
 

@@ -113,6 +113,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                         config->setDefaultPoints(xml->toString());
                     }
                     
+                    // Refresh the list in the UI
+                    if (auto* workflow = settingsSection.getWorkflowPage())
+                        workflow->updateEnvelopeList();
+
                     // Remove the temporary imported envelope
                     envelopes.removeChild(env, &undoManager);
                 }
@@ -223,37 +227,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             auto envelopes = audioProcessor.getEnvelopesTree();
             envelopes.removeAllChildren(&undoManager);
             
-            // Add a single default envelope
-            juce::ValueTree env("ENVELOPE");
-            env.setProperty("name", Theme::Defaults::envelopeName + " 1", nullptr);
-            env.setProperty("triggerNote", Theme::Defaults::triggerNote, nullptr);
-            env.setProperty("rate", Theme::Defaults::rate, nullptr);
-            env.setProperty("depth", (double)Theme::Defaults::depth, nullptr);
-            env.setProperty("smooth", (double)Theme::Defaults::smooth, nullptr);
-            env.setProperty("rateIsFrequencyMode", Theme::Defaults::rateIsFrequencyMode, nullptr);
-
-            juce::ValueTree points("POINTS");
-            for (int i = 0; i < Theme::Defaults::numDefaultPoints; ++i)
-            {
-                juce::ValueTree p("POINT");
-                p.setProperty("x", Theme::Defaults::defaultPoints[i].x, nullptr);
-                p.setProperty("y", Theme::Defaults::defaultPoints[i].y, nullptr);
-                points.addChild(p, -1, nullptr);
-            }
-            env.addChild(points, -1, nullptr);
-
-            juce::ValueTree segments("SEGMENTS");
-            for (int i = 0; i < Theme::Defaults::numDefaultPoints - 1; ++i)
-            {
-                juce::ValueTree s("SEGMENT");
-                s.setProperty("curve", Theme::Defaults::curve, nullptr);
-                s.setProperty("type", Theme::Defaults::curveType, nullptr);
-                segments.addChild(s, -1, nullptr);
-            }
-
-            env.addChild(segments, -1, nullptr);
-
-            envelopes.addChild(env, -1, &undoManager);
+            // Add a single default envelope (uses global config defaults)
+            audioProcessor.triggerEnvelope(-1); // reset trigger state
+            audioProcessor.addEnvelope(Theme::Defaults::envelopeName + " 1", -1); // -1 means use config default note
+            
             header.setPresetName("Default Project");
         });
 

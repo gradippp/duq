@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../model/EnvelopeData.h"
 
 class ConfigManager
 {
@@ -49,6 +50,51 @@ public:
 
     void setDefaultPoints (const juce::String& xml) { getProps()->setValue ("defaultPoints", xml); }
     juce::String getDefaultPoints() const { return getProps()->getValue ("defaultPoints", ""); }
+
+    // --- High-level Struct Helpers ---
+
+    EnvelopeControls getDefaultControls() const
+    {
+        EnvelopeControls c;
+        c.rate = getDefaultRate();
+        c.depth = getDefaultDepth();
+        c.smooth = getDefaultSmooth();
+        c.triggerNote = getDefaultTriggerNote();
+        c.rateIsFrequencyMode = true; // Default
+        return c;
+    }
+
+    void setDefaultControls (const EnvelopeControls& c)
+    {
+        setDefaultRate ((float)c.rate);
+        setDefaultDepth (c.depth);
+        setDefaultSmooth (c.smooth);
+        setDefaultTriggerNote (c.triggerNote);
+    }
+
+    EnvelopeShape getDefaultShape() const
+    {
+        auto xmlStr = getDefaultPoints();
+        if (xmlStr.isEmpty()) 
+        {
+            // Default linear ramp if nothing saved
+            EnvelopeShape s;
+            s.addPoint(0.0f, 0.0f);
+            s.addPoint(1.0f, 1.0f);
+            return s;
+        }
+
+        if (auto xml = juce::XmlDocument::parse(xmlStr))
+            return EnvelopeShape::fromValueTree(juce::ValueTree::fromXml(*xml));
+
+        return {};
+    }
+
+    void setDefaultShape (const EnvelopeShape& s)
+    {
+        if (auto xml = s.toValueTree().createXml())
+            setDefaultPoints (xml->toString());
+    }
 
 private:
     mutable juce::ApplicationProperties properties;
