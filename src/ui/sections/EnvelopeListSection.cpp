@@ -291,16 +291,21 @@ void EnvelopeListSection::paint(juce::Graphics& g)
     auto footerBounds = getLocalBounds().removeFromBottom(40);
     g.setColour(Theme::Colours::border.withAlpha(0.5f));
     g.drawLine(0.0f, footerBounds.getY(), (float)getWidth(), footerBounds.getY(), 1.0f);
+}
 
+void EnvelopeListSection::paintOverChildren(juce::Graphics& g)
+{
     // Drop Indicator
     if (isDragging && dropIndex >= 0)
     {
         constexpr int headerHeight = 32;
         constexpr int rowHeight = 28;
+        auto footerBounds = getLocalBounds().removeFromBottom(40);
         
-        float dropY = (float)(headerHeight + dropIndex * rowHeight) - viewport.getViewPosition().y;
+        float dropY = (float)(headerHeight + dropIndex * rowHeight) - (float)viewport.getViewPosition().y;
 
-        if (dropY >= headerHeight && dropY < footerBounds.getY())
+        // Ensure we don't draw over the header or footer
+        if (dropY >= (float)headerHeight && dropY < (float)footerBounds.getY())
         {
             g.setColour(Theme::Colours::accent);
             g.drawLine(0.0f, dropY, (float)getWidth(), dropY, 2.0f);
@@ -433,13 +438,13 @@ void EnvelopeListSection::itemDragEnter(const juce::DragAndDropTarget::SourceDet
 
 void EnvelopeListSection::itemDragMove(const juce::DragAndDropTarget::SourceDetails& details)
 {
-    auto localPos = getLocalPoint(nullptr, details.localPosition.toFloat());
+    auto localPos = details.localPosition.toFloat();
     
     // Header is 32px
-    float y = localPos.y - 32.0f + viewport.getViewPosition().y;
-    int index = juce::roundToInt(y / 28.0f); // rowHeight is 28
-
-    index = juce::jlimit(0, envelopesTree.getNumChildren(), index);
+    float y = localPos.y - 32.0f + (float)viewport.getViewPosition().y;
+    
+    // We want to insert BETWEEN rows, so we use floor to find which row slot the mouse is in
+    int index = juce::jlimit(0, envelopesTree.getNumChildren(), (int)std::floor(y / 28.0f + 0.5f));
 
     if (index != dropIndex)
     {
