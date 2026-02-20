@@ -107,9 +107,19 @@ void PresetSection::deletePreset(int index)
     if (fileIndex < 0 || fileIndex >= (int)filteredFiles.size()) return;
     
     auto file = filteredFiles[fileIndex];
-    if (file.deleteFile()) {
-        refreshPresetList();
-    }
+    
+    juce::NativeMessageBox::showOkCancelBox(
+        juce::MessageBoxIconType::WarningIcon,
+        "Delete Preset",
+        "Are you sure you want to delete '" + file.getFileNameWithoutExtension() + "'? This action cannot be undone.",
+        this,
+        juce::ModalCallbackFunction::create([this, file](int result) {
+            if (result != 0) {
+                if (file.deleteFile())
+                    refreshPresetList();
+            }
+        })
+    );
 }
 
 int PresetSection::getNumRows() 
