@@ -66,9 +66,56 @@ void CompactTimingSlider::showValueEntryDialog()
     }));
 }
 
+//==============================================================================
+
+CompactKnob::CompactKnob(const juce::String& label) : labelName(label)
+{
+    setLookAndFeel(&lnf);
+    setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    setRotaryParameters(juce::degreesToRadians(135.0f), juce::degreesToRadians(405.0f), true);
+    setRange(0.0, 1.0);
+}
+
+CompactKnob::~CompactKnob()
+{
+    setLookAndFeel(nullptr);
+}
+
+void CompactKnob::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    if (bounds.getWidth() < 10.0f || bounds.getHeight() < 10.0f) return;
+
+    auto h = bounds.getHeight();
+    auto knobArea = bounds.removeFromLeft(h).reduced(2.0f);
+    
+    if (knobArea.getWidth() > 0 && knobArea.getHeight() > 0)
+    {
+        float normalizedValue = (float)valueToProportionOfLength(getValue());
+        getLookAndFeel().drawRotarySlider(g, (int)knobArea.getX(), (int)knobArea.getY(), (int)knobArea.getWidth(), (int)knobArea.getHeight(),
+                                          normalizedValue,
+                                          juce::degreesToRadians(135.0f), juce::degreesToRadians(405.0f), *this);
+    }
+
+    // Label and Value
+    if (bounds.getWidth() > 10.0f)
+    {
+        g.setColour(Theme::Colours::textLabel);
+        g.setFont(FontManager::getBarlowBold(10.0f));
+        auto labelArea = bounds.removeFromTop(bounds.getHeight() * 0.5f).reduced(4, 0);
+        g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
+        
+        g.setColour(Theme::Colours::textMain);
+        g.setFont(FontManager::getJetBrainsMono(10.0f));
+        g.drawFittedText(juce::String(juce::roundToInt(getValue())) + "%", bounds.reduced(4, 0).toNearestInt(), juce::Justification::centredLeft, 1);
+    }
+}
+
 HeaderSection::HeaderSection()
     : lookaheadSlider("LOOKAHEAD"),
-      lookbehindSlider("LOOKBEHIND")
+      lookbehindSlider("LOOKBEHIND"),
+      mixKnob("MIX")
 {
     auto setupIconButton = [](juce::DrawableButton& button,
         const juce::String& iconName)
@@ -117,8 +164,8 @@ HeaderSection::HeaderSection()
     brandLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.9f));
     brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
 
-    mixKnob = std::make_unique<ControlKnobComponent>("", 100.0f, "%");
-    addAndMakeVisible(mixKnob.get());
+    addAndMakeVisible(mixKnob);
+    mixKnob.setTooltip("Global Wet/Dry Mix");
 
     undoButton.onClick = [this] { if (undoCallback) undoCallback(); };
     redoButton.onClick = [this] { if (redoCallback) redoCallback(); };
@@ -138,9 +185,9 @@ void HeaderSection::setupAttachments(juce::AudioProcessorValueTreeState& vts)
     lookaheadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookahead", lookaheadSlider);
     lookbehindAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookbehind", lookbehindSlider);
     
-    if (mixKnob)
-        mixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "mix", mixKnob->getSlider());
+    mixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "mix", mixKnob);
 }
+
 
 //==============================================================================
 
@@ -243,8 +290,7 @@ void HeaderSection::resized()
     // --- Right Area (Mix, Undo/Redo) ---
     auto rightArea = getLocalBounds().removeFromRight(200).reduced(10, 0);
     
-    if (mixKnob)
-        mixKnob->setBounds(rightArea.removeFromRight(60).reduced(0, 5));
+    mixKnob.setBounds(rightArea.removeFromRight(80).reduced(0, 5));
 
     rightArea.removeFromRight(15);
 

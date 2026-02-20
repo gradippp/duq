@@ -19,6 +19,18 @@ private:
     void showValueEntryDialog();
 };
 
+class CompactKnob : public juce::Slider
+{
+public:
+    CompactKnob(const juce::String& label);
+    ~CompactKnob() override;
+    void paint(juce::Graphics& g) override;
+
+private:
+    juce::String labelName;
+    FlatKnobLookAndFeel lnf;
+};
+
 class HeaderSection : public juce::Component
 {
 public:
@@ -61,7 +73,7 @@ private:
     CompactTimingSlider lookaheadSlider;
     CompactTimingSlider lookbehindSlider;
 
-    std::unique_ptr<ControlKnobComponent> mixKnob;
+    CompactKnob mixKnob;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookaheadAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookbehindAttachment;
