@@ -57,6 +57,16 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             resized();
         };
 
+    envelopeListSection.onSaveRequested = [this](juce::ValueTree env)
+        {
+            presetSection.setMode(PresetSection::Mode::Envelope);
+            presetSection.setTargetEnvelope(env);
+            gridSection.setVisible(false);
+            presetSection.setVisible(true);
+            resized();
+            presetSection.startSavingProcess();
+        };
+
     envelopeListSection.onImportRequested = [this]()
         {
             presetSection.setMode(PresetSection::Mode::Import);
@@ -119,27 +129,11 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     header.setSaveProjectCallback([this]
         {
-            auto initialFile = PresetManager::getProjectDirectory()
-                .getChildFile("Project");
-
-            auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
-
-            auto chooser = std::make_shared<juce::FileChooser>("Save Project Preset",
-                initialFile,
-                "*" + PresetManager::projectExtension);
-
-                            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
-                            {
-                                auto file = fc.getResult();
-                                if (file == juce::File())
-                                    return;
-            
-                                if (PresetManager::saveProject(audioProcessor.parameters.state, file))
-                                {
-                                    header.setPresetName(file.getFileNameWithoutExtension());
-                                }
-                            });
-            
+            presetSection.setMode(PresetSection::Mode::Project);
+            gridSection.setVisible(false);
+            presetSection.setVisible(true);
+            resized();
+            presetSection.startSavingProcess();
         });
 
     header.setLoadProjectCallback([this]

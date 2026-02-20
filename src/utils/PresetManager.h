@@ -17,6 +17,9 @@ public:
     static bool saveEnvelope(const juce::ValueTree& envelope, const juce::File& file);
     static bool saveProject(const juce::ValueTree& state, const juce::File& file);
 
+    static bool saveEnvelopeByName(const juce::ValueTree& envelope, const juce::String& name);
+    static bool saveProjectByName(const juce::ValueTree& state, const juce::String& name);
+
     // --- Loading ---
     static juce::ValueTree loadEnvelope(const juce::File& file);
     static juce::ValueTree loadProject(const juce::File& file);

@@ -19,6 +19,7 @@ public:
 
     std::function<void()> onDeleteRequested;
     std::function<void()> onReplaceRequested;
+    std::function<void()> onSaveRequested;
     std::function<void()> onSelected;
     std::function<void(int)> onNoteChanged;
     std::function<void(const juce::String&)> onNameChanged;

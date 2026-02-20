@@ -1,8 +1,8 @@
 #include "PresetManager.h"
 #include "../Globals.h"
 
-const juce::String PresetManager::envelopeExtension = ".duq.env";
-const juce::String PresetManager::projectExtension = ".duq";
+const juce::String PresetManager::envelopeExtension = "duq.env";
+const juce::String PresetManager::projectExtension = "duq";
 
 juce::File PresetManager::getEnvelopeDirectory()
 {
@@ -96,6 +96,18 @@ bool PresetManager::saveProject(const juce::ValueTree& state, const juce::File& 
     return saveValueTreeToXml(cleanProject, file);
 }
 
+bool PresetManager::saveEnvelopeByName(const juce::ValueTree& envelope, const juce::String& name)
+{
+    auto file = getEnvelopeDirectory().getChildFile(name).withFileExtension(envelopeExtension);
+    return saveEnvelope(envelope, file);
+}
+
+bool PresetManager::saveProjectByName(const juce::ValueTree& state, const juce::String& name)
+{
+    auto file = getProjectDirectory().getChildFile(name).withFileExtension(projectExtension);
+    return saveProject(state, file);
+}
+
 juce::ValueTree PresetManager::loadEnvelope(const juce::File& file)
 {
     return loadValueTreeFromXml(file, juce::Identifier("ENVELOPE"));
@@ -114,7 +126,7 @@ void PresetManager::importEnvelope(juce::ValueTree& envelopesTree, juce::UndoMan
     auto chooser = std::make_shared<juce::FileChooser>(
         "Import Envelope",
         getEnvelopeDirectory(),
-        "*" + envelopeExtension);
+        "*." + envelopeExtension);
 
     chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
         [envelopesTree, undoManager, onComplete, chooser](const juce::FileChooser& fc) mutable

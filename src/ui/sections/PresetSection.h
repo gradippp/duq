@@ -25,6 +25,8 @@ public:
     void setMode(Mode newMode);
     void setUndoManager(juce::UndoManager& um);
 
+    void startSavingProcess();
+
     std::function<void()> onClose;
     std::function<void(juce::String)> onProjectLoaded;
     std::function<void(int)> onEnvelopeImported;
@@ -42,6 +44,7 @@ private:
 
     DuqAudioProcessor& processor;
     Mode mode = Mode::Envelope;
+    bool isSavingMode = false;
 
     juce::ValueTree targetEnvelope;
     juce::UndoManager* undoManager = nullptr;
@@ -68,13 +71,15 @@ private:
         void mouseExit(const juce::MouseEvent&) override { isHovering = false; repaint(); }
         void mouseDown(const juce::MouseEvent& e) override;
 
-        void update(int newIndex, bool isSelected);
+        void update(int newIndex, bool isSelected, bool isEditable);
 
     private:
         PresetSection& owner;
         int rowDataIndex;
         bool isSelected = false;
         bool isHovering = false;
+        bool isEditableMode = false;
+        juce::Label editLabel;
         juce::DrawableButton deleteButton{ "delete", juce::DrawableButton::ImageFitted };
     };
 

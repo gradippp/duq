@@ -44,6 +44,7 @@ PresetSection::~PresetSection() {}
 void PresetSection::setMode(Mode newMode)
 {
     mode = newMode;
+    isSavingMode = false;
     titleLabel.setText(mode == Mode::Project ? "PROJECT BROWSER" : "ENVELOPE BROWSER", juce::dontSendNotification);
     searchEditor.setText("", juce::dontSendNotification);
     refreshPresetList();
@@ -60,6 +61,18 @@ void PresetSection::setUndoManager(juce::UndoManager& um)
     undoManager = &um;
 }
 
+void PresetSection::startSavingProcess()
+{
+    isSavingMode = true;
+    searchText = "";
+    searchEditor.setText("", juce::dontSendNotification);
+    refreshPresetList();
+    presetList.scrollToEnsureRowIsOnscreen(0);
+    
+    // We want the first row to be the editable one
+    repaint();
+}
+
 void PresetSection::refreshPresetList()
 {
     allFiles.clear();
@@ -67,7 +80,7 @@ void PresetSection::refreshPresetList()
     auto extension = (mode == Mode::Project) ? PresetManager::projectExtension : PresetManager::envelopeExtension;
     
     if (dir.exists() && dir.isDirectory()) {
-        auto files = dir.findChildFiles(juce::File::findFiles, false, "*" + extension);
+        auto files = dir.findChildFiles(juce::File::findFiles, false, "*." + extension);
         for (auto f : files)
             allFiles.push_back(f);
     }
@@ -90,15 +103,21 @@ void PresetSection::filterPresets()
 
 void PresetSection::deletePreset(int index)
 {
-    if (index < 0 || index >= (int)filteredFiles.size()) return;
+    int fileIndex = isSavingMode ? index - 1 : index;
+    if (fileIndex < 0 || fileIndex >= (int)filteredFiles.size()) return;
     
-    auto file = filteredFiles[index];
+    auto file = filteredFiles[fileIndex];
     if (file.deleteFile()) {
         refreshPresetList();
     }
 }
 
-int PresetSection::getNumRows() { return (int)filteredFiles.size(); }
+int PresetSection::getNumRows() 
+{ 
+    int count = (int)filteredFiles.size();
+    if (isSavingMode) count++;
+    return count;
+}
 
 void PresetSection::paintListBoxItem(int, juce::Graphics&, int, int, bool) {}
 
@@ -106,14 +125,22 @@ juce::Component* PresetSection::refreshComponentForRow(int rowNumber, bool isSel
 {
     auto* row = static_cast<PresetRowComponent*>(existingComponentToUpdate);
     if (row == nullptr) row = new PresetRowComponent(*this, rowNumber);
-    row->update(rowNumber, isSelected);
+    
+    bool isEditable = isSavingMode && rowNumber == 0;
+    int dataIdx = isSavingMode ? rowNumber - 1 : rowNumber;
+    
+    row->update(dataIdx, isSelected, isEditable);
     return row;
 }
 
-void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent&)
+void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent& e)
 {
-    if (rowNumber < 0 || rowNumber >= (int)filteredFiles.size()) return;
-    auto file = filteredFiles[rowNumber];
+    if (isSavingMode && rowNumber == 0) return;
+    
+    int dataIdx = isSavingMode ? rowNumber - 1 : rowNumber;
+    if (dataIdx < 0 || dataIdx >= (int)filteredFiles.size()) return;
+    
+    auto file = filteredFiles[dataIdx];
 
     if (mode == Mode::Envelope) {
         if (!targetEnvelope.isValid()) return;
@@ -171,7 +198,7 @@ void PresetSection::paint(juce::Graphics& g)
     g.setFont(FontManager::getJetBrainsMono(10.0f));
     g.drawText("Presets location: " + dir.getFullPathName(), footerArea.reduced(15, 0), juce::Justification::centredLeft);
 
-    if (filteredFiles.empty())
+    if (filteredFiles.empty() && !isSavingMode)
     {
         g.setColour(juce::Colours::grey.withAlpha(0.4f));
         g.setFont(FontManager::getBarlowBold(18.0f));
@@ -202,12 +229,51 @@ PresetSection::PresetRowComponent::PresetRowComponent(PresetSection& o, int idx)
     deleteButton.setImages(delIcon.get(), delIconOver.get(), delIcon.get());
     addAndMakeVisible(deleteButton);
     deleteButton.onClick = [this]() { owner.deletePreset(rowDataIndex); };
+
+    addAndMakeVisible(editLabel);
+    editLabel.setEditable(true, true, false);
+    editLabel.setFont(FontManager::getInterRegular(14.0f));
+    editLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain);
+    editLabel.setColour(juce::Label::textWhenEditingColourId, Theme::Colours::textMain);
+    editLabel.setJustificationType(juce::Justification::centredLeft);
+
+    editLabel.onEditorShow = [this]() {
+        if (auto* editor = editLabel.getCurrentTextEditor())
+            editor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::transparentBlack);
+    };
+
+    editLabel.onEditorHide = [this]() {
+        auto name = editLabel.getText().trim();
+        if (name.isNotEmpty()) {
+            if (owner.mode == PresetSection::Mode::Project) {
+                PresetManager::saveProjectByName(owner.processor.parameters.state, name);
+            } else {
+                auto env = owner.targetEnvelope.isValid() ? owner.targetEnvelope : owner.processor.getEnvelopesTree().getChild(0);
+                PresetManager::saveEnvelopeByName(env, name);
+            }
+            owner.isSavingMode = false;
+            owner.refreshPresetList();
+        }
+    };
 }
 
-void PresetSection::PresetRowComponent::update(int idx, bool sel)
+void PresetSection::PresetRowComponent::update(int idx, bool sel, bool editable)
 {
     rowDataIndex = idx;
     isSelected = sel;
+    isEditableMode = editable;
+
+    if (isEditableMode) {
+        editLabel.setVisible(true);
+        editLabel.setText("New Preset", juce::dontSendNotification);
+        editLabel.showEditor();
+        deleteButton.setVisible(false);
+    } else {
+        editLabel.setVisible(false);
+        // Don't allow deletion in Import mode
+        deleteButton.setVisible(owner.mode != PresetSection::Mode::Import);
+    }
+    
     repaint();
 }
 
@@ -222,8 +288,15 @@ void PresetSection::PresetRowComponent::paint(juce::Graphics& g)
         g.fillRoundedRectangle(area.reduced(4, 2), 4.0f);
     }
 
-    if (rowDataIndex < (int)owner.filteredFiles.size()) {
-        auto name = owner.filteredFiles[rowDataIndex].getFileNameWithoutExtension();
+    if (!isEditableMode && rowDataIndex >= 0 && rowDataIndex < (int)owner.filteredFiles.size()) {
+        auto file = owner.filteredFiles[rowDataIndex];
+        auto name = file.getFileName();
+        
+        auto ext = (owner.mode == PresetSection::Mode::Project) ? PresetManager::projectExtension : PresetManager::envelopeExtension;
+        
+        if (name.endsWith("." + ext))
+            name = name.dropLastCharacters(ext.length() + 1);
+
         g.setColour(isSelected ? Theme::Colours::textMain : Theme::Colours::textDimmed);
         g.setFont(FontManager::getInterRegular(14.0f));
         g.drawText(name, area.reduced(15, 0), juce::Justification::centredLeft, true);
@@ -232,11 +305,14 @@ void PresetSection::PresetRowComponent::paint(juce::Graphics& g)
 
 void PresetSection::PresetRowComponent::resized()
 {
+    auto area = getLocalBounds().reduced(15, 0);
+    editLabel.setBounds(area.withTrimmedRight(40));
     deleteButton.setBounds(getWidth() - 40, (getHeight() - 20) / 2, 20, 20);
 }
 
 void PresetSection::PresetRowComponent::mouseDown(const juce::MouseEvent& e)
 {
-    owner.presetList.selectRow(rowDataIndex);
-    owner.listBoxItemClicked(rowDataIndex, e);
+    if (isEditableMode) return;
+    owner.presetList.selectRow(rowDataIndex + (owner.isSavingMode ? 1 : 0));
+    owner.listBoxItemClicked(rowDataIndex + (owner.isSavingMode ? 1 : 0), e);
 }

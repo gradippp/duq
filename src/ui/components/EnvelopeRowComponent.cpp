@@ -107,23 +107,8 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
 
     saveButton.onClick = [this]()
         {
-            auto initialFile = PresetManager::getEnvelopeDirectory()
-                .getChildFile(envelope["name"].toString());
-
-            auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles;
-
-            auto chooser = std::make_shared<juce::FileChooser>("Save Envelope Preset",
-                initialFile,
-                "*" + PresetManager::envelopeExtension);
-
-            chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
-                {
-                    auto file = fc.getResult();
-                    if (file == juce::File())
-                        return;
-
-                    PresetManager::saveEnvelope(envelope, file);
-                });
+            if (onSaveRequested)
+                onSaveRequested();
         };
 
     replaceButton.onClick = [this]()
