@@ -764,6 +764,9 @@ void GridSection::rebuildPointComponents()
             grid.isDraggingPoint = true;
             grid.activeDragNode = node;
 
+            // Initialize with current position to prevent glitches on single clicks
+            grid.activeDragPosition = { (float)node["x"], (float)node["y"] };
+
             if (grid.undoManager)
                 grid.undoManager->beginNewTransaction("Move Envelope Point");
         };
@@ -903,8 +906,15 @@ void GridSection::rebuildPointComponents()
 
                 if (node.isValid())
                 {
-                    node.setProperty("x", grid.activeDragPosition.x, grid.undoManager);
-                    node.setProperty("y", grid.activeDragPosition.y, grid.undoManager);
+                    float oldX = node["x"];
+                    float oldY = node["y"];
+
+                    // Only update if the position actually changed
+                    if (oldX != grid.activeDragPosition.x || oldY != grid.activeDragPosition.y)
+                    {
+                        node.setProperty("x", grid.activeDragPosition.x, grid.undoManager);
+                        node.setProperty("y", grid.activeDragPosition.y, grid.undoManager);
+                    }
                 }
 
                 // Transaction started on drag start is ended implicitly when a
