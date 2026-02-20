@@ -105,6 +105,13 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             resized();
         });
 
+    header.setSettingsCallback([this]
+        {
+            // Placeholder: Show an alert for now until Settings section is implemented
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, 
+                "Settings", "Settings section coming soon!", "OK");
+        });
+
     header.setupAttachments(audioProcessor.parameters);
 
     aboutSection.setVisible(false);

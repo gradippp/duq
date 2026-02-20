@@ -51,6 +51,7 @@ public:
     void setLoadProjectCallback(std::function<void()> cb) { onLoadProject = std::move(cb); }
     void setInitPresetCallback(std::function<void()> cb) { onInitPreset = std::move(cb); }
     void setAboutCallback(std::function<void()> cb) { onAboutClicked = std::move(cb); }
+    void setSettingsCallback(std::function<void()> cb) { onSettingsClicked = std::move(cb); }
 
     void setupAttachments(juce::AudioProcessorValueTreeState& vts);
 
@@ -66,6 +67,7 @@ private:
     
     juce::DrawableButton saveProjectButton{ "save_project", juce::DrawableButton::ImageFitted };
     juce::DrawableButton initPresetButton{ "init_preset", juce::DrawableButton::ImageFitted };
+    juce::DrawableButton settingsButton{ "settings", juce::DrawableButton::ImageFitted };
     
     SelectableLabel presetNameLabel;
     SelectableLabel brandLabel;
@@ -85,6 +87,7 @@ private:
     std::function<void()> onLoadProject;
     std::function<void()> onInitPreset;
     std::function<void()> onAboutClicked;
+    std::function<void()> onSettingsClicked;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderSection)
 };

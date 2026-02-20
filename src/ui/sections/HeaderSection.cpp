@@ -140,16 +140,19 @@ HeaderSection::HeaderSection()
     setupIconButton(redoButton, "redo");
     setupIconButton(saveProjectButton, "save");
     setupIconButton(initPresetButton, "close"); 
+    setupIconButton(settingsButton, "settings");
     
     undoButton.setTooltip("Undo");
     redoButton.setTooltip("Redo");
     saveProjectButton.setTooltip("Save Project Preset");
     initPresetButton.setTooltip("Init Preset (Reset State)");
+    settingsButton.setTooltip("Settings");
 
     addAndMakeVisible(undoButton);
     addAndMakeVisible(redoButton);
     addAndMakeVisible(saveProjectButton);
     addAndMakeVisible(initPresetButton);
+    addAndMakeVisible(settingsButton);
 
     addAndMakeVisible(presetNameLabel);
     presetNameLabel.setJustificationType(juce::Justification::centred);
@@ -171,6 +174,7 @@ HeaderSection::HeaderSection()
     redoButton.onClick = [this] { if (redoCallback) redoCallback(); };
     saveProjectButton.onClick = [this] { if (onSaveProject) onSaveProject(); };
     initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
+    settingsButton.onClick = [this] { if (onSettingsClicked) onSettingsClicked(); };
 
     // --- Lookahead / Lookbehind ---
     addAndMakeVisible(lookaheadSlider);
@@ -288,8 +292,11 @@ void HeaderSection::resized()
     saveProjectButton.setBounds(initPresetButton.getRight() + spacing, centerBay.getCentreY() - buttonSize/2, buttonSize, buttonSize);
 
     // --- Right Area (Mix, Undo/Redo) ---
-    auto rightArea = getLocalBounds().removeFromRight(200).reduced(10, 0);
+    auto rightArea = getLocalBounds().removeFromRight(230).reduced(10, 0);
     
+    settingsButton.setBounds(rightArea.removeFromRight(buttonSize).withSizeKeepingCentre(buttonSize, buttonSize));
+    rightArea.removeFromRight(spacing);
+
     mixKnob.setBounds(rightArea.removeFromRight(80).reduced(0, 5));
 
     rightArea.removeFromRight(15);
