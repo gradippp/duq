@@ -1,10 +1,12 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../components/PointComponent.h"
-#include "../components/AnchorComponent.h"
 #include "../components/WaveformComponent.h"
 #include "../../model/EnvelopeData.h"
+#include "GridBackground.h"
+#include "EnvelopePathRenderer.h"
+#include "PlayheadOverlay.h"
+#include "PointsContainer.h"
 
 class GridSection : public juce::Component,
     private juce::ValueTree::Listener,
@@ -21,20 +23,27 @@ public:
 
     void setDraggingAnchor(bool b) { isDraggingAnchor = b; }
     void setDraggingPoint(bool b) { isDraggingPoint = b; }
+    
     juce::Rectangle<int> getViewArea() const { return viewArea; }
     float getZoomX() const { return zoomX; }
     float getZoomY() const { return zoomY; }
     float getUniformZoom() const { return uniformZoom; }
+    int getGridPower() const { return gridPower; }
+    juce::ValueTree getEnvelope() const { return envelope; }
+
     juce::ValueTree activeDragNode;
     juce::Point<float> activeDragPosition;
+    juce::ValueTree activeAnchorNode;
+    float activeDragCurve = 0.0f;
 
     // Undo
     void setUndoManager(juce::UndoManager& um);
     juce::UndoManager& getUndoManager();
+    juce::UndoManager* getUndoManagerPtr() { return undoManager; }
 
     // Coordinate mapping
-    juce::Point<float> normalizedToPixel(juce::Point<float>) const;
-    juce::Point<float> pixelToNormalized(juce::Point<float>) const;
+    juce::Point<float> normalizedToPixel(juce::Point<float> p) const { return state.normalizedToPixel(p); }
+    juce::Point<float> pixelToNormalized(juce::Point<float> p) const { return state.pixelToNormalized(p); }
 
     // Rendering
     void paint(juce::Graphics&) override;
@@ -59,6 +68,10 @@ public:
     void mouseWheelMove(const juce::MouseEvent&,
         const juce::MouseWheelDetails&) override;
 
+    void updatePointPositions();
+    void updatePathRenderer();
+    static float snapValue(float value, float step);
+
 private:
     // ValueTree Listener
     void valueTreePropertyChanged(juce::ValueTree&,
@@ -74,32 +87,23 @@ private:
 
     bool isDraggingPoint = false;
     bool isDraggingAnchor = false;
-    juce::ValueTree activeAnchorNode;
-    float activeDragCurve = 0.0f;
     int activeAnchorIndex = -1;
 
     // View State
+    GridViewState state;
     int gridPower = 4;
-
     static constexpr int minGridPower = 2;
     static constexpr int maxGridPower = 6;
-
     float zoomX = 1.0f;
     float zoomY = 1.0f;
-
-    // When strict pinch is enabled we drive both axes from this uniform zoom
     float uniformZoom = 1.0f;
-
     float offsetX = 0.0f;
     float offsetY = 0.0f;
-
     static constexpr float minZoom = 1.0f;
     static constexpr float maxZoom = 10.0f;
 
-    // (strict pinch uses `uniformZoom`) 
-
-    // Panning
     void updatePanCursor();
+    void updateViewState();
 
     // Timer for debounced writing to ValueTree
     void timerCallback() override;
@@ -109,15 +113,15 @@ private:
     float panStartOffsetX = 0.0f;
     float panStartOffsetY = 0.0f;
 
-    // Rendering helpers
-    void drawGrid(juce::Graphics&);
-    void rebuildPointComponents();
-    void updatePointPositions();
-    static float snapValue(float value, float step);
-
     // Layout
     juce::Rectangle<int> viewArea;
+    
+    // Components
+    GridBackground gridBackground;
     WaveformComponent waveform;
+    EnvelopePathRenderer pathRenderer;
+    PointsContainer pointsContainer;
+    PlayheadOverlay playheadOverlay;
 
     // Data
     juce::ValueTree envelope;
@@ -127,10 +131,7 @@ private:
     bool pendingZoomWrite = false;
     int zoomWriteCounter = 0;
     bool isUserZooming = false;
-    bool persistZoomToTree = false; // set true to re-enable writing zoom to ValueTree
-
-    std::vector<std::unique_ptr<PointComponent>> pointComponents;
-    std::vector<std::unique_ptr<AnchorComponent>> anchorComponents;
+    bool persistZoomToTree = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GridSection)
 };
