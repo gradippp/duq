@@ -51,6 +51,9 @@ WorkflowPage::WorkflowPage()
     };
     addAndMakeVisible(importFromBrowserButton);
 
+    addAndMakeVisible(shapePreview);
+    shapePreview.setShape(config->getDefaultShape());
+
     updateEnvelopeList();
 }
 
@@ -78,6 +81,11 @@ void WorkflowPage::updateEnvelopeList()
         auto env = envelopes.getChild(i);
         currentEnvelopesCombo.addItem(env.getProperty("name").toString(), i + 1);
     }
+}
+
+void WorkflowPage::updateShapePreview()
+{
+    shapePreview.setShape(config->getDefaultShape());
 }
 
 void WorkflowPage::paint(juce::Graphics& g)
@@ -159,6 +167,9 @@ void WorkflowPage::resized()
     currentEnvelopesCombo.setBounds(row5.removeFromLeft(200).reduced(0, 10));
     row5.removeFromLeft(40);
     importFromBrowserButton.setBounds(row5.removeFromLeft(200).reduced(0, 10));
+
+    area.removeFromTop(20);
+    shapePreview.setBounds(area.removeFromTop(150).withWidth(440));
 }
 
 void WorkflowPage::sliderValueChanged(juce::Slider* s)
@@ -179,7 +190,9 @@ void WorkflowPage::comboBoxChanged(juce::ComboBox* cb)
         auto env = envelopes.getChild(cb->getSelectedItemIndex());
         if (env.isValid())
         {
-            config->setDefaultShape(EnvelopeShape::fromValueTree(env));
+            auto shape = EnvelopeShape::fromValueTree(env);
+            config->setDefaultShape(shape);
+            shapePreview.setShape(shape);
         }
     }
 }

@@ -84,8 +84,19 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     presetSection.onClose = [this]()
         {
             presetSection.setVisible(false);
-            if (settingsSection.isVisible()) {
-                // Keep settings visible
+            
+            bool returningToSettings = false;
+            if (auto* workflow = settingsSection.getWorkflowPage())
+            {
+                if (workflow->isWaitingForImport)
+                {
+                    workflow->isWaitingForImport = false;
+                    returningToSettings = true;
+                }
+            }
+
+            if (returningToSettings) {
+                settingsSection.setVisible(true);
             } else {
                 gridSection.setVisible(true);
             }
@@ -94,7 +105,17 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     presetSection.onEnvelopeImported = [this](int newIndex)
         {
-            if (presetSection.getMode() == PresetSection::Mode::Import && settingsSection.isVisible())
+            bool handledAsDefault = false;
+            if (auto* workflow = settingsSection.getWorkflowPage())
+            {
+                if (workflow->isWaitingForImport)
+                {
+                    handledAsDefault = true;
+                    workflow->isWaitingForImport = false;
+                }
+            }
+
+            if (handledAsDefault)
             {
                 auto envelopes = audioProcessor.getEnvelopesTree();
                 auto env = envelopes.getChild(newIndex);
@@ -115,7 +136,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                     
                     // Refresh the list in the UI
                     if (auto* workflow = settingsSection.getWorkflowPage())
+                    {
                         workflow->updateEnvelopeList();
+                        workflow->updateShapePreview();
+                    }
 
                     // Remove the temporary imported envelope
                     envelopes.removeChild(env, &undoManager);
@@ -163,8 +187,9 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     settingsSection.setProcessor(&p);
     if (auto* workflow = settingsSection.getWorkflowPage())
     {
-        workflow->onImportFromBrowser = [this]
+        workflow->onImportFromBrowser = [this, workflow]
         {
+            workflow->isWaitingForImport = true;
             presetSection.setMode(PresetSection::Mode::Import);
             gridSection.setVisible(false);
             settingsSection.setVisible(false);

@@ -3,6 +3,7 @@
 #include "SettingsPageBase.h"
 #include "../../utils/ComboBoxLookAndFeel.h"
 #include "../../utils/TextButtonLookAndFeel.h"
+#include "../../components/ShapePreviewComponent.h"
 
 class WorkflowPage : public SettingsPageBase,
                      private juce::Slider::Listener,
@@ -17,9 +18,12 @@ public:
 
     void setProcessor(class DuqAudioProcessor* p);
     void updateEnvelopeList();
+    void updateShapePreview();
 
     std::function<void()> onImportFromBrowser;
     std::function<void(juce::ValueTree)> onShapeChanged;
+
+    bool isWaitingForImport = false;
 
 private:
     void sliderValueChanged(juce::Slider* s) override;
@@ -40,6 +44,7 @@ private:
     // --- Default Shape ---
     juce::ComboBox currentEnvelopesCombo;
     juce::TextButton importFromBrowserButton{ "Import from Preset Browser" };
+    ShapePreviewComponent shapePreview;
 
     ComboBoxLookAndFeel comboBoxLNF;
     TextButtonLookAndFeel textButtonLNF;
