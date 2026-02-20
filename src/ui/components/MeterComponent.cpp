@@ -12,6 +12,11 @@ MeterComponent::MeterComponent(std::atomic<float>& source,
     startTimerHz(60);
 }
 
+MeterComponent::~MeterComponent()
+{
+    stopTimer();
+}
+
 void MeterComponent::setMode(MeterMode newMode)
 {
     mode = newMode;

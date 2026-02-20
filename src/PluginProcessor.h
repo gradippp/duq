@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "dsp/EnvelopeProcessor.h"
+#include "utils/ConfigManager.h"
 
 //==============================================================================
 class DuqAudioProcessor : public juce::AudioProcessor,
@@ -83,6 +84,8 @@ public:
     std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
     double getPhaseIncrement(int envelopeIndex) const;
 
+    ConfigManager& getConfig() { return *config; }
+
 private:
     //==============================================================================
     void syncToDSP();
@@ -136,6 +139,8 @@ private:
     std::atomic<int> monpos{ 0 };
 
     std::array<std::atomic<bool>, 128> activeNotes{};
+
+    juce::SharedResourcePointer<ConfigManager> config;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DuqAudioProcessor)

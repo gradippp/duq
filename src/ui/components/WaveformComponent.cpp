@@ -8,6 +8,11 @@ WaveformComponent::WaveformComponent()
     startTimerHz(60);
 }
 
+WaveformComponent::~WaveformComponent()
+{
+    stopTimer();
+}
+
 void WaveformComponent::setSampleBuffer(
     const std::atomic<int>* writePos,
     const float* sampleData,

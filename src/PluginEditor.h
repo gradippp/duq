@@ -18,6 +18,7 @@
 #include "ui/sections/MeterSection.h"
 #include "ui/sections/PresetSection.h"
 #include "ui/sections/AboutSection.h"
+#include "ui/sections/SettingsSection.h"
 
 //==============================================================================
 /**
@@ -48,6 +49,7 @@ private:
     MeterSection meterSection;
     PresetSection presetSection{ audioProcessor };
     AboutSection aboutSection;
+    SettingsSection settingsSection;
 
     juce::TooltipWindow tooltipWindow{ this };
 

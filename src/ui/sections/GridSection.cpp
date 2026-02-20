@@ -29,6 +29,8 @@ GridSection::GridSection() : pointsContainer(*this)
 
 GridSection::~GridSection()
 {
+    stopTimer();
+
     if (envelope.isValid())
         envelope.removeListener(this);
 }

@@ -9,6 +9,7 @@ class WaveformComponent : public juce::Component,
 {
 public:
     WaveformComponent();
+    ~WaveformComponent() override;
 
     void setSampleBuffer(const std::atomic<int>* writePos,
         const float* sampleData,

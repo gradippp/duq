@@ -107,10 +107,19 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     header.setSettingsCallback([this]
         {
-            // Placeholder: Show an alert for now until Settings section is implemented
-            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, 
-                "Settings", "Settings section coming soon!", "OK");
+            settingsSection.setVisible(true);
+            gridSection.setVisible(false);
+            presetSection.setVisible(false);
+            resized();
         });
+    
+    settingsSection.setVisible(false);
+    settingsSection.onClose = [this]
+        {
+            settingsSection.setVisible(false);
+            gridSection.setVisible(true);
+            resized();
+        };
 
     header.setupAttachments(audioProcessor.parameters);
 
@@ -230,8 +239,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     addAndMakeVisible(meterSection);
     addAndMakeVisible(presetSection);
     addAndMakeVisible(aboutSection);
+    addAndMakeVisible(settingsSection);
     aboutSection.toFront(false);
     aboutSection.setVisible(false);
+    settingsSection.setVisible(false);
     presetSection.setVisible(false); // <--- ENSURE IT IS HIDDEN AFTER ADDING
 
     undoManager.clearUndoHistory();
@@ -292,6 +303,7 @@ void DuqAudioProcessorEditor::resized()
 
     gridSection.setBounds(rightArea);
     presetSection.setBounds(rightArea);
+    settingsSection.setBounds(rightArea);
     aboutSection.setBounds(getLocalBounds());
     meterSection.setBounds(meterArea);
 }

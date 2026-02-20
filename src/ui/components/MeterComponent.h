@@ -25,6 +25,7 @@ public:
     MeterComponent(std::atomic<float>& source,
         Direction dir = Direction::LeftToRight,
         const juce::String& label = {});
+    ~MeterComponent() override;
 
     void setGradient(const juce::ColourGradient& newGradient);
     void setLabel(const juce::String& newLabel);
