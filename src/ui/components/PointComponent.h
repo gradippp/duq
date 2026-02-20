@@ -26,6 +26,7 @@ public:
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
     void mouseEnter(const juce::MouseEvent&) override;
+    void mouseMove(const juce::MouseEvent&) override;
     void mouseExit(const juce::MouseEvent&) override;
 
 private:

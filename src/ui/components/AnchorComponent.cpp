@@ -8,6 +8,7 @@ AnchorComponent::AnchorComponent(GridSection& owner,
     : grid(owner), segment(node)
 {
     setSize(10, 10);
+    setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
 }
 
 void AnchorComponent::setNormalizedPosition(juce::Point<float> p)
@@ -73,6 +74,7 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
     if (e.mods.isLeftButtonDown())
     {
         isDragging = true;
+        setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
         startCurve = (float)segment.getProperty("curve", Theme::Defaults::curve);
         dragStartMouse = e.getScreenPosition();
 
@@ -138,4 +140,31 @@ void AnchorComponent::mouseUp(const juce::MouseEvent& e)
         if (onDragEnd)
             onDragEnd(segment);
     }
+
+    // Restore cursor based on hover state
+    if (!getBounds().contains(e.getPosition()))
+    {
+        // If we're not hovering anymore, we can let it revert to parent cursor
+        // but if we're still over it, the component's default (set in constructor) will take over.
+    }
+}
+
+void AnchorComponent::mouseEnter(const juce::MouseEvent& e)
+{
+    mouseMove(e);
+}
+
+void AnchorComponent::mouseMove(const juce::MouseEvent& e)
+{
+    if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
+    {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+        return;
+    }
+    setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
+}
+
+void AnchorComponent::mouseExit(const juce::MouseEvent&)
+{
+    // Let it revert to parent's cursor automatically
 }

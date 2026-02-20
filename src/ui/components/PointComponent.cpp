@@ -39,15 +39,29 @@ void PointComponent::paint(juce::Graphics& g)
     }
 }
 
-void PointComponent::mouseEnter(const juce::MouseEvent&)
+void PointComponent::mouseEnter(const juce::MouseEvent& e)
 {
     isHovering = true;
+    mouseMove(e);
     repaint();
+}
+
+void PointComponent::mouseMove(const juce::MouseEvent& e)
+{
+    if (e.mods.isAltDown() && grid.getUniformZoom() > 1.0f)
+    {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+    else
+    {
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
 }
 
 void PointComponent::mouseExit(const juce::MouseEvent&)
 {
     isHovering = false;
+    setMouseCursor(juce::MouseCursor::NormalCursor);
     repaint();
 }
 
