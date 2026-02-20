@@ -52,6 +52,11 @@ namespace Theme
         const juce::Colour knobIndicator   { accent };
         const juce::Colour knobAccent      { accent };
         const juce::Colour knobShadow      { 0xFF000000 };
+
+        // Preset Browser
+        const juce::Colour presetBrowserBackground { 0xFF121212 };
+        const juce::Colour presetBrowserFooter     { 0xFF000000 };
+        const juce::Colour presetBrowserFooterLine { accent.withAlpha(0.1f) };
     }
 
     namespace Defaults

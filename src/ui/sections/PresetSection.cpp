@@ -11,23 +11,23 @@ PresetSection::PresetSection(DuqAudioProcessor& p)
     addAndMakeVisible(titleLabel);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setFont(FontManager::getBarlowBold(22.0f));
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.8f));
+    titleLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.8f));
 
-    auto normal = Icons::load("close", juce::Colours::white.withAlpha(0.6f));
-    auto over = Icons::load("close", juce::Colours::white);
-    auto down = Icons::load("close", juce::Colours::white.withAlpha(0.4f));
+    auto normal = Icons::load("close", Theme::Colours::textMain.withAlpha(0.6f));
+    auto over = Icons::load("close", Theme::Colours::textMain);
+    auto down = Icons::load("close", Theme::Colours::textMain.withAlpha(0.4f));
     closeButton.setImages(normal.get(), over.get(), down.get());
     addAndMakeVisible(closeButton);
     closeButton.onClick = [this]() { if (onClose) onClose(); };
 
     // Search Bar
     addAndMakeVisible(searchEditor);
-    searchEditor.setTextToShowWhenEmpty("SEARCH PRESETS...", juce::Colours::white.withAlpha(0.3f));
+    searchEditor.setTextToShowWhenEmpty("SEARCH PRESETS...", Theme::Colours::textDimmed);
     searchEditor.setJustification(juce::Justification::centred);
     searchEditor.setFont(FontManager::getInterRegular(14.0f));
-    searchEditor.setColour(juce::TextEditor::backgroundColourId, juce::Colours::black.withAlpha(0.2f));
-    searchEditor.setColour(juce::TextEditor::outlineColourId, juce::Colours::white.withAlpha(0.1f));
-    searchEditor.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::white.withAlpha(0.3f));
+    searchEditor.setColour(juce::TextEditor::backgroundColourId, Theme::Colours::presetBrowserFooter.withAlpha(0.2f));
+    searchEditor.setColour(juce::TextEditor::outlineColourId, Theme::Colours::border.withAlpha(0.1f));
+    searchEditor.setColour(juce::TextEditor::focusedOutlineColourId, Theme::Colours::border.withAlpha(0.3f));
     searchEditor.onTextChange = [this]() { searchText = searchEditor.getText(); filterPresets(); };
 
     // List
@@ -185,19 +185,19 @@ void PresetSection::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
     
     // Modern dark background
-    g.setColour(juce::Colour(0xff121212));
+    g.setColour(Theme::Colours::presetBrowserBackground);
     g.fillRoundedRectangle(bounds, 4.0f);
 
     // Subtle inner shadow / border
-    g.setColour(juce::Colours::white.withAlpha(0.05f));
+    g.setColour(Theme::Colours::border.withAlpha(0.2f));
     g.drawRoundedRectangle(bounds.reduced(1.0f), 4.0f, 2.0f);
 
     // Footer area
     auto footerArea = getLocalBounds().removeFromBottom(32).toFloat();
-    g.setColour(juce::Colours::black.withAlpha(0.3f));
+    g.setColour(Theme::Colours::presetBrowserFooter.withAlpha(0.3f));
     g.fillRoundedRectangle(footerArea.reduced(2.0f), 2.0f);
     
-    g.setColour(juce::Colours::white.withAlpha(0.1f));
+    g.setColour(Theme::Colours::presetBrowserFooterLine);
     g.drawLine(footerArea.getX() + 10, footerArea.getY(), footerArea.getRight() - 10, footerArea.getY());
 
     auto dir = (mode == Mode::Project) 
@@ -234,7 +234,7 @@ void PresetSection::resized()
 
 PresetSection::PresetRowComponent::PresetRowComponent(PresetSection& o, int idx) : owner(o), rowDataIndex(idx)
 {
-    auto delIcon = Icons::load("delete", juce::Colours::white.withAlpha(0.4f));
+    auto delIcon = Icons::load("delete", Theme::Colours::textMain.withAlpha(0.4f));
     auto delIconOver = Icons::load("delete", Theme::Colours::danger);
     deleteButton.setImages(delIcon.get(), delIconOver.get(), delIcon.get());
     addAndMakeVisible(deleteButton);
@@ -291,10 +291,10 @@ void PresetSection::PresetRowComponent::paint(juce::Graphics& g)
 {
     auto area = getLocalBounds().toFloat();
     if (isSelected) {
-        g.setColour(juce::Colours::white.withAlpha(0.1f));
+        g.setColour(Theme::Colours::uiSelected);
         g.fillRoundedRectangle(area.reduced(4, 2), 4.0f);
     } else if (isHovering) {
-        g.setColour(juce::Colours::white.withAlpha(0.03f));
+        g.setColour(Theme::Colours::uiHover);
         g.fillRoundedRectangle(area.reduced(4, 2), 4.0f);
     }
 
