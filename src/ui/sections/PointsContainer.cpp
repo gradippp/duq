@@ -208,4 +208,6 @@ void PointsContainer::updatePointPositions()
         float y = juce::jmap(shapedT, y1, y2);
         anchorComponents[i]->setNormalizedPosition({ x, y });
     }
+
+    grid.repaint();
 }

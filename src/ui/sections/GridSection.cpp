@@ -14,10 +14,14 @@ GridSection::GridSection() : pointsContainer(*this)
     waveform.toBack();
     gridBackground.toBack();
     
-    // Path renderer and playhead overlay should be above waveform but below points
-    pathRenderer.toFront(true);
-    playheadOverlay.toFront(true);
-    pointsContainer.toFront(true);
+    // Ensure overlays don't block interaction with GridSection or Points
+    waveform.setInterceptsMouseClicks(false, false);
+    pathRenderer.setInterceptsMouseClicks(false, false);
+    playheadOverlay.setInterceptsMouseClicks(false, false);
+    
+    // Allow double-clicks to pass through PointsContainer to reach GridSection
+    // when not clicking directly on a point or anchor.
+    pointsContainer.setInterceptsMouseClicks(false, true);
 
     setOpaque(false);
     startTimerHz(60); // 60fps animation
@@ -265,8 +269,12 @@ void GridSection::updatePanCursor()
 
 void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
 {
-    if (!envelope.isValid() || !e.mods.isLeftButtonDown() || e.eventComponent != this) return;
-    auto normalized = pixelToNormalized(e.position.toFloat());
+    if (!envelope.isValid() || !e.mods.isLeftButtonDown()) return;
+    
+    // Use relative position to GridSection
+    auto localPos = e.getEventRelativeTo(this).position;
+    auto normalized = pixelToNormalized(localPos);
+    
     if (normalized.x <= 0.0f || normalized.x >= 1.0f) return;
 
     auto points = envelope.getOrCreateChildWithName("POINTS", undoManager);

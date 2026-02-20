@@ -3,7 +3,7 @@
 
 WaveformComponent::WaveformComponent()
 {
-    setOpaque(true);
+    setOpaque(false);
     setInterceptsMouseClicks(false, false);
     startTimerHz(60);
 }
@@ -35,8 +35,6 @@ void WaveformComponent::timerCallback()
 
 void WaveformComponent::paint(juce::Graphics& g)
 {
-    g.fillAll(Theme::Colours::background);
-
     if (!samples || bufferLength <= 0)
         return;
 

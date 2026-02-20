@@ -48,7 +48,10 @@ struct GridViewState
 class GridBackground : public juce::Component
 {
 public:
-    GridBackground() = default;
+    GridBackground()
+    {
+        setInterceptsMouseClicks(false, false);
+    }
 
     void setViewState(const GridViewState& newState)
     {
@@ -58,6 +61,8 @@ public:
 
     void paint(juce::Graphics& g) override
     {
+        g.fillAll(Theme::Colours::background);
+
         int divisions = 1 << state.gridPower;
         float baseStep = 1.0f / divisions;
 
