@@ -57,6 +57,12 @@ namespace Theme
         const juce::Colour presetBrowserBackground { 0xFF121212 };
         const juce::Colour presetBrowserFooter     { 0xFF000000 };
         const juce::Colour presetBrowserFooterLine { accent.withAlpha(0.1f) };
+
+        // Context Menus
+        const juce::Colour contextMenuBackground     { 0xFF1A1A1A };
+        const juce::Colour contextMenuText           { accent.withAlpha(0.9f) };
+        const juce::Colour contextMenuHighlight      { uiSelected };
+        const juce::Colour contextMenuBorder         { border };
     }
 
     namespace Defaults

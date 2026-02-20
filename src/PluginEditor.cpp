@@ -26,6 +26,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     // editor's size to whatever you need it to be.
 
     knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
+    contextMenuLookAndFeel = std::make_unique<ContextMenuLookAndFeel>();
+    
+    juce::LookAndFeel::setDefaultLookAndFeel(contextMenuLookAndFeel.get());
+    setLookAndFeel(contextMenuLookAndFeel.get());
 
     envelopeListSection.setUndoManager(undoManager);
 
@@ -228,6 +232,9 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
 DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
 {
+    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+    setLookAndFeel(nullptr);
+
     controlSection.getRateKnob().getSlider().setLookAndFeel(nullptr);
     controlSection.getDepthKnob().getSlider().setLookAndFeel(nullptr);
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(nullptr);
