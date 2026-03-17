@@ -73,12 +73,10 @@ private:
     SelectableLabel brandLabel;
 
     CompactTimingSlider lookaheadSlider;
-    CompactTimingSlider lookbehindSlider;
 
     CompactKnob mixKnob;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookaheadAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lookbehindAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixAttachment;
 
     std::function<void()> undoCallback;

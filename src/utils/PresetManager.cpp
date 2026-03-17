@@ -78,7 +78,7 @@ bool PresetManager::saveProject(const juce::ValueTree& state, const juce::File& 
     // Copy global properties if we have the root
     if (root.isValid())
     {
-        const juce::Identifier props[] = { "mix", "lookahead", "lookbehind" };
+        const juce::Identifier props[] = { "mix", "lookahead" };
         for (const auto& id : props)
         {
             if (root.hasProperty(id))

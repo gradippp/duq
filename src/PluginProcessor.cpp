@@ -61,18 +61,12 @@ DuqAudioProcessor::DuqAudioProcessor()
     // Listen to all automation parameters
     parameters.addParameterListener("mix", this);
     parameters.addParameterListener("lookahead", this);
-    parameters.addParameterListener("lookbehind", this);
     for (int i = 0; i < 12; ++i)
     {
         juce::String prefix = "env" + juce::String(i) + "_";
         parameters.addParameterListener(prefix + "rate", this);
         parameters.addParameterListener(prefix + "depth", this);
         parameters.addParameterListener(prefix + "smooth", this);
-    }
-
-    if (envelopes.getNumChildren() == 0)
-    {
-        addEnvelope(Theme::Defaults::envelopeName + " 1", Theme::Defaults::triggerNote);
     }
 
     voices.resize(maxVoices);
@@ -90,7 +84,6 @@ DuqAudioProcessor::~DuqAudioProcessor()
 
     parameters.removeParameterListener("mix", this);
     parameters.removeParameterListener("lookahead", this);
-    parameters.removeParameterListener("lookbehind", this);
     for (int i = 0; i < 12; ++i)
     {
         juce::String prefix = "env" + juce::String(i) + "_";
@@ -214,12 +207,10 @@ void DuqAudioProcessor::syncToDSP()
         dspState.envelopes = std::move(newEnvelopes);
 
         float lookaheadMs = parameters.getRawParameterValue("lookahead")->load();
-        float lookbehindMs = parameters.getRawParameterValue("lookbehind")->load();
         dspState.mixPercent = parameters.getRawParameterValue("mix")->load();
         double srate = getSampleRate();
 
         dspState.lookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
-        dspState.lookbehindSamples = (int)(lookbehindMs * srate / 1000.0);
 
         setLatencySamples(dspState.lookaheadSamples);
     }
@@ -238,13 +229,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
         "Lookahead",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
         Theme::Defaults::lookahead,
-        juce::AudioParameterFloatAttributes().withLabel("ms")));
-
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ "lookbehind", 1 },
-        "Lookbehind",
-        juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
-        Theme::Defaults::lookbehind,
         juce::AudioParameterFloatAttributes().withLabel("ms")));
 
     // --- Envelope Parameters (12 slots) ---
@@ -303,21 +287,11 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                     bool foundVoice = false;
                     for (auto& v : voices)
                     {
-                        if ((v.isActive || v.isPending) && v.envelopeIndex == i && v.noteNumber == note)
+                        if (v.isActive && v.envelopeIndex == i && v.noteNumber == note)
                         {
-                            if (dspState.lookbehindSamples > 0)
-                            {
-                                v.isPending = true;
-                                v.isActive = false;
-                                v.delaySamplesRemaining = dspState.lookbehindSamples;
-                            }
-                            else
-                            {
-                                v.isPending = false;
-                                v.isActive = true;
-                                v.currentPhase = 0.0;
-                                v.lastSegmentIndex = 0;
-                            }
+                            v.isActive = true;
+                            v.currentPhase = 0.0;
+                            v.lastSegmentIndex = 0;
                             foundVoice = true;
                             break;
                         }
@@ -327,25 +301,15 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                     {
                         for (auto& v : voices)
                         {
-                            if (!v.isActive && !v.isPending)
+                            if (!v.isActive)
                             {
                                 v.envelopeIndex = i;
                                 v.currentPhase = 0.0;
                                 v.currentGain = 1.0f;
                                 v.lastSegmentIndex = 0;
                                 v.noteNumber = note;
+                                v.isActive = true;
 
-                                if (dspState.lookbehindSamples > 0)
-                                {
-                                    v.isPending = true;
-                                    v.isActive = false;
-                                    v.delaySamplesRemaining = dspState.lookbehindSamples;
-                                }
-                                else
-                                {
-                                    v.isPending = false;
-                                    v.isActive = true;
-                                }
                                 foundVoice = true;
                                 break;
                             }
@@ -391,25 +355,14 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     {
         for (auto& v : voices)
         {
-            if (!v.isActive && !v.isPending)
+            if (!v.isActive)
             {
                 v.envelopeIndex = mTrig;
                 v.currentPhase = 0.0;
                 v.currentGain = 1.0f;
                 v.lastSegmentIndex = 0;
                 v.noteNumber = -1; // Manual
-
-                if (dspState.lookbehindSamples > 0)
-                {
-                    v.isPending = true;
-                    v.isActive = false;
-                    v.delaySamplesRemaining = dspState.lookbehindSamples;
-                }
-                else
-                {
-                    v.isPending = false;
-                    v.isActive = true;
-                }
+                v.isActive = true;
                 break;
             }
         }
@@ -431,17 +384,6 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
         for (auto& v : voices)
         {
-            if (v.isPending)
-            {
-                if (--v.delaySamplesRemaining <= 0)
-                {
-                    v.isPending = false;
-                    v.isActive = true;
-                    v.currentPhase = 0.0;
-                    v.lastSegmentIndex = 0;
-                }
-            }
-
             if (v.isActive && v.envelopeIndex >= 0 && v.envelopeIndex < (int)dspState.envelopes.size())
             {
                 const auto& env = dspState.envelopes[v.envelopeIndex];
@@ -575,7 +517,6 @@ void DuqAudioProcessor::resetVoices()
     for (auto& v : voices)
     {
         v.isActive = false;
-        v.isPending = false;
         v.envelopeIndex = -1;
     }
 }
@@ -715,8 +656,13 @@ void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
     if (xml && xml->hasTagName(parameters.state.getType()))
     {
         parameters.state.removeListener(this);
+        getEnvelopesTree().removeListener(this);
+
         parameters.replaceState(juce::ValueTree::fromXml(*xml));
+        
         parameters.state.addListener(this);
+        getEnvelopesTree().addListener(this);
+        
         syncToDSP();
     }
 }

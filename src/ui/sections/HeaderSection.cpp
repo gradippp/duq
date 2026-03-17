@@ -75,6 +75,7 @@ CompactKnob::CompactKnob(const juce::String& label) : labelName(label)
     setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     setRotaryParameters(juce::degreesToRadians(135.0f), juce::degreesToRadians(405.0f), true);
     setRange(0.0, 100.0);
+    setValue(100.0);
 }
 
 CompactKnob::~CompactKnob()
@@ -114,7 +115,6 @@ void CompactKnob::paint(juce::Graphics& g)
 
 HeaderSection::HeaderSection()
     : lookaheadSlider("LOOKAHEAD"),
-      lookbehindSlider("LOOKBEHIND"),
       mixKnob("MIX")
 {
     auto setupIconButton = [](juce::DrawableButton& button,
@@ -176,18 +176,15 @@ HeaderSection::HeaderSection()
     initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
     settingsButton.onClick = [this] { if (onSettingsClicked) onSettingsClicked(); };
 
-    // --- Lookahead / Lookbehind ---
+    // --- Lookahead ---
     addAndMakeVisible(lookaheadSlider);
-    addAndMakeVisible(lookbehindSlider);
 
     lookaheadSlider.onValueChange = [this] { repaint(); };
-    lookbehindSlider.onValueChange = [this] { repaint(); };
 }
 
 void HeaderSection::setupAttachments(juce::AudioProcessorValueTreeState& vts)
 {
     lookaheadAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookahead", lookaheadSlider);
-    lookbehindAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "lookbehind", lookbehindSlider);
     
     mixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "mix", mixKnob);
 }
@@ -281,11 +278,9 @@ void HeaderSection::resized()
 
     // Timing Sliders stacked to the left of the bay
     int stackX = centerBay.getX() - spacing - timingWidth;
-    int totalStackHeight = (timingHeight * 2) + timingGap;
-    int stackY = centerBay.getCentreY() - totalStackHeight / 2;
+    int stackY = centerBay.getCentreY() - timingHeight / 2;
 
     lookaheadSlider.setBounds(stackX, stackY, timingWidth, timingHeight);
-    lookbehindSlider.setBounds(stackX, stackY + timingHeight + timingGap, timingWidth, timingHeight);
 
     // Init/Save to the right of the bay
     initPresetButton.setBounds(centerBay.getRight() + spacing, centerBay.getCentreY() - buttonSize/2, buttonSize, buttonSize);

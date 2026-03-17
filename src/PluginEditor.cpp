@@ -247,7 +247,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             auto& vts = audioProcessor.parameters;
             if (auto* p = vts.getParameter("mix")) p->setValueNotifyingHost(p->getDefaultValue());
             if (auto* p = vts.getParameter("lookahead")) p->setValueNotifyingHost(vts.getParameterRange("lookahead").convertTo0to1(Theme::Defaults::lookahead));
-            if (auto* p = vts.getParameter("lookbehind")) p->setValueNotifyingHost(vts.getParameterRange("lookbehind").convertTo0to1(Theme::Defaults::lookbehind));
 
             auto envelopes = audioProcessor.getEnvelopesTree();
             envelopes.removeAllChildren(&undoManager);

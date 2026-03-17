@@ -19,6 +19,7 @@ private:
     void buttonClicked(juce::Button* b) override;
 
     juce::ComboBox waveformQualityCombo;
+    juce::ComboBox oscilloscopeView;
     juce::ToggleButton tooltipsToggle{ "Show Tooltips" };
     juce::ComboBox themeCombo;
 
