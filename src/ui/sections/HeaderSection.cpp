@@ -15,27 +15,27 @@ void CompactTimingSlider::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
     
     // Background
-    g.setColour(Theme::Colours::sectionBackground.withAlpha(0.8f));
+    g.setColour(T_COL(sectionBackground).withAlpha(0.8f));
     g.fillRoundedRectangle(bounds, 2.0f);
     
     // Fill based on value (Visual Progress)
     auto fillWidth = bounds.getWidth() * static_cast<float>(getValue() / getMaximum());
-    g.setColour(Theme::Colours::accent.withAlpha(0.1f));
+    g.setColour(T_COL(accent).withAlpha(0.1f));
     g.fillRoundedRectangle(bounds.withWidth(fillWidth), 2.0f);
 
     // Label
-    g.setColour(Theme::Colours::textLabel);
+    g.setColour(T_COL(textLabel));
     g.setFont(FontManager::getBarlowBold(10.0f));
     auto labelArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f).reduced(6, 0);
     g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
     
     // Value
-    g.setColour(Theme::Colours::textMain);
+    g.setColour(T_COL(textMain));
     g.setFont(FontManager::getJetBrainsMono(11.0f));
     g.drawFittedText(juce::String(getValue(), 1) + " ms", bounds.reduced(6, 0).toNearestInt(), juce::Justification::centredRight, 1);
     
     // Border
-    g.setColour(Theme::Colours::border.withAlpha(0.5f));
+    g.setColour(T_COL(border).withAlpha(0.5f));
     g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 2.0f, 1.0f);
 }
 
@@ -102,12 +102,12 @@ void CompactKnob::paint(juce::Graphics& g)
     // Label and Value
     if (bounds.getWidth() > 10.0f)
     {
-        g.setColour(Theme::Colours::textLabel);
+        g.setColour(T_COL(textLabel));
         g.setFont(FontManager::getBarlowBold(10.0f));
         auto labelArea = bounds.removeFromTop(bounds.getHeight() * 0.5f).reduced(4, 0);
         g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
         
-        g.setColour(Theme::Colours::textMain);
+        g.setColour(T_COL(textMain));
         g.setFont(FontManager::getJetBrainsMono(10.0f));
         g.drawFittedText(juce::String(juce::roundToInt(getValue())) + "%", bounds.reduced(4, 0).toNearestInt(), juce::Justification::centredLeft, 1);
     }
@@ -126,11 +126,11 @@ HeaderSection::HeaderSection()
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                Theme::Colours::uiHover);
+                T_COL(uiHover));
 
-            auto normal = Icons::load(iconName, Theme::Colours::textMain);
-            auto over = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.85f));
-            auto down = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.6f));
+            auto normal = Icons::load(iconName, T_COL(textMain));
+            auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
+            auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
 
             if (normal != nullptr)
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -157,14 +157,14 @@ HeaderSection::HeaderSection()
     addAndMakeVisible(presetNameLabel);
     presetNameLabel.setJustificationType(juce::Justification::centred);
     presetNameLabel.setFont(FontManager::getJetBrainsMono(15.0f));
-    presetNameLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.85f));
+    presetNameLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.85f));
     presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
     presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
 
     addAndMakeVisible(brandLabel);
     brandLabel.setText("DUQ", juce::dontSendNotification);
     brandLabel.setFont(FontManager::getInterBold(28.0f));
-    brandLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain.withAlpha(0.9f));
+    brandLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.9f));
     brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
 
     addAndMakeVisible(mixKnob);
@@ -237,22 +237,22 @@ void HeaderSection::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
 
     // ---------- Background ----------
-    g.setColour(Theme::Colours::headerBackground);
+    g.setColour(T_COL(headerBackground));
     g.fillAll();
 
     // Subtle metallic top highlight
-    g.setColour(Theme::Colours::accent.withAlpha(0.03f));
+    g.setColour(T_COL(accent).withAlpha(0.03f));
     g.fillRect(bounds.removeFromTop(1.0f));
 
     // ---------- Bottom Divider ----------
-    g.setColour(Theme::Colours::border);
+    g.setColour(T_COL(border));
     g.drawLine(0.0f, bounds.getBottom() - 1.0f, bounds.getRight(), bounds.getBottom() - 1.0f, 1.0f);
 
     // ---------- Preset "Bay" (Center) ----------
     auto centerArea = getLocalBounds().withSizeKeepingCentre(280, 28).toFloat();
-    g.setColour(Theme::Colours::background.withAlpha(0.4f));
+    g.setColour(T_COL(background).withAlpha(0.4f));
     g.fillRoundedRectangle(centerArea, 2.0f);
-    g.setColour(Theme::Colours::border.withAlpha(0.5f));
+    g.setColour(T_COL(border).withAlpha(0.5f));
     g.drawRoundedRectangle(centerArea, 2.0f, 1.0f);
 }
 

@@ -36,7 +36,7 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
     addAndMakeVisible(knob);
     addAndMakeVisible(valueLabel);
 
-    valueLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain);
+    valueLabel.setColour(juce::Label::textColourId, T_COL(textMain));
     valueLabel.setJustificationType(juce::Justification::centredRight);
     valueLabel.setFont(FontManager::getJetBrainsMono(13.0f));
 
@@ -159,7 +159,7 @@ void ControlKnobComponent::paint(juce::Graphics& g)
 
     auto labelArea = bounds.removeFromLeft(bounds.getWidth() - 60);
 
-    g.setColour(Theme::Colours::textLabel);
+    g.setColour(T_COL(textLabel));
     g.setFont(FontManager::getInterMedium(13.0f));
 
     g.drawText(labelText,

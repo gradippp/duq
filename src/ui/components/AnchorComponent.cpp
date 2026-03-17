@@ -19,7 +19,7 @@ void AnchorComponent::setNormalizedPosition(juce::Point<float> p)
 
 void AnchorComponent::paint(juce::Graphics& g)
 {
-    g.setColour(Theme::Colours::anchor);
+    g.setColour(T_COL(anchor));
     g.drawEllipse(getLocalBounds().toFloat(), 2.0f);
 }
 

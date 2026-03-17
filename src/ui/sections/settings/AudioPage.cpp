@@ -13,7 +13,7 @@ AudioPage::AudioPage()
     addAndMakeVisible(globalMixSlider);
 
     sampleRateLabel.setFont(FontManager::getJetBrainsMono(11.0f));
-    sampleRateLabel.setColour(juce::Label::textColourId, Theme::Colours::textDimmed);
+    sampleRateLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
     sampleRateLabel.setText("Host Sample Rate: 44.1 kHz", juce::dontSendNotification);
     addAndMakeVisible(sampleRateLabel);
 }

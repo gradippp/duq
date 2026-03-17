@@ -3,6 +3,7 @@
 #include "settings/GeneralPage.h"
 #include "settings/WorkflowPage.h"
 #include "settings/AudioPage.h"
+#include "settings/ThemePage.h"
 #include "../utils/IconFactory.h"
 
 void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouseOverButton, bool isMouseDownOnButton)
@@ -12,18 +13,18 @@ void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouse
 
     if (isSelected)
     {
-        g.setColour(Theme::Colours::uiSelected.withAlpha(0.2f));
+        g.setColour(T_COL(uiSelected).withAlpha(0.2f));
         g.fillRect(bounds);
-        g.setColour(Theme::Colours::accent);
+        g.setColour(T_COL(accent));
         g.fillRect(bounds.removeFromLeft(3.0f));
     }
     else if (isMouseOverButton)
     {
-        g.setColour(Theme::Colours::uiHover.withAlpha(0.1f));
+        g.setColour(T_COL(uiHover).withAlpha(0.1f));
         g.fillRect(bounds);
     }
 
-    g.setColour(isSelected ? Theme::Colours::accent : Theme::Colours::textDimmed);
+    g.setColour(isSelected ? T_COL(accent) : T_COL(textDimmed));
     g.setFont(FontManager::getBarlowBold(13.0f));
     g.drawText(getButtonText(), getLocalBounds().reduced(15, 0), juce::Justification::centredLeft);
 }
@@ -39,11 +40,11 @@ SettingsSection::SettingsSection()
     {
         button.setClickingTogglesState(false);
         button.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
-        button.setColour(juce::DrawableButton::backgroundOnColourId, Theme::Colours::uiHover);
+        button.setColour(juce::DrawableButton::backgroundOnColourId, T_COL(uiHover));
 
-        auto normal = Icons::load(iconName, Theme::Colours::textMain);
-        auto over = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.85f));
-        auto down = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.6f));
+        auto normal = Icons::load(iconName, T_COL(textMain));
+        auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
+        auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
 
         if (normal != nullptr)
             button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -57,9 +58,10 @@ SettingsSection::SettingsSection()
     pages.push_back(std::make_unique<GeneralPage>());
     pages.push_back(std::make_unique<WorkflowPage>());
     pages.push_back(std::make_unique<AudioPage>());
+    pages.push_back(std::make_unique<ThemePage>());
 
     // Create Sidebar Buttons
-    juce::StringArray names = { "GENERAL", "WORKFLOW", "AUDIO" };
+    juce::StringArray names = { "GENERAL", "WORKFLOW", "AUDIO", "THEME" };
     for (int i = 0; i < names.size(); ++i)
     {
         auto btn = std::make_unique<SidebarButton>(names[i]);
@@ -118,15 +120,15 @@ void SettingsSection::paint(juce::Graphics& g)
     auto sidebarArea = bounds.removeFromLeft(160);
 
     // Sidebar Background
-    g.setColour(Theme::Colours::background.brighter(0.02f));
+    g.setColour(T_COL(background).brighter(0.02f));
     g.fillRect(sidebarArea);
 
     // Sidebar Divider
-    g.setColour(Theme::Colours::border);
+    g.setColour(T_COL(border));
     g.drawLine((float)sidebarArea.getRight(), 0.0f, (float)sidebarArea.getRight(), (float)getHeight(), 1.0f);
 
     // Section Title in Sidebar
-    g.setColour(Theme::Colours::accent.withAlpha(0.8f));
+    g.setColour(T_COL(accent).withAlpha(0.8f));
     g.setFont(FontManager::getInterBold(18.0f));
     g.drawText("SETTINGS", sidebarArea.removeFromTop(60).reduced(15, 0), juce::Justification::centredLeft);
 }

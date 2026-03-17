@@ -21,8 +21,7 @@ private:
     juce::ComboBox waveformQualityCombo;
     juce::ComboBox oscilloscopeView;
     juce::ToggleButton tooltipsToggle{ "Show Tooltips" };
-    juce::ComboBox themeCombo;
-
+    
     ComboBoxLookAndFeel comboBoxLNF;
     juce::SharedResourcePointer<ConfigManager> config;
 

@@ -18,12 +18,12 @@ public:
     void paint(juce::Graphics& g) override
     {
         // Category Header
-        g.setColour(Theme::Colours::textLabel);
+        g.setColour(T_COL(textLabel));
         g.setFont(FontManager::getBarlowBold(14.0f));
         g.drawText(title, 20, 20, getWidth() - 40, 30, juce::Justification::centredLeft);
 
         // Underline Divider
-        g.setColour(Theme::Colours::border.withAlpha(0.3f));
+        g.setColour(T_COL(border).withAlpha(0.3f));
         g.drawLine(20, 45, getWidth() - 20, 45, 1.0f);
     }
 
@@ -37,7 +37,7 @@ public:
     void drawControlLabel(juce::Graphics& g, const juce::String& label, const juce::Rectangle<int>& controlBounds)
     {
         g.setFont(FontManager::getInterRegular(12.0f));
-        g.setColour(Theme::Colours::textDimmed);
+        g.setColour(T_COL(textDimmed));
         g.drawText(label, controlBounds.getX(), controlBounds.getY() - 20, controlBounds.getWidth(), 20, juce::Justification::centredLeft);
     }
 

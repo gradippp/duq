@@ -100,11 +100,11 @@ void WorkflowPage::paint(juce::Graphics& g)
     drawControlLabel(g, "Undo History Limit", undoLimitSlider.getBounds());
 
     // Group 2: Envelope Defaults
-    g.setColour(Theme::Colours::textLabel);
+    g.setColour(T_COL(textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
     int group2Y = undoLimitSlider.getBottom() + 40;
     g.drawText("ENVELOPE DEFAULTS", 20, group2Y, 200, 30, juce::Justification::centredLeft);
-    g.setColour(Theme::Colours::border.withAlpha(0.3f));
+    g.setColour(T_COL(border).withAlpha(0.3f));
     g.drawLine(20, group2Y + 25, getWidth() - 20, group2Y + 25, 1.0f);
 
     drawControlLabel(g, "Default Rate", defaultRateSlider.getBounds());
@@ -113,10 +113,10 @@ void WorkflowPage::paint(juce::Graphics& g)
 
     // Group 3: Default Shape
     int group3Y = defaultSmoothSlider.getBottom() + 40;
-    g.setColour(Theme::Colours::textLabel);
+    g.setColour(T_COL(textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
     g.drawText("DEFAULT ENVELOPE SHAPE", 20, group3Y, 200, 30, juce::Justification::centredLeft);
-    g.setColour(Theme::Colours::border.withAlpha(0.3f));
+    g.setColour(T_COL(border).withAlpha(0.3f));
     g.drawLine(20, group3Y + 25, getWidth() - 20, group3Y + 25, 1.0f);
 
     drawControlLabel(g, "Set default from current envelope:", currentEnvelopesCombo.getBounds());

@@ -76,7 +76,7 @@ public:
             }
         }
 
-        g.setColour(Theme::Colours::envelopeLine);
+        g.setColour(T_COL(envelopeLine));
         g.strokePath(path, juce::PathStrokeType(2.0f));
 
         juce::Path fillPath = path;
@@ -88,8 +88,8 @@ public:
         fillPath.lineTo(state.normalizedToPixel({ fillFirstX, 0.0f }));
         fillPath.closeSubPath();
 
-        juce::ColourGradient grad(Theme::Colours::envelopeFillTop, 0, (float)state.viewArea.getY(),
-                                  Theme::Colours::envelopeFillBot, 0, (float)state.viewArea.getBottom(), false);
+        juce::ColourGradient grad(T_COL(envelopeFillTop), 0, (float)state.viewArea.getY(),
+                                  T_COL(envelopeFillBot), 0, (float)state.viewArea.getBottom(), false);
         g.setGradientFill(grad);
         g.fillPath(fillPath);
     }

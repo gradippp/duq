@@ -100,13 +100,13 @@ void WaveformComponent::paint(juce::Graphics& g)
         }
     }
 
-    g.setColour(Theme::Colours::waveform);
+    g.setColour(T_COL(waveform));
     g.strokePath(waveformPath, juce::PathStrokeType(1.0f));
 
     // subtle center line (0.0 amplitude -> normY = 0.5)
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;
     float yCenter = (1.0f - nyCenter) * height;
-    g.setColour(Theme::Colours::gridMinor);
+    g.setColour(T_COL(gridMinor));
     g.drawLine(0, yCenter, width, yCenter);
 }
 

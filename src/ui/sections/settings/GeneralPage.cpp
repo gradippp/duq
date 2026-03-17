@@ -12,18 +12,11 @@ GeneralPage::GeneralPage()
     tooltipsToggle.setToggleState(config->getShowTooltips(), juce::dontSendNotification);
     tooltipsToggle.addListener(this);
     addAndMakeVisible(tooltipsToggle);
-
-    themeCombo.setLookAndFeel(&comboBoxLNF);
-    themeCombo.addItemList({"Default Dark", "Slate", "Steel", "Obsidian"}, 1);
-    themeCombo.setSelectedItemIndex(0);
-    themeCombo.addListener(this);
-    addAndMakeVisible(themeCombo);
 }
 
 GeneralPage::~GeneralPage() 
 {
     waveformQualityCombo.setLookAndFeel(nullptr);
-    themeCombo.setLookAndFeel(nullptr);
 }
 
 void GeneralPage::paint(juce::Graphics& g)
@@ -31,7 +24,6 @@ void GeneralPage::paint(juce::Graphics& g)
     SettingsPageBase::paint(g);
 
     drawControlLabel(g, "Waveform Quality", waveformQualityCombo.getBounds());
-    drawControlLabel(g, "UI Theme", themeCombo.getBounds());
 }
 
 void GeneralPage::resized()
@@ -42,11 +34,9 @@ void GeneralPage::resized()
 
     auto area = getLocalBounds().withTrimmedTop(startY).reduced(20, 0);
     
-    // Row 1: Waveform Quality and UI Theme
+    // Row 1: Waveform Quality
     auto row1 = area.removeFromTop(rowHeight);
     waveformQualityCombo.setBounds(row1.removeFromLeft(150));
-    row1.removeFromLeft(40);
-    themeCombo.setBounds(row1.removeFromLeft(150));
 
     area.removeFromTop(spacingY);
 

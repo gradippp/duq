@@ -7,11 +7,11 @@ class ComboBoxLookAndFeel : public ContextMenuLookAndFeel
 public:
     ComboBoxLookAndFeel()
     {
-        setColour(juce::ComboBox::backgroundColourId, Theme::Colours::sectionBackground);
-        setColour(juce::ComboBox::outlineColourId, Theme::Colours::border.withAlpha(0.5f));
-        setColour(juce::ComboBox::textColourId, Theme::Colours::textMain);
-        setColour(juce::ComboBox::arrowColourId, Theme::Colours::accent.withAlpha(0.8f));
-        setColour(juce::ComboBox::focusedOutlineColourId, Theme::Colours::accent.withAlpha(0.5f));
+        setColour(juce::ComboBox::backgroundColourId, T_COL(sectionBackground));
+        setColour(juce::ComboBox::outlineColourId, T_COL(border).withAlpha(0.5f));
+        setColour(juce::ComboBox::textColourId, T_COL(textMain));
+        setColour(juce::ComboBox::arrowColourId, T_COL(accent).withAlpha(0.8f));
+        setColour(juce::ComboBox::focusedOutlineColourId, T_COL(accent).withAlpha(0.5f));
     }
 
     void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,

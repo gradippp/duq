@@ -51,6 +51,9 @@ public:
     void setDefaultPoints (const juce::String& xml) { getProps()->setValue ("defaultPoints", xml); }
     juce::String getDefaultPoints() const { return getProps()->getValue ("defaultPoints", ""); }
 
+    void setActiveThemePath (const juce::String& path) { getProps()->setValue ("activeThemePath", path); }
+    juce::String getActiveThemePath() const { return getProps()->getValue ("activeThemePath", ""); }
+
     // --- High-level Struct Helpers ---
 
     EnvelopeControls getDefaultControls() const

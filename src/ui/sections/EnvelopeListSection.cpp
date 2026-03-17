@@ -54,10 +54,10 @@ EnvelopeListSection::EnvelopeListSection()
         button.setButtonText(text);
         button.setComponentID(iconName);
         button.setTooltip(tooltip);
-        button.setColour(juce::TextButton::buttonColourId, Theme::Colours::background.withAlpha(0.4f));
-        button.setColour(juce::TextButton::buttonOnColourId, Theme::Colours::uiHover);
-        button.setColour(juce::TextButton::textColourOffId, Theme::Colours::textLabel);
-        button.setColour(juce::TextButton::textColourOnId, Theme::Colours::textMain);
+        button.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
+        button.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
+        button.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));
+        button.setColour(juce::TextButton::textColourOnId, T_COL(textMain));
     };
 
     setupButton(addButton, "ADD", "add", "Add a new default envelope");
@@ -268,20 +268,20 @@ void EnvelopeListSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
 
-    g.fillAll(Theme::Colours::sectionBackground);
+    g.fillAll(T_COL(sectionBackground));
 
     // Outer border
-    g.setColour(Theme::Colours::border);
+    g.setColour(T_COL(border));
     g.drawRect(bounds, 1);
 
     // ===== Header Area =====
     constexpr int headerHeight = 32;
     auto headerArea = bounds.removeFromTop(headerHeight);
 
-    g.setColour(Theme::Colours::headerBackground);
+    g.setColour(T_COL(headerBackground));
     g.fillRect(headerArea);
 
-    g.setColour(Theme::Colours::textMain);
+    g.setColour(T_COL(textMain));
     g.setFont(FontManager::getBarlowBold(16.0f));
 
     g.drawText("ENVELOPES",
@@ -289,7 +289,7 @@ void EnvelopeListSection::paint(juce::Graphics& g)
         juce::Justification::centredLeft);
 
     auto footerBounds = getLocalBounds().removeFromBottom(40);
-    g.setColour(Theme::Colours::border.withAlpha(0.5f));
+    g.setColour(T_COL(border).withAlpha(0.5f));
     g.drawLine(0.0f, footerBounds.getY(), (float)getWidth(), footerBounds.getY(), 1.0f);
 }
 
@@ -307,7 +307,7 @@ void EnvelopeListSection::paintOverChildren(juce::Graphics& g)
         // Ensure we don't draw over the header or footer
         if (dropY >= (float)headerHeight && dropY < (float)footerBounds.getY())
         {
-            g.setColour(Theme::Colours::accent);
+            g.setColour(T_COL(accent));
             g.drawLine(0.0f, dropY, (float)getWidth(), dropY, 2.0f);
         }
     }

@@ -23,7 +23,9 @@
 //==============================================================================
 /**
 */
-class DuqAudioProcessorEditor  : public juce::AudioProcessorEditor, public juce::Timer
+class DuqAudioProcessorEditor  : public juce::AudioProcessorEditor,
+                                public juce::Timer,
+                                public juce::ChangeListener
 {
 public:
     DuqAudioProcessorEditor (DuqAudioProcessor&);
@@ -33,7 +35,8 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    juce::UndoManager& undoManager;
+    void timerCallback() override;
+    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -53,7 +56,7 @@ private:
 
     juce::TooltipWindow tooltipWindow{ this };
 
-    void timerCallback() override;
+    juce::UndoManager& undoManager;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessorEditor)
 };

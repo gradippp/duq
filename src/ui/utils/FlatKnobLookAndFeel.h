@@ -24,17 +24,17 @@ public:
             sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
         // --- Outer Ring (Shadow/Glow) ---
-        g.setColour(Theme::Colours::knobShadow.withAlpha(0.2f));
+        g.setColour(T_COL(knobShadow).withAlpha(0.2f));
         g.drawEllipse(centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f, 1.0f);
 
         // --- Base Circle Gradient ---
-        juce::ColourGradient baseGrad(Theme::Colours::sectionBackground.brighter(0.05f), centreX, centreY - radius,
-                                      Theme::Colours::sectionBackground.darker(0.1f), centreX, centreY + radius, false);
+        juce::ColourGradient baseGrad(T_COL(sectionBackground).brighter(0.05f), centreX, centreY - radius,
+                                      T_COL(sectionBackground).darker(0.1f), centreX, centreY + radius, false);
         g.setGradientFill(baseGrad);
         g.fillEllipse(centreX - radius + 1.0f, centreY - radius + 1.0f, (radius - 1.0f) * 2.0f, (radius - 1.0f) * 2.0f);
 
         // Inner bevel highlight
-        g.setColour(Theme::Colours::accent.withAlpha(0.05f));
+        g.setColour(T_COL(accent).withAlpha(0.05f));
         g.drawEllipse(centreX - radius + 2.0f, centreY - radius + 2.0f, (radius - 2.0f) * 2.0f, (radius - 2.0f) * 2.0f, 1.0f);
 
         // --- Arcs Area ---
@@ -44,14 +44,14 @@ public:
         // Background arc (Track)
         juce::Path bgArc;
         bgArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, rotaryStartAngle, rotaryEndAngle, true);
-        g.setColour(Theme::Colours::knobTrack);
+        g.setColour(T_COL(knobTrack));
         g.strokePath(bgArc, juce::PathStrokeType(thickness + 0.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         // Value arc (Active)
         juce::Path valueArc;
         valueArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, rotaryStartAngle, angle, true);
         
-        auto accentColour = Theme::Colours::knobAccent;
+        auto accentColour = T_COL(knobAccent);
         g.setColour(accentColour);
         g.strokePath(valueArc, juce::PathStrokeType(thickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
@@ -71,7 +71,7 @@ public:
             centreY + dotDist * sinA
         );
 
-        g.setColour(Theme::Colours::knobIndicator);
+        g.setColour(T_COL(knobIndicator));
         g.fillEllipse(dotPos.x - dotRadius, dotPos.y - dotRadius, dotRadius * 2.0f, dotRadius * 2.0f);
     }
 };

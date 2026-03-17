@@ -34,10 +34,10 @@ public:
 
             if (pixelX >= viewArea.getX() && pixelX <= viewArea.getRight())
             {
-                g.setColour(Theme::Colours::playheadGlow);
+                g.setColour(T_COL(playheadGlow));
                 g.drawVerticalLine((int)pixelX, (float)viewArea.getY(), (float)viewArea.getBottom());
 
-                g.setColour(Theme::Colours::playhead);
+                g.setColour(T_COL(playhead));
                 g.drawVerticalLine((int)pixelX, (float)viewArea.getY(), (float)viewArea.getBottom());
             }
         }

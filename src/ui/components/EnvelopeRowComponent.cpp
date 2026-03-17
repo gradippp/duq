@@ -21,11 +21,11 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                Theme::Colours::uiHover);
+                T_COL(uiHover));
 
-            auto normal = Icons::load(iconName, Theme::Colours::textMain);
-            auto over = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.85f));
-            auto down = Icons::load(iconName, Theme::Colours::textMain.withAlpha(0.6f));
+            auto normal = Icons::load(iconName, T_COL(textMain));
+            auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
+            auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
 
             if (normal != nullptr)
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -38,7 +38,7 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     // ===============================
 
     nameLabel.setEditable(false, true, false);
-    nameLabel.setColour(juce::Label::textColourId, Theme::Colours::textMain);
+    nameLabel.setColour(juce::Label::textColourId, T_COL(textMain));
     nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
     nameLabel.setJustificationType(juce::Justification::centredLeft);
     nameLabel.setFont(FontManager::getInterRegular(13.0f));
@@ -72,11 +72,11 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     noteButton.setClickingTogglesState(false);
     noteButton.setTooltip("Trigger MIDI note");
     noteButton.setColour(juce::TextButton::buttonColourId,
-        Theme::Colours::uiHover);
+        T_COL(uiHover));
     noteButton.setColour(juce::TextButton::textColourOffId,
-        Theme::Colours::textMain);
+        T_COL(textMain));
     noteButton.setColour(juce::TextButton::buttonOnColourId,
-        Theme::Colours::uiSelected);
+        T_COL(uiSelected));
     noteButton.getLookAndFeel().setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
 
     noteButton.onClick = [this]
@@ -148,7 +148,7 @@ void EnvelopeRowComponent::refreshFromTree()
     bool isDisabled = (bool)envelope.getProperty("disabled", false);
 
     nameLabel.setColour(juce::Label::textColourId,
-        isDisabled ? Theme::Colours::textDimmed : Theme::Colours::textMain);
+        isDisabled ? T_COL(textDimmed) : T_COL(textMain));
 
     float alpha = isDisabled ? 0.4f : 1.0f;
     noteButton.setAlpha(alpha);
@@ -262,12 +262,12 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Background
     // ===============================
 
-    juce::Colour bgColour = Theme::Colours::sectionBackground;
+    juce::Colour bgColour = T_COL(sectionBackground);
 
     if (isSelected)
-        bgColour = Theme::Colours::uiSelected;
+        bgColour = T_COL(uiSelected);
     else if (isHovered)
-        bgColour = Theme::Colours::uiHover;
+        bgColour = T_COL(uiHover);
 
     if (isDisabled)
         bgColour = bgColour.withAlpha(0.1f);
@@ -280,7 +280,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // ===============================
     {
         auto handleArea = bounds.removeFromLeft(12).reduced(4, 8);
-        g.setColour(Theme::Colours::textDimmed.withAlpha(0.3f));
+        g.setColour(T_COL(textDimmed).withAlpha(0.3f));
         
         for (int i = 0; i < 3; ++i)
         {
@@ -294,7 +294,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Envelope name
     // ===============================
 
-    g.setColour(isDisabled ? Theme::Colours::textDimmed : Theme::Colours::textMain);
+    g.setColour(isDisabled ? T_COL(textDimmed) : T_COL(textMain));
     g.setFont(FontManager::getInterRegular(13.0f));
 
     auto nameArea = bounds;
@@ -315,7 +315,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
             .removeFromRight(20)
             .withSizeKeepingCentre(dotSize, dotSize);
 
-        g.setColour(Theme::Colours::midiIndicator);
+        g.setColour(T_COL(midiIndicator));
         g.fillEllipse(dotArea.toFloat());
     }
 
@@ -323,7 +323,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Bottom separator
     // ===============================
 
-    g.setColour(Theme::Colours::border.withAlpha(0.3f));
+    g.setColour(T_COL(border).withAlpha(0.3f));
     g.drawLine(0.0f,
         (float)getHeight() - 1.0f,
         (float)getWidth(),
@@ -332,7 +332,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Overlay for disabled state
     if (isDisabled)
     {
-        g.setColour(Theme::Colours::uiDisabledOverlay.withAlpha(0.2f));
+        g.setColour(T_COL(uiDisabledOverlay).withAlpha(0.2f));
         g.fillRect(bounds);
     }
 }

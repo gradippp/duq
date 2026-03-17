@@ -292,11 +292,14 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     settingsSection.setVisible(false);
     presetSection.setVisible(false); // <--- ENSURE IT IS HIDDEN AFTER ADDING
 
+    ThemeManager::getInstance().addChangeListener(this);
+
     undoManager.clearUndoHistory();
 }
 
 DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
 {
+    ThemeManager::getInstance().removeChangeListener(this);
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
 
@@ -316,10 +319,18 @@ void DuqAudioProcessorEditor::timerCallback()
     envelopeListSection.updateMidiActivity(audioProcessor);
 }
 
+void DuqAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    if (source == &ThemeManager::getInstance())
+    {
+        repaint();
+    }
+}
+
 //==============================================================================
 void DuqAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll(Theme::Colours::background);
+    g.fillAll(T_COL(background));
 }
 
 void DuqAudioProcessorEditor::resized()

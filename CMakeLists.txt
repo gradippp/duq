@@ -110,6 +110,7 @@ target_link_libraries(${PLUGIN_NAME}
         juce::juce_core
         juce::juce_graphics
         juce::juce_gui_basics
+        juce::juce_gui_extra
         juce::juce_audio_utils
         juce::juce_audio_processors
         juce::juce_audio_plugin_client

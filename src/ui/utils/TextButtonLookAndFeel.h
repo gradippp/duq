@@ -9,10 +9,10 @@ class TextButtonLookAndFeel : public juce::LookAndFeel_V4
 public:
     TextButtonLookAndFeel()
     {
-        setColour(juce::TextButton::buttonColourId, Theme::Colours::sectionBackground);
-        setColour(juce::TextButton::buttonOnColourId, Theme::Colours::uiSelected);
-        setColour(juce::TextButton::textColourOffId, Theme::Colours::textMain);
-        setColour(juce::TextButton::textColourOnId, Theme::Colours::accent);
+        setColour(juce::TextButton::buttonColourId, T_COL(sectionBackground));
+        setColour(juce::TextButton::buttonOnColourId, T_COL(uiSelected));
+        setColour(juce::TextButton::textColourOffId, T_COL(textMain));
+        setColour(juce::TextButton::textColourOnId, T_COL(accent));
     }
 
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
@@ -30,7 +30,7 @@ public:
         g.setColour(baseColour);
         g.fillRoundedRectangle(bounds, cornerSize);
 
-        g.setColour(Theme::Colours::border.withAlpha(isMouseOverButton ? 0.6f : 0.3f));
+        g.setColour(T_COL(border).withAlpha(isMouseOverButton ? 0.6f : 0.3f));
         g.drawRoundedRectangle(bounds.reduced(0.5f), cornerSize, 1.0f);
     }
 
