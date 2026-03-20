@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../components/EnvelopeRowComponent.h"
+#include "../utils/ViewportLookAndFeel.h"
 
 class DuqAudioProcessor;
 
@@ -67,6 +68,7 @@ private:
 
     juce::Viewport viewport;
     juce::Component rowContainer;
+    ViewportLookAndFeel viewportLnf;
     CustomButtonLookAndFeel buttonLnf;
     juce::TextButton addButton;
     juce::TextButton importButton;

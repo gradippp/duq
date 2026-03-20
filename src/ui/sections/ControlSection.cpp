@@ -1,4 +1,5 @@
 #include "ControlSection.h"
+#include "../utils/FontManager.h"
 #include "../../Globals.h"
 
 static const std::vector<juce::String> rateDivisions =
@@ -218,18 +219,18 @@ void ControlSection::paint(juce::Graphics& g)
     g.fillRect(headerArea);
 
     g.setColour(T_COL(textMain));
-    g.setFont(juce::Font(14.0f, juce::Font::bold));
+    g.setFont(FontManager::getBarlowBold(16.0f));
 
-    g.drawText("Controls",
+    g.drawText("CONTROLS",
         headerArea.reduced(10, 0),
         juce::Justification::centredLeft);
 
     if (!hasEnvelope)
     {
         g.setColour(T_COL(textDimmed));
-        g.setFont(juce::Font(14.0f));
+        g.setFont(FontManager::getInterRegular(14.0f));
 
-        g.drawText("Add an envelope",
+        g.drawText("Select an envelope to edit",
             bounds,
             juce::Justification::centred);
 

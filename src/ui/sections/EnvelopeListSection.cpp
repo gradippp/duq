@@ -67,6 +67,7 @@ EnvelopeListSection::EnvelopeListSection()
     addAndMakeVisible(addButton);
     addAndMakeVisible(importButton);
 
+    viewport.setLookAndFeel(&viewportLnf);
     viewport.setViewedComponent(&rowContainer, false);
     viewport.setScrollBarsShown(true, false);
     addAndMakeVisible(viewport);
