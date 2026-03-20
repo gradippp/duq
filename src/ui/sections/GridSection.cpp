@@ -1,6 +1,7 @@
 #include "GridSection.h"
 #include "../../PluginProcessor.h"
 #include "../../dsp/EnvelopeCurves.h"
+#include "../../utils/ConfigManager.h"
 #include "../../Globals.h"
 
 GridSection::GridSection() : pointsContainer(*this)
@@ -142,22 +143,23 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
         int numPoints = points.getNumChildren();
         if (numPoints >= 2 && segments.getNumChildren() != numPoints - 1)
         {
+            juce::SharedResourcePointer<ConfigManager> config;
             segments.removeAllChildren(nullptr);
             for (int i = 0; i < numPoints - 1; ++i)
             {
                 juce::ValueTree s("SEGMENT");
-                s.setProperty("curve", Theme::Defaults::curve, nullptr);
-                s.setProperty("type", Theme::Defaults::curveType, nullptr);
+                s.setProperty("curve", config->getDefaultTension(), nullptr);
+                s.setProperty("type", config->getDefaultCurve(), nullptr);
                 segments.addChild(s, -1, nullptr);
             }
         }
 
-        zoomX = (float)envelope.getProperty("zoomX", Theme::Defaults::zoom);
-        zoomY = (float)envelope.getProperty("zoomY", Theme::Defaults::zoom);
-        uniformZoom = (float)envelope.getProperty("uniformZoom", Theme::Defaults::zoom);
-        offsetX = (float)envelope.getProperty("offsetX", Theme::Defaults::offset);
-        offsetY = (float)envelope.getProperty("offsetY", Theme::Defaults::offset);
-        gridPower = (int)envelope.getProperty("gridPower", Theme::Defaults::gridPower);
+        zoomX = (float)envelope.getProperty("zoomX", Defaults::zoom);
+        zoomY = (float)envelope.getProperty("zoomY", Defaults::zoom);
+        uniformZoom = (float)envelope.getProperty("uniformZoom", Defaults::zoom);
+        offsetX = (float)envelope.getProperty("offsetX", Defaults::offset);
+        offsetY = (float)envelope.getProperty("offsetY", Defaults::offset);
+        gridPower = (int)envelope.getProperty("gridPower", Defaults::gridPower);
     }
 
     pointsContainer.setEnvelope(envelope);
@@ -286,9 +288,10 @@ void GridSection::mouseDoubleClick(const juce::MouseEvent& e)
     newPoint.setProperty("x", normalized.x, nullptr);
     newPoint.setProperty("y", normalized.y, nullptr);
 
+    juce::SharedResourcePointer<ConfigManager> config;
     juce::ValueTree newSegment("SEGMENT");
-    newSegment.setProperty("curve", Theme::Defaults::curve, nullptr);
-    newSegment.setProperty("type", Theme::Defaults::curveType, nullptr);
+    newSegment.setProperty("curve", config->getDefaultTension(), nullptr);
+    newSegment.setProperty("type", config->getDefaultCurve(), nullptr);
 
     int insertIndex = 0;
     for (int i = 0; i < points.getNumChildren(); ++i) {

@@ -46,6 +46,9 @@ DuqAudioProcessor::DuqAudioProcessor()
     parameters(*this, &undoManager, "PARAMETERS", createParameterLayout())
 #endif
 {
+    juce::SharedResourcePointer<ConfigManager> config;
+    undoManager.setMaxNumberOfStoredUnits(30000, config->getUndoLimit());
+
     for (auto& n : activeNotes)
         n.store(false);
 
@@ -219,6 +222,8 @@ void DuqAudioProcessor::syncToDSP()
 juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+    juce::SharedResourcePointer<ConfigManager> config;
+    auto controls = config->getDefaultControls();
 
     // --- Global Parameters ---
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
@@ -228,7 +233,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
         juce::ParameterID{ "lookahead", 1 },
         "Lookahead",
         juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
-        Theme::Defaults::lookahead,
+        Defaults::lookahead,
         juce::AudioParameterFloatAttributes().withLabel("ms")));
 
     // --- Envelope Parameters (12 slots) ---
@@ -238,13 +243,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
         
         // Rate range is 0-100 (handles both Hz and Sync index)
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            juce::ParameterID{ prefix + "rate", 1 }, "Env " + juce::String(i + 1) + " Rate", 0.0f, 100.0f, 2.0f));
+            juce::ParameterID{ prefix + "rate", 1 }, "Env " + juce::String(i + 1) + " Rate", 0.0f, 100.0f, (float)controls.rate));
             
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            juce::ParameterID{ prefix + "depth", 1 }, "Env " + juce::String(i + 1) + " Depth", 0.0f, 100.0f, 100.0f));
+            juce::ParameterID{ prefix + "depth", 1 }, "Env " + juce::String(i + 1) + " Depth", 0.0f, 100.0f, controls.depth));
             
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            juce::ParameterID{ prefix + "smooth", 1 }, "Env " + juce::String(i + 1) + " Smooth", 0.0f, 100.0f, 0.0f));
+            juce::ParameterID{ prefix + "smooth", 1 }, "Env " + juce::String(i + 1) + " Smooth", 0.0f, 100.0f, controls.smooth));
     }
 
     return { params.begin(), params.end() };
@@ -258,10 +263,26 @@ juce::ValueTree DuqAudioProcessor::getEnvelopesTree()
 void DuqAudioProcessor::addEnvelope(const juce::String& name, int note)
 {
     auto envelopes = getEnvelopesTree();
+    int newIndex = envelopes.getNumChildren();
 
     auto env = createDefaultEnvelope(name, note);
 
     envelopes.addChild(env, -1, &undoManager);
+
+    // If it's an automated slot, update the parameters to match the defaults we just set in 'env'
+    if (newIndex < 12)
+    {
+        juce::String prefix = "env" + juce::String(newIndex) + "_";
+        
+        auto setParam = [this, prefix](const juce::String& suffix, float value) {
+            if (auto* param = parameters.getParameter(prefix + suffix))
+                param->setValueNotifyingHost(parameters.getParameterRange(prefix + suffix).convertTo0to1(value));
+        };
+        
+        setParam("rate", (float)(double)env.getProperty("rate"));
+        setParam("depth", (float)(double)env.getProperty("depth"));
+        setParam("smooth", (float)(double)env.getProperty("smooth"));
+    }
 }
 
 void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)

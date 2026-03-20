@@ -1,6 +1,7 @@
 #include "AnchorComponent.h"
 #include "../sections/GridSection.h"
 #include "../../model/EnvelopeData.h"
+#include "../../utils/ConfigManager.h"
 #include "../../Globals.h"
 
 AnchorComponent::AnchorComponent(GridSection& owner,
@@ -58,7 +59,8 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
             {
                 auto& um = grid.getUndoManager();
                 um.beginNewTransaction("Reset Tension");
-                segment.setProperty("curve", Theme::Defaults::curve, &um);
+                juce::SharedResourcePointer<ConfigManager> config;
+                segment.setProperty("curve", config->getDefaultTension(), &um);
                 grid.repaint();
             }
         });
@@ -75,7 +77,8 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
     {
         isDragging = true;
         setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
-        startCurve = (float)segment.getProperty("curve", Theme::Defaults::curve);
+        juce::SharedResourcePointer<ConfigManager> config;
+        startCurve = (float)segment.getProperty("curve", config->getDefaultTension());
         dragStartMouse = e.getScreenPosition();
 
         if (onDragStart)
@@ -85,8 +88,9 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
 
 void AnchorComponent::showTensionDialog()
 {
+    juce::SharedResourcePointer<ConfigManager> config;
     auto* aw = new juce::AlertWindow("Set Tension", "Enter tension value (0.0 to 1.0):", juce::MessageBoxIconType::NoIcon);
-    aw->addTextEditor("tension", juce::String((float)segment.getProperty("curve", Theme::Defaults::curve)), "Tension:");
+    aw->addTextEditor("tension", juce::String((float)segment.getProperty("curve", config->getDefaultTension())), "Tension:");
     aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
     aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 

@@ -202,14 +202,14 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             // Reset global parameters
             auto& vts = audioProcessor.parameters;
             if (auto* p = vts.getParameter("mix")) p->setValueNotifyingHost(p->getDefaultValue());
-            if (auto* p = vts.getParameter("lookahead")) p->setValueNotifyingHost(vts.getParameterRange("lookahead").convertTo0to1(Theme::Defaults::lookahead));
+            if (auto* p = vts.getParameter("lookahead")) p->setValueNotifyingHost(vts.getParameterRange("lookahead").convertTo0to1(Defaults::lookahead));
 
             auto envelopes = audioProcessor.getEnvelopesTree();
             envelopes.removeAllChildren(&undoManager);
             
             // Add a single default envelope (uses global config defaults)
             audioProcessor.triggerEnvelope(-1); // reset trigger state
-            audioProcessor.addEnvelope(Theme::Defaults::envelopeName + " 1", -1); // -1 means use config default note
+            audioProcessor.addEnvelope(Defaults::envelopeName + " 1", -1); // -1 means use config default note
             
             header.setPresetName("Default Project");
         });

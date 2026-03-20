@@ -1,4 +1,5 @@
 #include "PresetManager.h"
+#include "ConfigManager.h"
 #include "../Globals.h"
 
 const juce::String PresetManager::envelopeExtension = "duq.env";
@@ -176,8 +177,9 @@ void PresetManager::importEnvelope(juce::ValueTree& envelopesTree, juce::UndoMan
                     importedEnv.setProperty("name", finalName, nullptr);
 
                     // 2. Find next free trigger note
-                    int nextNote = Theme::Defaults::triggerNote;
-                    for (int n = Theme::Defaults::triggerNote; n <= 127; ++n) 
+                    juce::SharedResourcePointer<ConfigManager> config;
+                    int nextNote = config->getDefaultTriggerNote();
+                    for (int n = config->getDefaultTriggerNote(); n <= 127; ++n) 
                     {
                         bool isNoteUsed = false;
                         for (int i = 0; i < envelopesTree.getNumChildren(); ++i) 

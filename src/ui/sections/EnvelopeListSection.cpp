@@ -3,6 +3,7 @@
 #include "../../PluginProcessor.h"
 #include "../utils/FontManager.h"
 #include "../../model/EnvelopeData.h"
+#include "../../utils/ConfigManager.h"
 #include "../../Globals.h"
 #include "../../utils/PresetManager.h"
 #include "../utils/IconFactory.h"
@@ -72,42 +73,13 @@ EnvelopeListSection::EnvelopeListSection()
 
     addButton.onClick = [this]()
         {
-            if (!undoManager || !envelopesTree.isValid())
+            if (processor == nullptr)
                 return;
 
             undoManager->beginNewTransaction("Add Envelope");
-
-            juce::ValueTree env("ENVELOPE");
-            env.setProperty("name", generateDefaultName(), nullptr);
-            env.setProperty("triggerNote", getNextFreeNote(Theme::Defaults::triggerNote), nullptr);
-            env.setProperty("rate", Theme::Defaults::rate, nullptr);
-            env.setProperty("depth", (double)Theme::Defaults::depth, nullptr);
-            env.setProperty("smooth", (double)Theme::Defaults::smooth, nullptr);
-            env.setProperty("rateIsFrequencyMode", Theme::Defaults::rateIsFrequencyMode, nullptr);
-
-            juce::ValueTree points("POINTS");
-            for (int i = 0; i < Theme::Defaults::numDefaultPoints; ++i)
-            {
-                juce::ValueTree p("POINT");
-                p.setProperty("x", Theme::Defaults::defaultPoints[i].x, nullptr);
-                p.setProperty("y", Theme::Defaults::defaultPoints[i].y, nullptr);
-                points.addChild(p, -1, nullptr);
-            }
-
-            juce::ValueTree segments("SEGMENTS");
-            for (int i = 0; i < Theme::Defaults::numDefaultPoints - 1; ++i)
-            {
-                juce::ValueTree s("SEGMENT");
-                s.setProperty("curve", Theme::Defaults::curve, nullptr);
-                s.setProperty("type", Theme::Defaults::curveType, nullptr);
-                segments.addChild(s, -1, nullptr);
-            }
-
-            env.addChild(points, -1, nullptr);
-            env.addChild(segments, -1, nullptr);
-
+            
             const int newIndex = envelopesTree.getNumChildren();
-            envelopesTree.addChild(env, -1, undoManager);
+            processor->addEnvelope(generateDefaultName(), -1); // -1 uses config default note
             selectEnvelope(newIndex);
         };
 
@@ -378,10 +350,11 @@ bool EnvelopeListSection::isNoteAlreadyUsed(int note) const
 juce::String EnvelopeListSection::generateDefaultName() const
 {
     int counter = 1;
+    juce::SharedResourcePointer<ConfigManager> config;
 
     while (true)
     {
-        juce::String candidate = Theme::Defaults::envelopeName + " " + juce::String(counter);
+        juce::String candidate = config->getProps()->getValue("envelopeName", Defaults::envelopeName) + " " + juce::String(counter);
         bool exists = false;
 
         for (int i = 0; i < envelopesTree.getNumChildren(); ++i)

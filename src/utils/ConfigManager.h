@@ -30,6 +30,9 @@ public:
     void setSnapSensitivity (float sensitivity) { getProps()->setValue ("snapSensitivity", sensitivity); }
     float getSnapSensitivity() const { return (float)getProps()->getDoubleValue ("snapSensitivity", 0.01); }
 
+    void setUndoLimit (int limit) { getProps()->setValue ("undoLimit", limit); }
+    int getUndoLimit() const { return getProps()->getIntValue ("undoLimit", 200); }
+
     void setDefaultCurve (int type) { getProps()->setValue ("defaultCurve", type); }
     int getDefaultCurve() const { return getProps()->getIntValue ("defaultCurve", 0); }
 

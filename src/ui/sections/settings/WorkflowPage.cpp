@@ -178,6 +178,7 @@ void WorkflowPage::sliderValueChanged(juce::Slider* s)
     else if (s == &defaultRateSlider) config->setDefaultRate((float)s->getValue());
     else if (s == &defaultDepthSlider) config->setDefaultDepth((float)s->getValue());
     else if (s == &defaultSmoothSlider) config->setDefaultSmooth((float)s->getValue());
+    else if (s == &undoLimitSlider) config->setUndoLimit((int)s->getValue());
 }
 
 void WorkflowPage::comboBoxChanged(juce::ComboBox* cb)
