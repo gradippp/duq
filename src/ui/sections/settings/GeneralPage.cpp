@@ -1,4 +1,5 @@
 #include "GeneralPage.h"
+#include "../../../utils/PresetManager.h"
 
 GeneralPage::GeneralPage()
     : SettingsPageBase("GENERAL SETTINGS")
@@ -153,17 +154,17 @@ void GeneralPage::refreshThemeList()
     themeCombo.clear(juce::dontSendNotification);
     themeCombo.addItem("Default (Dark)", 1);
     
-    juce::File themesDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-        .getChildFile("Duq")
-        .getChildFile("Themes");
+    juce::File themesDir = PresetManager::getThemeDirectory();
     
-    if (!themesDir.exists()) themesDir.createDirectory();
-
-    auto files = themesDir.findChildFiles(juce::File::findFiles, false, "*.duqtheme");
+    auto files = themesDir.findChildFiles(juce::File::findFiles, false, "*." + PresetManager::themeExtension);
     int id = 2;
     for (auto& f : files)
     {
-        themeCombo.addItem(f.getFileNameWithoutExtension(), id++);
+        auto name = f.getFileName();
+        if (name.endsWithIgnoreCase("." + PresetManager::themeExtension))
+            name = name.dropLastCharacters(PresetManager::themeExtension.length() + 1);
+
+        themeCombo.addItem(name, id++);
     }
     
     juce::String active = config->getActiveThemePath();
@@ -176,7 +177,11 @@ void GeneralPage::refreshThemeList()
         juce::File activeFile(active);
         if (activeFile.existsAsFile())
         {
-            themeCombo.setText(activeFile.getFileNameWithoutExtension(), juce::dontSendNotification);
+            auto name = activeFile.getFileName();
+            if (name.endsWithIgnoreCase("." + PresetManager::themeExtension))
+                name = name.dropLastCharacters(PresetManager::themeExtension.length() + 1);
+
+            themeCombo.setText(name, juce::dontSendNotification);
             ThemeManager::getInstance().loadThemeFromFile(activeFile);
         }
         else
@@ -195,11 +200,9 @@ void GeneralPage::loadSelectedTheme()
         return;
     }
 
-    juce::File themesDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-        .getChildFile("Duq")
-        .getChildFile("Themes");
+    juce::File themesDir = PresetManager::getThemeDirectory();
     
-    juce::File themeFile = themesDir.getChildFile(themeCombo.getText() + ".duqtheme");
+    juce::File themeFile = themesDir.getChildFile(themeCombo.getText()).withFileExtension(PresetManager::themeExtension);
     if (themeFile.existsAsFile())
     {
         ThemeManager::getInstance().loadThemeFromFile(themeFile);
@@ -210,23 +213,26 @@ void GeneralPage::loadSelectedTheme()
 void GeneralPage::importTheme()
 {
     auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-    auto chooser = std::make_shared<juce::FileChooser>("Import Theme", juce::File(), "*.duqtheme");
+    auto chooser = std::make_shared<juce::FileChooser>("Import Theme", 
+                                                       PresetManager::getThemeDirectory(), 
+                                                       "*." + PresetManager::themeExtension);
     
     chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
     {
         auto result = fc.getResult();
         if (result.existsAsFile())
         {
-            juce::File themesDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                .getChildFile("Duq")
-                .getChildFile("Themes");
-            
-            if (!themesDir.exists()) themesDir.createDirectory();
+            juce::File themesDir = PresetManager::getThemeDirectory();
             
             juce::File target = themesDir.getChildFile(result.getFileName());
             result.copyFileTo(target);
             refreshThemeList();
-            themeCombo.setText(target.getFileNameWithoutExtension());
+            
+            auto name = target.getFileName();
+            if (name.endsWithIgnoreCase("." + PresetManager::themeExtension))
+                name = name.dropLastCharacters(PresetManager::themeExtension.length() + 1);
+                
+            themeCombo.setText(name, juce::dontSendNotification);
             loadSelectedTheme();
         }
     });
@@ -235,17 +241,20 @@ void GeneralPage::importTheme()
 void GeneralPage::exportTheme()
 {
     auto chooserFlags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting;
-    auto chooser = std::make_shared<juce::FileChooser>("Export Current Theme", juce::File(), "*.duqtheme");
+    auto chooser = std::make_shared<juce::FileChooser>("Export Current Theme", 
+                                                       PresetManager::getThemeDirectory(), 
+                                                       "*." + PresetManager::themeExtension);
     
     chooser->launchAsync(chooserFlags, [this, chooser](const juce::FileChooser& fc)
     {
         auto result = fc.getResult();
         if (result != juce::File())
         {
-            if (result.getFileExtension() != ".duqtheme")
-                result = result.withFileExtension(".duqtheme");
+            if (!result.getFileName().endsWithIgnoreCase("." + PresetManager::themeExtension))
+                result = result.withFileExtension(PresetManager::themeExtension);
                 
             ThemeManager::getInstance().saveThemeToFile(result);
+            refreshThemeList();
         }
     });
 }

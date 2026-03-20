@@ -3,6 +3,7 @@
 
 const juce::String PresetManager::envelopeExtension = "duq.env";
 const juce::String PresetManager::projectExtension = "duq";
+const juce::String PresetManager::themeExtension = "duq.theme";
 
 juce::File PresetManager::getEnvelopeDirectory()
 {
@@ -21,6 +22,18 @@ juce::File PresetManager::getProjectDirectory()
     auto dir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
         .getChildFile("Duq")
         .getChildFile("Presets");
+
+    if (!dir.exists())
+        dir.createDirectory();
+
+    return dir;
+}
+
+juce::File PresetManager::getThemeDirectory()
+{
+    auto dir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+        .getChildFile("Duq")
+        .getChildFile("Themes");
 
     if (!dir.exists())
         dir.createDirectory();

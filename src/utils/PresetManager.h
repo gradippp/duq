@@ -8,10 +8,12 @@ public:
     // --- File Extensions ---
     static const juce::String envelopeExtension;
     static const juce::String projectExtension;
+    static const juce::String themeExtension;
 
     // --- Directory Helpers ---
     static juce::File getEnvelopeDirectory();
     static juce::File getProjectDirectory();
+    static juce::File getThemeDirectory();
 
     // --- Saving ---
     static bool saveEnvelope(const juce::ValueTree& envelope, const juce::File& file);
