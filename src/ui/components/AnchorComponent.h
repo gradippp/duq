@@ -4,10 +4,12 @@
 
 class GridSection;
 
-class AnchorComponent : public juce::Component
+class AnchorComponent : public juce::Component, public juce::TooltipClient
 {
 public:
     AnchorComponent(GridSection& owner, juce::ValueTree node);
+
+    juce::String getTooltip() override;
 
     void setNormalizedPosition(juce::Point<float>);
 

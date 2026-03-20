@@ -12,6 +12,27 @@ AnchorComponent::AnchorComponent(GridSection& owner,
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
 }
 
+juce::String AnchorComponent::getTooltip()
+{
+    if (!segment.isValid()) return {};
+
+    float tension = segment.getProperty("curve", 0.5f);
+    int typeIdx = segment.getProperty("type", 0);
+    
+    juce::String typeStr;
+    switch ((CurveType)typeIdx)
+    {
+        case CurveType::Exponential: typeStr = "Exponential"; break;
+        case CurveType::Linear:      typeStr = "Linear"; break;
+        case CurveType::Logarithmic: typeStr = "Logarithmic"; break;
+        case CurveType::SCurve:      typeStr = "S-Curve"; break;
+        case CurveType::Step:        typeStr = "Step"; break;
+        default:                     typeStr = "Unknown"; break;
+    }
+
+    return "Tension: " + juce::String(tension, 2) + " (" + typeStr + ")";
+}
+
 void AnchorComponent::setNormalizedPosition(juce::Point<float> p)
 {
     auto pixel = grid.normalizedToPixel(p);

@@ -3,10 +3,12 @@
 
 class GridSection;
 
-class PointComponent : public juce::Component
+class PointComponent : public juce::Component, public juce::TooltipClient
 {
 public:
     PointComponent(GridSection& owner, juce::ValueTree pointNode);
+
+    juce::String getTooltip() override;
 
     void setNormalizedPosition(juce::Point<float> p);
     juce::Point<float> getNormalizedPosition() const;

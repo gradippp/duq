@@ -8,6 +8,12 @@ PointComponent::PointComponent(GridSection& owner, juce::ValueTree node)
     setSize(12, 12);
 }
 
+juce::String PointComponent::getTooltip()
+{
+    if (!point.isValid()) return {};
+    return "X: " + juce::String((float)point["x"], 3) + ", Y: " + juce::String((float)point["y"], 3);
+}
+
 void PointComponent::setNormalizedPosition(juce::Point<float> p)
 {
     normalized = p;
