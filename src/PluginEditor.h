@@ -38,6 +38,9 @@ public:
     void timerCallback() override;
     void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 
+    enum class Section { Grid, Presets, Settings, About };
+    void showSection(Section section);
+
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.

@@ -57,34 +57,25 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         {
             presetSection.setMode(PresetSection::Mode::Envelope);
             presetSection.setTargetEnvelope(env);
-            gridSection.setVisible(false);
-            presetSection.setVisible(true);
-            resized();
+            showSection(Section::Presets);
         };
 
     envelopeListSection.onSaveRequested = [this](juce::ValueTree env)
         {
             presetSection.setMode(PresetSection::Mode::Envelope);
             presetSection.setTargetEnvelope(env);
-            gridSection.setVisible(false);
-            presetSection.setVisible(true);
-            resized();
+            showSection(Section::Presets);
             presetSection.startSavingProcess();
         };
 
     envelopeListSection.onImportRequested = [this]()
         {
             presetSection.setMode(PresetSection::Mode::Import);
-            gridSection.setVisible(false);
-            presetSection.setVisible(true);
-            resized();
+            showSection(Section::Presets);
         };
 
-    presetSection.setVisible(false);
     presetSection.onClose = [this]()
         {
-            presetSection.setVisible(false);
-            
             bool returningToSettings = false;
             if (auto* workflow = settingsSection.getWorkflowPage())
             {
@@ -96,11 +87,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             }
 
             if (returningToSettings) {
-                settingsSection.setVisible(true);
+                showSection(Section::Settings);
             } else {
-                gridSection.setVisible(true);
+                showSection(Section::Grid);
             }
-            resized();
         };
 
     presetSection.onEnvelopeImported = [this](int newIndex)
@@ -145,9 +135,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
                     envelopes.removeChild(env, &undoManager);
                 }
                 
-                presetSection.setVisible(false);
-                settingsSection.setVisible(true);
-                resized();
+                showSection(Section::Settings);
             }
             else
             {
@@ -160,29 +148,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             header.setPresetName(name);
         };
 
-    header.setAboutCallback([this]
-        {
-            aboutSection.setVisible(true);
-            gridSection.setVisible(false);
-            presetSection.setVisible(false);
-            resized();
-        });
-
-    header.setSettingsCallback([this]
-        {
-            settingsSection.setVisible(true);
-            gridSection.setVisible(false);
-            presetSection.setVisible(false);
-            resized();
-        });
+    header.setAboutCallback([this] { showSection(Section::About); });
+    header.setSettingsCallback([this] { showSection(Section::Settings); });
     
-    settingsSection.setVisible(false);
-    settingsSection.onClose = [this]
-        {
-            settingsSection.setVisible(false);
-            gridSection.setVisible(true);
-            resized();
-        };
+    settingsSection.onClose = [this] { showSection(Section::Grid); };
 
     settingsSection.setProcessor(&p);
     if (auto* workflow = settingsSection.getWorkflowPage())
@@ -191,20 +160,11 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         {
             workflow->isWaitingForImport = true;
             presetSection.setMode(PresetSection::Mode::Import);
-            gridSection.setVisible(false);
-            settingsSection.setVisible(false);
-            presetSection.setVisible(true);
-            resized();
+            showSection(Section::Presets);
         };
     }
 
-    aboutSection.setVisible(false);
-    aboutSection.onClose = [this]
-        {
-            aboutSection.setVisible(false);
-            gridSection.setVisible(true);
-            resized();
-        };
+    aboutSection.onClose = [this] { showSection(Section::Grid); };
 
     controlSection.setUndoManager(undoManager);
     gridSection.setUndoManager(undoManager);
@@ -225,18 +185,14 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     header.setSaveProjectCallback([this]
         {
             presetSection.setMode(PresetSection::Mode::Project);
-            gridSection.setVisible(false);
-            presetSection.setVisible(true);
-            resized();
+            showSection(Section::Presets);
             presetSection.startSavingProcess();
         });
 
     header.setLoadProjectCallback([this]
         {
             presetSection.setMode(PresetSection::Mode::Project);
-            gridSection.setVisible(false);
-            presetSection.setVisible(true);
-            resized();
+            showSection(Section::Presets);
         });
 
     header.setInitPresetCallback([this]
@@ -287,10 +243,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     addAndMakeVisible(presetSection);
     addAndMakeVisible(aboutSection);
     addAndMakeVisible(settingsSection);
-    aboutSection.toFront(false);
-    aboutSection.setVisible(false);
-    settingsSection.setVisible(false);
-    presetSection.setVisible(false); // <--- ENSURE IT IS HIDDEN AFTER ADDING
+
+    showSection(Section::Grid);
 
     ThemeManager::getInstance().addChangeListener(this);
 
@@ -325,6 +279,22 @@ void DuqAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* so
     {
         repaint();
     }
+}
+
+void DuqAudioProcessorEditor::showSection(Section section)
+{
+    gridSection.setVisible(section == Section::Grid);
+    presetSection.setVisible(section == Section::Presets);
+    settingsSection.setVisible(section == Section::Settings);
+    aboutSection.setVisible(section == Section::About);
+    
+    // Always show left panel and meters unless it's About section
+    bool showMainUI = (section != Section::About);
+    envelopeListSection.setVisible(showMainUI);
+    controlSection.setVisible(showMainUI);
+    meterSection.setVisible(showMainUI);
+    
+    resized();
 }
 
 //==============================================================================
