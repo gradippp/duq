@@ -6,18 +6,23 @@
 #include "../../Globals.h"
 #include "FontManager.h"
 
-class ColorRow : public juce::Component
+class ColorRow : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     ColorRow(ThemeManager::ColourID id) : colourID(id)
     {
+        auto description = ThemeManager::getInstance().getColourDescription(id);
+        setTooltip(description);
+
         colorButton.id = id;
         nameLabel.setText(ThemeManager::getInstance().getColourName(id).toUpperCase(), juce::dontSendNotification);
         nameLabel.setFont(FontManager::getJetBrainsMono(10.0f));
         nameLabel.setColour(juce::Label::textColourId, T_COL(textLabel));
+        nameLabel.setTooltip(description);
         addAndMakeVisible(nameLabel);
 
         colorButton.setButtonText("");
+        colorButton.setTooltip(description);
         addAndMakeVisible(colorButton);
         colorButton.onClick = [this] { openPicker(); };
     }
@@ -118,7 +123,7 @@ public:
 
     int getRequiredHeight() const
     {
-        int numCols = 3;
+        int numCols = 2;
         int numRows = (rows.size() + numCols - 1) / numCols;
         return numRows * 35;
     }
@@ -127,7 +132,7 @@ private:
     void updateLayout()
     {
         int rowHeight = 35;
-        int numCols = 3;
+        int numCols = 2;
         int colWidth = getWidth() / numCols;
         
         for (int i = 0; i < rows.size(); ++i)

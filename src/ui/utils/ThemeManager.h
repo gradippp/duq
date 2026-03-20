@@ -57,6 +57,7 @@ public:
     bool saveThemeToFile(const juce::File& file);
 
     juce::String getColourName(ColourID id) const;
+    juce::String getColourDescription(ColourID id) const;
     ColourID getIDFromName(const juce::String& name) const;
 
     static std::vector<ColourID> getAllIDs();

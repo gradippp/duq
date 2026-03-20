@@ -126,6 +126,51 @@ bool ThemeManager::saveThemeToFile(const juce::File& file)
     return xml.writeTo(file);
 }
 
+juce::String ThemeManager::getColourDescription(ColourID id) const
+{
+    switch (id)
+    {
+        case background: return "The main application background color.";
+        case sectionBackground: return "Background for individual UI panels and sections.";
+        case headerBackground: return "The top header bar background.";
+        case border: return "Global outline and divider line color.";
+        case accent: return "The primary highlights, selections, and focus indicators.";
+        case gridMajor: return "Strongest horizontal and vertical grid lines in the waveform editor.";
+        case gridMinor: return "Subtle subdivision lines in the waveform editor.";
+        case waveform: return "The line representing the audio signal waveform.";
+        case envelopeLine: return "The main outline of the envelope curve.";
+        case envelopeFillTop: return "The top color for the envelope's shaded region.";
+        case envelopeFillBot: return "The bottom color for the envelope's shaded region.";
+        case point: return "The circular handle for node points.";
+        case anchor: return "The small indicators for curve tension control.";
+        case playhead: return "The vertical line indicating current playback position.";
+        case playheadGlow: return "Soft highlight surrounding the playhead.";
+        case textMain: return "Primary text color for labels and values.";
+        case textDimmed: return "Secondary text for less important metadata.";
+        case textLabel: return "Text for category headers and static labels.";
+        case uiHover: return "The background color for buttons and items when hovered.";
+        case uiSelected: return "The highlight color for active items and selections.";
+        case uiDisabledOverlay: return "Color applied over UI elements that are currently inactive.";
+        case midiIndicator: return "The flash color for MIDI input activity.";
+        case danger: return "Alert color for deletions and critical warnings.";
+        case meterBackground: return "The static background for audio level meters.";
+        case meterFill: return "The active level indicator in audio meters.";
+        case meterReduction: return "Gain reduction indicator color.";
+        case knobTrack: return "The circular track background for control knobs.";
+        case knobIndicator: return "The pointer or value indicator on knobs.";
+        case knobAccent: return "Accent color for active knob regions.";
+        case knobShadow: return "Subtle drop shadow for UI depth.";
+        case presetBrowserBackground: return "Background for the preset management list.";
+        case presetBrowserFooter: return "The bar at the bottom of the preset browser.";
+        case presetBrowserFooterLine: return "Separator line for the preset browser footer.";
+        case contextMenuBackground: return "Background for popup menus and dropdowns.";
+        case contextMenuText: return "Text color within popup menus.";
+        case contextMenuHighlight: return "Highlight for selected menu items.";
+        case contextMenuBorder: return "Outline for popup and dropdown menus.";
+    }
+    return "";
+}
+
 juce::String ThemeManager::getColourName(ColourID id) const
 {
     switch (id)
