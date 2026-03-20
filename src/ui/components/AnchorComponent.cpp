@@ -174,6 +174,18 @@ void AnchorComponent::mouseUp(const juce::MouseEvent& e)
     }
 }
 
+void AnchorComponent::mouseDoubleClick(const juce::MouseEvent& e)
+{
+    if (!segment.isValid() || !e.mods.isLeftButtonDown())
+        return;
+
+    auto& um = grid.getUndoManager();
+    um.beginNewTransaction("Reset Tension");
+    juce::SharedResourcePointer<ConfigManager> config;
+    segment.setProperty("curve", config->getDefaultTension(), &um);
+    grid.repaint();
+}
+
 void AnchorComponent::mouseEnter(const juce::MouseEvent& e)
 {
     mouseMove(e);

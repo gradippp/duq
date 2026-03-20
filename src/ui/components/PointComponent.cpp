@@ -170,16 +170,17 @@ void PointComponent::mouseUp(const juce::MouseEvent& e)
 
 void PointComponent::mouseDoubleClick(const juce::MouseEvent& e)
 {
-    if (!point.isValid())
+    if (!point.isValid() || !e.mods.isLeftButtonDown())
         return;
 
-    if (!e.mods.isLeftButtonDown())
-        return;
+    auto points = point.getParent();
+    if (!points.isValid()) return;
 
-    if (auto* parent = dynamic_cast<GridSection*>(getParentComponent()))
-    {
-        parent->deletePoint(point);
-    }
+    int index = points.indexOf(point);
+    if (index == 0 || index == points.getNumChildren() - 1)
+        return; // Cannot delete endpoints
+
+    grid.deletePoint(point);
 }
 
 void PointComponent::showPositionDialog()
