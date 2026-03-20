@@ -13,7 +13,7 @@ public:
     {
         colorButton.id = id;
         nameLabel.setText(ThemeManager::getInstance().getColourName(id).toUpperCase(), juce::dontSendNotification);
-        nameLabel.setFont(FontManager::getJetBrainsMono(11.0f));
+        nameLabel.setFont(FontManager::getJetBrainsMono(10.0f));
         nameLabel.setColour(juce::Label::textColourId, T_COL(textLabel));
         addAndMakeVisible(nameLabel);
 
@@ -32,8 +32,8 @@ public:
     void resized() override
     {
         auto area = getLocalBounds().reduced(5, 0);
-        nameLabel.setBounds(area.removeFromLeft(area.getWidth() - 60));
-        colorButton.setBounds(area.removeFromRight(40).reduced(0, 5));
+        nameLabel.setBounds(area.removeFromLeft(area.getWidth() - 35));
+        colorButton.setBounds(area.removeFromRight(30).reduced(0, 5));
     }
 
 private:
@@ -102,41 +102,42 @@ class ThemeEditor : public juce::Component
 public:
     ThemeEditor()
     {
-        addAndMakeVisible(viewport);
-        viewport.setViewedComponent(&content);
-
         auto ids = ThemeManager::getAllIDs();
         for (auto id : ids)
         {
             auto* row = new ColorRow(id);
             rows.add(row);
-            content.addAndMakeVisible(row);
+            addAndMakeVisible(row);
         }
-        
-        updateLayout();
     }
 
     void resized() override
     {
-        viewport.setBounds(getLocalBounds());
         updateLayout();
+    }
+
+    int getRequiredHeight() const
+    {
+        int numCols = 3;
+        int numRows = (rows.size() + numCols - 1) / numCols;
+        return numRows * 35;
     }
 
 private:
     void updateLayout()
     {
         int rowHeight = 35;
-        int y = 0;
-        for (auto* row : rows)
+        int numCols = 3;
+        int colWidth = getWidth() / numCols;
+        
+        for (int i = 0; i < rows.size(); ++i)
         {
-            row->setBounds(0, y, viewport.getWidth() - viewport.getScrollBarThickness(), rowHeight);
-            y += rowHeight;
+            int col = i % numCols;
+            int rowIdx = i / numCols;
+            rows[i]->setBounds(col * colWidth, rowIdx * rowHeight, colWidth - 10, rowHeight);
         }
-        content.setSize(viewport.getWidth() - viewport.getScrollBarThickness(), y);
     }
 
-    juce::Viewport viewport;
-    juce::Component content;
     juce::OwnedArray<ColorRow> rows;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ThemeEditor)

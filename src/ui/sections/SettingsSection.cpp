@@ -3,7 +3,6 @@
 #include "settings/GeneralPage.h"
 #include "settings/WorkflowPage.h"
 #include "settings/AudioPage.h"
-#include "settings/ThemePage.h"
 #include "../utils/IconFactory.h"
 
 void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouseOverButton, bool isMouseDownOnButton)
@@ -58,10 +57,9 @@ SettingsSection::SettingsSection()
     pages.push_back(std::make_unique<GeneralPage>());
     pages.push_back(std::make_unique<WorkflowPage>());
     pages.push_back(std::make_unique<AudioPage>());
-    pages.push_back(std::make_unique<ThemePage>());
 
     // Create Sidebar Buttons
-    juce::StringArray names = { "GENERAL", "WORKFLOW", "AUDIO", "THEME" };
+    juce::StringArray names = { "GENERAL", "WORKFLOW", "AUDIO" };
     for (int i = 0; i < names.size(); ++i)
     {
         auto btn = std::make_unique<SidebarButton>(names[i]);
