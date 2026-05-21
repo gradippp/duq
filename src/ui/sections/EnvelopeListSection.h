@@ -1,5 +1,5 @@
 #pragma once
-#include <juce_gui_basics/juce_gui_basics.h>
+#include "../utils/GlobalLookAndFeel.h"
 #include "../components/EnvelopeRowComponent.h"
 #include "../utils/ViewportLookAndFeel.h"
 
@@ -11,9 +11,10 @@ class EnvelopeListSection : public juce::Component,
     private juce::ValueTree::Listener
 {
 public:
-    class CustomButtonLookAndFeel : public juce::LookAndFeel_V4
+    class CustomButtonLookAndFeel : public GlobalLookAndFeel
     {
     public:
+        CustomButtonLookAndFeel() { refreshColours(); }
         void drawButtonText (juce::Graphics& g, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override;
         juce::Font getTextButtonFont(juce::TextButton&, int) override;
     };

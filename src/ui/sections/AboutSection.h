@@ -1,6 +1,6 @@
 #pragma once
 
-#include <juce_gui_basics/juce_gui_basics.h>
+#include "../utils/GlobalLookAndFeel.h"
 
 class AboutSection : public juce::Component
 {
@@ -18,9 +18,9 @@ private:
     juce::Label titleLabel{ "title", "DUQ" };
     juce::Label versionLabel{ "version", "" };
     
-    struct ModernScrollbarLF : public juce::LookAndFeel_V4
+    struct ModernScrollbarLF : public GlobalLookAndFeel
     {
-        ModernScrollbarLF() = default;
+        ModernScrollbarLF() { refreshColours(); }
 
         void drawScrollbar(juce::Graphics& g, juce::ScrollBar& scrollbar,
             int x, int y, int width, int height,
