@@ -16,7 +16,7 @@ public:
     void refreshColours()
     {
         // ==============================================================================
-        // CORE UI COLOURS
+        // CORE UI COLOURS - Map ThemeManager IDs to JUCE Component IDs
         // ==============================================================================
         
         // --- Buttons ---
@@ -39,7 +39,7 @@ public:
         setColour(juce::PopupMenu::highlightedTextColourId, T_COL(textMain));
 
         // --- Toggles ---
-        setColour(juce::ToggleButton::textColourId, T_COL(textMain));
+        setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
         setColour(juce::ToggleButton::tickColourId, T_COL(widgetTick));
 
         // --- Sliders ---
@@ -83,6 +83,7 @@ public:
 
     void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override
     {
+        juce::ignoreUnused(isMouseOverButton, isButtonDown);
         g.setFont(FontManager::getBarlowBold(12.0f));
         g.setColour(button.findColour(button.getToggleState() ? juce::TextButton::textColourOnId 
                                                              : juce::TextButton::textColourOffId)
@@ -100,20 +101,20 @@ public:
                      const bool ticked, const bool isEnabled,
                      const bool isMouseOverButton, const bool isButtonDown) override
     {
-        juce::ignoreUnused(isEnabled, isButtonDown, component);
+        juce::ignoreUnused(isButtonDown, component);
         auto boxRect = juce::Rectangle<float>(x, y, w, h).reduced(1.0f);
 
         // Background
-        g.setColour(T_COL(widgetBackground));
+        g.setColour(component.findColour(juce::ComboBox::backgroundColourId, true));
         g.fillRoundedRectangle(boxRect, 2.0f);
 
         // Outline
-        g.setColour(T_COL(widgetOutline).withAlpha(isMouseOverButton ? 0.8f : 0.4f));
+        g.setColour(component.findColour(juce::ComboBox::outlineColourId, true).withAlpha(isMouseOverButton ? 0.8f : 0.4f));
         g.drawRoundedRectangle(boxRect.reduced(0.5f), 2.0f, 1.0f);
 
         if (ticked)
         {
-            g.setColour(T_COL(widgetTick));
+            g.setColour(component.findColour(juce::ToggleButton::tickColourId, true).withAlpha(isEnabled ? 1.0f : 0.5f));
             auto tickPath = getTickShape(w * 0.7f);
             g.fillPath(tickPath, tickPath.getTransformToScaleToFit(x + w * 0.15f, y + h * 0.15f, w * 0.7f, h * 0.7f, true));
         }
@@ -127,6 +128,7 @@ public:
                       int buttonX, int buttonY, int buttonW, int buttonH,
                       juce::ComboBox& box) override
     {
+        juce::ignoreUnused(isButtonDown);
         auto bounds = juce::Rectangle<int>(width, height).toFloat();
 
         // Background
@@ -185,7 +187,7 @@ public:
                 trackRect = { x + width * 0.5f - trackWidth * 0.5f, (float)y, trackWidth, (float)height };
 
             // Track Background
-            g.setColour(T_COL(widgetBackground));
+            g.setColour(slider.findColour(juce::Slider::backgroundColourId));
             g.fillRoundedRectangle(trackRect, trackWidth * 0.5f);
 
             // Active Track
@@ -195,7 +197,7 @@ public:
             else
                 activeTrack = { trackRect.getX(), sliderPos, trackWidth, trackRect.getBottom() - sliderPos };
 
-            g.setColour(T_COL(accent));
+            g.setColour(slider.findColour(juce::Slider::trackColourId));
             g.fillRoundedRectangle(activeTrack, trackWidth * 0.5f);
 
             // Thumb
@@ -206,10 +208,10 @@ public:
             else
                 thumbRect = { x + width * 0.5f - thumbSize * 0.5f, sliderPos - thumbSize * 0.5f, thumbSize, thumbSize };
 
-            g.setColour(T_COL(textMain));
+            g.setColour(slider.findColour(juce::Slider::thumbColourId));
             g.fillEllipse(thumbRect);
             
-            g.setColour(T_COL(widgetOutline));
+            g.setColour(slider.findColour(juce::Slider::textBoxOutlineColourId).withAlpha(0.6f));
             g.drawEllipse(thumbRect, 1.0f);
         }
         else
@@ -265,7 +267,7 @@ public:
         g.setColour(accentColour.withAlpha(0.15f));
         g.strokePath(valueArc, juce::PathStrokeType(thickness + 1.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        // --- Modern Indicator (Dot) ---
+        // --- Indicator (Dot) ---
         float dotRadius = 1.8f;
         float dotDist = radius - 8.5f;
         
@@ -297,6 +299,8 @@ public:
         const juce::String& text, const juce::String& shortcutKeyText,
         const juce::Drawable* icon, const juce::Colour* textColourToUse) override
     {
+        juce::ignoreUnused(isActive, hasSubMenu, shortcutKeyText, icon);
+        
         if (isSeparator)
         {
             auto r = area.reduced(5, 0);
