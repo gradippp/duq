@@ -56,6 +56,7 @@ public:
     void loadDefaultTheme();
     bool loadThemeFromFile(const juce::File& file);
     bool saveThemeToFile(const juce::File& file);
+    juce::String saveThemeToXmlString() const;
 
     juce::String getColourName(ColourID id) const;
     juce::String getColourDescription(ColourID id) const;

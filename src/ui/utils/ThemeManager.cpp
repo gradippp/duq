@@ -115,6 +115,11 @@ bool ThemeManager::loadThemeFromFile(const juce::File& file)
 
 bool ThemeManager::saveThemeToFile(const juce::File& file)
 {
+    return file.replaceWithText(saveThemeToXmlString());
+}
+
+juce::String ThemeManager::saveThemeToXmlString() const
+{
     juce::XmlElement xml("THEME");
 
     for (auto const& [id, color] : colours)
@@ -124,7 +129,7 @@ bool ThemeManager::saveThemeToFile(const juce::File& file)
         child->setAttribute("hex", color.toDisplayString(true));
     }
 
-    return xml.writeTo(file);
+    return xml.createDocument(juce::String());
 }
 
 juce::String ThemeManager::getColourDescription(ColourID id) const

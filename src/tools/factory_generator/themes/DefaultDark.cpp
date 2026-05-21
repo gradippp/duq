@@ -1,17 +1,13 @@
 #include "FactoryData.h"
+#include "ui/utils/ThemeManager.h"
 
 namespace FactoryData {
     std::vector<FactoryAsset> getThemes() {
+        auto& tm = ThemeManager::getInstance();
+        tm.loadDefaultTheme();
+        
         return {
-            { "Default_Dark.theme", R"json({
-  "name": "Default Dark",
-  "colours": {
-    "background": "ff0f0f0f",
-    "textMain": "ffffffff",
-    "textDimmed": "ff888888",
-    "accent": "ff3498db"
-  }
-})json" }
+            { "Default_Dark.theme", tm.saveThemeToXmlString() }
         };
     }
 }
