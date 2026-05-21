@@ -79,6 +79,11 @@ void ThemeManager::initializeDefaultColours()
     colours[contextMenuText] = accentColour.withAlpha(0.9f);
     colours[contextMenuHighlight] = uiSelectedColour;
     colours[contextMenuBorder] = borderColour;
+
+    colours[widgetBackground] = juce::Colour(0xFF000000);
+    colours[widgetOutline] = borderColour;
+    colours[widgetText] = accentColour;
+    colours[widgetTick] = accentColour;
 }
 
 void ThemeManager::loadDefaultTheme()
@@ -174,6 +179,10 @@ juce::String ThemeManager::getColourDescription(ColourID id) const
         case contextMenuHighlight: return "Highlight for selected menu items.";
         case contextMenuBorder: return "Outline for popup and dropdown menus.";
         case sidechain: return "The waveform color for the sidechain input signal.";
+        case widgetBackground: return "Background for checkboxes, dropdowns, and text boxes.";
+        case widgetOutline: return "Border for UI widgets.";
+        case widgetText: return "Text color inside UI widgets.";
+        case widgetTick: return "Color of the checkmark in checkboxes.";
     }
     return "";
 }
@@ -220,6 +229,10 @@ juce::String ThemeManager::getColourName(ColourID id) const
         case contextMenuHighlight: return "contextMenuHighlight";
         case contextMenuBorder: return "contextMenuBorder";
         case sidechain: return "sidechain";
+        case widgetBackground: return "widgetBackground";
+        case widgetOutline: return "widgetOutline";
+        case widgetText: return "widgetText";
+        case widgetTick: return "widgetTick";
     }
     return "unknown";
 }
@@ -264,6 +277,10 @@ ThemeManager::ColourID ThemeManager::getIDFromName(const juce::String& name) con
     if (name == "contextMenuHighlight") return contextMenuHighlight;
     if (name == "contextMenuBorder") return contextMenuBorder;
     if (name == "sidechain") return sidechain;
+    if (name == "widgetBackground") return widgetBackground;
+    if (name == "widgetOutline") return widgetOutline;
+    if (name == "widgetText") return widgetText;
+    if (name == "widgetTick") return widgetTick;
     return (ColourID)-1;
 }
 
@@ -280,6 +297,7 @@ std::vector<ThemeManager::ColourID> ThemeManager::getAllIDs()
         knobTrack, knobIndicator, knobAccent, knobShadow,
         presetBrowserBackground, presetBrowserFooter, presetBrowserFooterLine,
         contextMenuBackground, contextMenuText, contextMenuHighlight, contextMenuBorder,
-        sidechain
+        sidechain,
+        widgetBackground, widgetOutline, widgetText, widgetTick
     };
 }

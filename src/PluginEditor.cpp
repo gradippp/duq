@@ -26,11 +26,10 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
 
-    knobLookAndFeel = std::make_unique<FlatKnobLookAndFeel>();
-    contextMenuLookAndFeel = std::make_unique<ContextMenuLookAndFeel>();
+    globalLookAndFeel = std::make_unique<GlobalLookAndFeel>();
     
-    juce::LookAndFeel::setDefaultLookAndFeel(contextMenuLookAndFeel.get());
-    setLookAndFeel(contextMenuLookAndFeel.get());
+    juce::LookAndFeel::setDefaultLookAndFeel(globalLookAndFeel.get());
+    setLookAndFeel(globalLookAndFeel.get());
 
     envelopeListSection.setUndoManager(undoManager);
 
@@ -216,10 +215,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     startTimerHz(10);
 
-    controlSection.getRateKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-    controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-    controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
-
     gridSection.setSampleBuffers(
         &audioProcessor.getMonitorWritePosition(),
         audioProcessor.getMonitorSamplesPre(),
@@ -259,10 +254,6 @@ DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
 
-    controlSection.getRateKnob().getSlider().setLookAndFeel(nullptr);
-    controlSection.getDepthKnob().getSlider().setLookAndFeel(nullptr);
-    controlSection.getSmoothKnob().getSlider().setLookAndFeel(nullptr);
-
     stopTimer();
 }
 
@@ -279,14 +270,17 @@ void DuqAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* so
 {
     if (source == &ThemeManager::getInstance())
     {
-        // 1. Refresh global LookAndFeel instances
-        if (knobLookAndFeel) knobLookAndFeel->setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
-        if (contextMenuLookAndFeel) contextMenuLookAndFeel->refreshColours();
+        // 1. Refresh global LookAndFeel
+        if (globalLookAndFeel) 
+        {
+            globalLookAndFeel->refreshColours();
+            globalLookAndFeel->setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
+        }
 
-        // 2. Refresh local LookAndFeel and trigger LookAndFeelChanged recursively
+        // 2. Trigger LookAndFeelChanged recursively
         sendLookAndFeelChange();
 
-        // 3. Manual refresh for components with custom refreshTheme methods
+        // 3. Manual refresh for sections
         header.refreshTheme();
         
         // 4. Force repaint

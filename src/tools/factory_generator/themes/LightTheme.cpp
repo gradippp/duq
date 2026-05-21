@@ -59,6 +59,11 @@ namespace FactoryData {
         tm.setColour(ThemeManager::contextMenuHighlight, accentColour.withAlpha(0.15f));
         tm.setColour(ThemeManager::contextMenuBorder, borderColour);
 
+        tm.setColour(ThemeManager::widgetBackground, juce::Colour(0xFFFFFFFF));
+        tm.setColour(ThemeManager::widgetOutline, juce::Colour(0xFFBBBBBB));
+        tm.setColour(ThemeManager::widgetText, textMainColour);
+        tm.setColour(ThemeManager::widgetTick, juce::Colour(0xFF000000));
+
         return { "Light.duq.theme", tm.saveThemeToXmlString().toStdString() };
     }
 }

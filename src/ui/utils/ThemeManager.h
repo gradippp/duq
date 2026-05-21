@@ -45,7 +45,11 @@ public:
         contextMenuText,
         contextMenuHighlight,
         contextMenuBorder,
-        sidechain
+        sidechain,
+        widgetBackground,
+        widgetOutline,
+        widgetText,
+        widgetTick
     };
 
     static ThemeManager& getInstance();
