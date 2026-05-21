@@ -62,7 +62,7 @@ private:
 
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
-    juce::String presetName{ "Default Project" };
+    juce::String presetName{ Defaults::projectName };
 
     juce::DrawableButton undoButton{ "undo", juce::DrawableButton::ImageFitted };
     juce::DrawableButton redoButton{ "redo", juce::DrawableButton::ImageFitted };

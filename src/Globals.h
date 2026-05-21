@@ -31,6 +31,7 @@ namespace Defaults
     const float offset = 0.0f;
 
     const juce::String envelopeName = "Env";
+    const juce::String projectName = "INIT";
 
     struct Point { float x, y; };
     const Point defaultPoints[] = { { 0.0f, 0.0f }, { 1.0f, 1.0f } };

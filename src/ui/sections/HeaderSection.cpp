@@ -125,6 +125,7 @@ HeaderSection::HeaderSection()
     addAndMakeVisible(presetNameLabel);
     presetNameLabel.setJustificationType(juce::Justification::centred);
     presetNameLabel.setFont(FontManager::getJetBrainsMono(15.0f));
+    presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
     presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
 
     addAndMakeVisible(brandLabel);

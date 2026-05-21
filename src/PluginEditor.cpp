@@ -210,7 +210,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             audioProcessor.triggerEnvelope(-1); // reset trigger state
             audioProcessor.addEnvelope(Defaults::envelopeName + " 1", -1); // -1 means use config default note
             
-            header.setPresetName("Default Project");
+            header.setPresetName(Defaults::projectName);
         });
 
     startTimerHz(10);
