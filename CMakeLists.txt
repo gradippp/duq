@@ -191,6 +191,7 @@ add_executable(FactoryGenerator ${GENERATOR_SRCS})
 target_include_directories(FactoryGenerator PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_BINARY_DIR}/juce_binarydata_${PLUGIN_NAME}BinaryData/JuceLibraryCode"
 )
 
 # Link to JUCE modules needed for serialization
@@ -201,6 +202,9 @@ target_link_libraries(FactoryGenerator PRIVATE
     juce::juce_gui_basics
     juce::juce_events
 )
+
+# Ensure BinaryData is generated before compiling FontManager
+add_dependencies(FactoryGenerator ${PLUGIN_NAME}BinaryData)
 
 set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
 
