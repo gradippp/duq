@@ -44,7 +44,8 @@ public:
         contextMenuBackground,
         contextMenuText,
         contextMenuHighlight,
-        contextMenuBorder
+        contextMenuBorder,
+        sidechain
     };
 
     static ThemeManager& getInstance();

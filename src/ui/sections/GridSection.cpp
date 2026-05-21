@@ -101,9 +101,9 @@ void GridSection::valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int)
     updateViewState();
 }
 
-void GridSection::setSampleBuffer(const std::atomic<int>* writePos, const float* sampleData, int bufferSize)
+void GridSection::setSampleBuffers(const std::atomic<int>* writePos, const float* pre, const float* post, const float* sidechain, int bufferSize)
 {
-    waveform.setSampleBuffer(writePos, sampleData, bufferSize);
+    waveform.setSampleBuffers(writePos, pre, post, sidechain, bufferSize);
 }
 
 void GridSection::setUndoManager(juce::UndoManager& um)

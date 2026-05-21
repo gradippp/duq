@@ -13,13 +13,17 @@ WaveformComponent::~WaveformComponent()
     stopTimer();
 }
 
-void WaveformComponent::setSampleBuffer(
+void WaveformComponent::setSampleBuffers(
     const std::atomic<int>* writePos,
-    const float* sampleData,
+    const float* preData,
+    const float* postData,
+    const float* sidechainData,
     int bufferSize)
 {
     writePosition = writePos;
-    samples = sampleData;
+    samplesPre = preData;
+    samplesPost = postData;
+    samplesSidechain = sidechainData;
     bufferLength = bufferSize;
 }
 
@@ -40,12 +44,11 @@ void WaveformComponent::timerCallback()
 
 void WaveformComponent::paint(juce::Graphics& g)
 {
-    if (!samples || bufferLength <= 0)
+    if (!samplesPre || !samplesPost || bufferLength <= 0)
         return;
 
     const int width = getWidth();
     const int height = getHeight();
-    const float centerY = height * 0.5f;
 
     const float visibleWidthNorm = 1.0f / zoomX;
     const float visibleHeightNorm = 1.0f / zoomY;
@@ -53,55 +56,77 @@ void WaveformComponent::paint(juce::Graphics& g)
     const float visibleSamples = visibleWidthNorm * bufferLength;
     const float samplesPerPixel = visibleSamples / (float)width;
 
-    juce::Path waveformPath;
-    bool started = false;
-
-    for (int x = 0; x < width; ++x)
+    auto createWaveformPath = [&](const float* data) -> juce::Path
     {
-        float sampleIdx = startSample + (x * samplesPerPixel);
-        int start = (int)sampleIdx;
-        int end = (int)(sampleIdx + samplesPerPixel);
+        juce::Path path;
+        if (!data) return path;
 
-        start = juce::jlimit(0, bufferLength - 1, start);
-        end = juce::jlimit(start + 1, bufferLength, end);
-
-        float minVal = 1.0f;
-        float maxVal = -1.0f;
-
-        for (int i = start; i < end; ++i)
+        bool started = false;
+        for (int x = 0; x < width; ++x)
         {
-            float v = samples[i];
-            minVal = std::min(minVal, v);
-            maxVal = std::max(maxVal, v);
+            float sampleIdx = startSample + (x * samplesPerPixel);
+            int start = (int)sampleIdx;
+            int end = (int)(sampleIdx + samplesPerPixel);
+
+            start = juce::jlimit(0, bufferLength - 1, start);
+            end = juce::jlimit(start + 1, bufferLength, end);
+
+            float minVal = 1.0f;
+            float maxVal = -1.0f;
+
+            for (int i = start; i < end; ++i)
+            {
+                float v = data[i];
+                minVal = std::min(minVal, v);
+                maxVal = std::max(maxVal, v);
+            }
+            
+            if (minVal > maxVal) continue;
+
+            // Map amplitude [-1, 1] to normalized Y [0, 1]
+            float normYTop = (maxVal + 1.0f) * 0.5f;
+            float normYBottom = (minVal + 1.0f) * 0.5f;
+
+            // Apply grid vertical zoom and offset
+            float nyTop = (normYTop - offsetY) / visibleHeightNorm;
+            float nyBottom = (normYBottom - offsetY) / visibleHeightNorm;
+
+            // Map to pixels
+            float yTop = (1.0f - nyTop) * (float)height;
+            float yBottom = (1.0f - nyBottom) * (float)height;
+
+            if (!started)
+            {
+                path.startNewSubPath((float)x, yTop);
+                path.lineTo((float)x, yBottom);
+                started = true;
+            }
+            else
+            {
+                path.lineTo((float)x, yTop);
+                path.lineTo((float)x, yBottom);
+            }
         }
+        return path;
+    };
 
-        // Map amplitude [-1, 1] to normalized Y [0, 1]
-        float normYTop = (maxVal + 1.0f) * 0.5f;
-        float normYBottom = (minVal + 1.0f) * 0.5f;
-
-        // Apply grid vertical zoom and offset
-        float nyTop = (normYTop - offsetY) / visibleHeightNorm;
-        float nyBottom = (normYBottom - offsetY) / visibleHeightNorm;
-
-        // Map to pixels
-        float yTop = (1.0f - nyTop) * (float)height;
-        float yBottom = (1.0f - nyBottom) * (float)height;
-
-        if (!started)
-        {
-            waveformPath.startNewSubPath((float)x, yTop);
-            waveformPath.lineTo((float)x, yBottom);
-            started = true;
-        }
-        else
-        {
-            waveformPath.lineTo((float)x, yTop);
-            waveformPath.lineTo((float)x, yBottom);
-        }
+    // 1. Draw Sidechain (Background)
+    if (samplesSidechain)
+    {
+        auto scPath = createWaveformPath(samplesSidechain);
+        g.setColour(T_COL(sidechain).withAlpha(1.0f)); 
+        g.strokePath(scPath, juce::PathStrokeType(1.2f));
     }
 
+    // 2. Draw Pre (Dry)
+    auto prePath = createWaveformPath(samplesPre);
+    g.setColour(T_COL(waveform).withAlpha(0.3f));
+    g.strokePath(prePath, juce::PathStrokeType(1.0f));
+
+    // 3. Draw Post (Wet)
+    auto postPath = createWaveformPath(samplesPost);
     g.setColour(T_COL(waveform));
-    g.strokePath(waveformPath, juce::PathStrokeType(1.0f));
+    g.strokePath(postPath, juce::PathStrokeType(1.5f));
 
     // subtle center line (0.0 amplitude -> normY = 0.5)
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;

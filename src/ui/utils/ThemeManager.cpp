@@ -41,6 +41,7 @@ void ThemeManager::initializeDefaultColours()
     colours[gridMajor] = accentColour.withAlpha(0.12f);
     colours[gridMinor] = accentColour.withAlpha(0.04f);
     colours[waveform] = juce::Colours::azure;
+    colours[sidechain] = juce::Colour(0xFFFFA500); // Orange
 
     colours[envelopeLine] = accentColour;
     colours[envelopeFillTop] = accentColour.withAlpha(0.15f);
@@ -167,6 +168,7 @@ juce::String ThemeManager::getColourDescription(ColourID id) const
         case contextMenuText: return "Text color within popup menus.";
         case contextMenuHighlight: return "Highlight for selected menu items.";
         case contextMenuBorder: return "Outline for popup and dropdown menus.";
+        case sidechain: return "The waveform color for the sidechain input signal.";
     }
     return "";
 }
@@ -212,6 +214,7 @@ juce::String ThemeManager::getColourName(ColourID id) const
         case contextMenuText: return "contextMenuText";
         case contextMenuHighlight: return "contextMenuHighlight";
         case contextMenuBorder: return "contextMenuBorder";
+        case sidechain: return "sidechain";
     }
     return "unknown";
 }
@@ -255,6 +258,7 @@ ThemeManager::ColourID ThemeManager::getIDFromName(const juce::String& name) con
     if (name == "contextMenuText") return contextMenuText;
     if (name == "contextMenuHighlight") return contextMenuHighlight;
     if (name == "contextMenuBorder") return contextMenuBorder;
+    if (name == "sidechain") return sidechain;
     return (ColourID)-1;
 }
 
@@ -270,6 +274,7 @@ std::vector<ThemeManager::ColourID> ThemeManager::getAllIDs()
         meterBackground, meterFill, meterReduction,
         knobTrack, knobIndicator, knobAccent, knobShadow,
         presetBrowserBackground, presetBrowserFooter, presetBrowserFooterLine,
-        contextMenuBackground, contextMenuText, contextMenuHighlight, contextMenuBorder
+        contextMenuBackground, contextMenuText, contextMenuHighlight, contextMenuBorder,
+        sidechain
     };
 }

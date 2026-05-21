@@ -69,7 +69,9 @@ public:
     //==============================================================================
     // Monitor buffer
     int getMonitorBufferSize() const noexcept { return monitorBufferSize; }
-    const float* getMonitorSamples() const noexcept { return monSamples; }
+    const float* getMonitorSamplesPre() const noexcept { return monSamplesPre; }
+    const float* getMonitorSamplesPost() const noexcept { return monSamplesPost; }
+    const float* getMonitorSamplesSidechain() const noexcept { return monSamplesSidechain; }
     const std::atomic<int>& getMonitorWritePosition() const noexcept { return monpos; }
 
     //==============================================================================
@@ -135,7 +137,9 @@ private:
 
     //==============================================================================
     static constexpr int monitorBufferSize = 2048;
-    float monSamples[monitorBufferSize]{};
+    float monSamplesPre[monitorBufferSize]{};
+    float monSamplesPost[monitorBufferSize]{};
+    float monSamplesSidechain[monitorBufferSize]{};
     std::atomic<int> monpos{ 0 };
 
     std::array<std::atomic<bool>, 128> activeNotes{};

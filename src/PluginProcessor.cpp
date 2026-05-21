@@ -39,6 +39,7 @@ DuqAudioProcessor::DuqAudioProcessor()
 #if ! JucePlugin_IsMidiEffect
 #if ! JucePlugin_IsSynth
         .withInput("Input", juce::AudioChannelSet::stereo(), true)
+        .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)
 #endif
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
@@ -358,7 +359,10 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples = buffer.getNumSamples();
-    const int numChannels = buffer.getNumChannels();
+    const int numInputChannels = getBusCount(true) > 0 ? getBusBuffer(buffer, true, 0).getNumChannels() : 0;
+    const int numOutputChannels = getBusCount(false) > 0 ? getBusBuffer(buffer, false, 0).getNumChannels() : 0;
+    const int numChannels = std::min(numInputChannels, numOutputChannels);
+    
     const double sampleRate = getSampleRate();
 
     float inputPeak = 0.0f;
@@ -455,11 +459,16 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
         // Write UNPROCESSED sample into monitor buffer for visualization
         float monitorSample = 0.0f;
-        for (int ch = 0; ch < numChannels; ++ch)
-            monitorSample += delayBuffer.getSample(ch, readPos);
-        monitorSample /= (float)numChannels;
+        if (numChannels > 0)
+        {
+            for (int ch = 0; ch < numChannels; ++ch)
+                monitorSample += delayBuffer.getSample(ch, readPos);
+            monitorSample /= (float)numChannels;
+        }
 
-        monSamples[writeIndex] = monitorSample;
+        monSamplesPre[writeIndex] = monitorSample;
+
+        float finalMonitorSample = 0.0f;
 
         for (int ch = 0; ch < numChannels; ++ch)
         {
@@ -473,10 +482,31 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             float s_final = s_wet * mixVal + s_orig * (1.0f - mixVal);
             
             channelData[i] = s_final;
+            finalMonitorSample += s_final;
             
             // Peak output
             outputPeak = std::max(outputPeak, std::abs(s_final));
         }
+
+        if (numChannels > 0)
+            finalMonitorSample /= (float)numChannels;
+        
+        monSamplesPost[writeIndex] = finalMonitorSample;
+
+        // Sidechain input
+        float sidechainSample = 0.0f;
+        if (getBusCount(true) > 1)
+        {
+            auto scBus = getBusBuffer(buffer, true, 1);
+            int scChannels = scBus.getNumChannels();
+            if (scChannels > 0)
+            {
+                for (int ch = 0; ch < scChannels; ++ch)
+                    sidechainSample += scBus.getReadPointer(ch)[i];
+                sidechainSample /= (float)scChannels;
+            }
+        }
+        monSamplesSidechain[writeIndex] = sidechainSample;
 
         writeIndex++;
         if (writeIndex >= monitorBufferSize)

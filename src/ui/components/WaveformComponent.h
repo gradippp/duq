@@ -11,8 +11,10 @@ public:
     WaveformComponent();
     ~WaveformComponent() override;
 
-    void setSampleBuffer(const std::atomic<int>* writePos,
-        const float* sampleData,
+    void setSampleBuffers(const std::atomic<int>* writePos,
+        const float* preData,
+        const float* postData,
+        const float* sidechainData,
         int bufferSize);
 
     void setViewState(float zoomX, float offsetX, float zoomY = 1.0f, float offsetY = 0.0f);
@@ -23,7 +25,9 @@ private:
     void timerCallback() override;
 
     const std::atomic<int>* writePosition = nullptr;
-    const float* samples = nullptr;
+    const float* samplesPre = nullptr;
+    const float* samplesPost = nullptr;
+    const float* samplesSidechain = nullptr;
     int bufferLength = 0;
 
     float zoomX = 1.0f;

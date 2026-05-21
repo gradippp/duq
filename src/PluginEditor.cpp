@@ -220,9 +220,11 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     controlSection.getDepthKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
     controlSection.getSmoothKnob().getSlider().setLookAndFeel(knobLookAndFeel.get());
 
-    gridSection.setSampleBuffer(
+    gridSection.setSampleBuffers(
         &audioProcessor.getMonitorWritePosition(),
-        audioProcessor.getMonitorSamples(),
+        audioProcessor.getMonitorSamplesPre(),
+        audioProcessor.getMonitorSamplesPost(),
+        audioProcessor.getMonitorSamplesSidechain(),
         audioProcessor.getMonitorBufferSize());
 
     gridSection.setProcessor(&audioProcessor);

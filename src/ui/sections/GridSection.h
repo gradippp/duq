@@ -52,8 +52,10 @@ public:
     float getCurveForSegment(int index) const;
 
     // Waveform
-    void setSampleBuffer(const std::atomic<int>* writePos,
-        const float* sampleData,
+    void setSampleBuffers(const std::atomic<int>* writePos,
+        const float* preData,
+        const float* postData,
+        const float* sidechainData,
         int bufferSize);
 
     // Mouse interaction
