@@ -57,3 +57,38 @@ jobs:
       with:
         name: Duq-AU-${{ runner.os }}-${{ env.FULL_PLUGIN_VERSION }}
         path: build/Duq_artefacts/Release/AU/
+
+  publish:
+    name: Publish Release
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Zip Artifacts
+        run: |
+          cd artifacts
+          for dir in */; do
+            # Remove trailing slash
+            dir=${dir%/}
+            # Zip the contents of the directory, not the directory itself, to keep the zip clean
+            cd "$dir"
+            zip -r "../../${dir}.zip" .
+            cd ..
+          done
+          cd ..
+          ls -l *.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*.zip"
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-test') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
