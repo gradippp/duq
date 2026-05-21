@@ -179,7 +179,23 @@ file(GLOB_RECURSE GENERATOR_SRCS
 )
 
 add_executable(FactoryGenerator ${GENERATOR_SRCS})
+target_include_directories(FactoryGenerator PRIVATE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+
+# Link to JUCE modules needed for serialization
+target_link_libraries(FactoryGenerator PRIVATE
+    juce::juce_core
+    juce::juce_data_structures
+)
+
 set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
+
+# FactoryGenerator uses std::filesystem, which requires macOS 10.15+
+if(APPLE)
+    set_target_properties(FactoryGenerator PROPERTIES XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.15")
+endif()
 
 set(FACTORY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/FactoryContent")
 

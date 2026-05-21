@@ -1,13 +1,16 @@
 #include "FactoryData.h"
+#include "model/EnvelopeData.h"
 
 namespace FactoryData {
     std::vector<FactoryAsset> getEnvelopes() {
+        EnvelopeShape pluck;
+        pluck.addPoint(0.0f, 1.0f);
+        pluck.addPoint(0.1f, 0.0f);
+        
+        auto xml = pluck.toValueTree().createXml();
+        
         return {
-            { "Basic_Pluck.env", R"xml(<?xml version="1.0" encoding="UTF-8"?>
-<Envelope name="Basic Pluck">
-  <Point x="0.0" y="1.0" curve="0" tension="0.5"/>
-  <Point x="0.1" y="0.0" curve="0" tension="0.5"/>
-</Envelope>)xml" }
+            { "Basic_Pluck.env", xml->toString() }
         };
     }
 }
