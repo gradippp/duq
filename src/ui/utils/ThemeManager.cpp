@@ -101,7 +101,7 @@ void ThemeManager::initializeDefaultColours()
     colours[contextMenuHighlight] = uiSelectedColour;
     colours[contextMenuBorder] = borderColour;
 
-    colours[widgetBackground] = juce::Colour(0xFF000000);
+    colours[widgetBackground] = juce::Colour(0xFF121212);
     colours[widgetOutline] = borderColour;
     colours[widgetText] = accentColour;
     colours[widgetTick] = accentColour;
