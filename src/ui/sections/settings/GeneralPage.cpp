@@ -7,7 +7,6 @@ GeneralPage::GeneralPage()
     ThemeManager::getInstance().addChangeListener(this);
 
     // General Settings
-    waveformQualityCombo.setLookAndFeel(&comboBoxLNF);
     waveformQualityCombo.addItemList({"Low", "Medium", "High"}, 1);
     waveformQualityCombo.setSelectedItemIndex(config->getWaveformQuality());
     waveformQualityCombo.addListener(this);
@@ -26,22 +25,15 @@ GeneralPage::GeneralPage()
     addAndMakeVisible(tooltipsToggle);
 
     // Theme Settings
-    themeCombo.setLookAndFeel(&comboBoxLNF);
     themeCombo.addListener(this);
     addAndMakeVisible(themeCombo);
 
-    importButton.setButtonText("IMPORT");
-    importButton.setLookAndFeel(&buttonLNF);
     importButton.addListener(this);
     addAndMakeVisible(importButton);
 
-    exportButton.setButtonText("EXPORT");
-    exportButton.setLookAndFeel(&buttonLNF);
     exportButton.addListener(this);
     addAndMakeVisible(exportButton);
 
-    resetButton.setButtonText("RESET");
-    resetButton.setLookAndFeel(&buttonLNF);
     resetButton.addListener(this);
     addAndMakeVisible(resetButton);
 
@@ -53,11 +45,6 @@ GeneralPage::GeneralPage()
 GeneralPage::~GeneralPage() 
 {
     ThemeManager::getInstance().removeChangeListener(this);
-    waveformQualityCombo.setLookAndFeel(nullptr);
-    themeCombo.setLookAndFeel(nullptr);
-    importButton.setLookAndFeel(nullptr);
-    exportButton.setLookAndFeel(nullptr);
-    resetButton.setLookAndFeel(nullptr);
 }
 
 void GeneralPage::paint(juce::Graphics& g)

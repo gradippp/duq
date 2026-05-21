@@ -6,7 +6,6 @@ WorkflowPage::WorkflowPage()
     : SettingsPageBase("WORKFLOW & EDITING")
 {
     // --- Grid & Editing ---
-    defaultCurveCombo.setLookAndFeel(&comboBoxLNF);
     defaultCurveCombo.addItemList({"Exponential", "Linear", "Logarithmic", "S-Curve", "Step"}, 1);
     defaultCurveCombo.setSelectedItemIndex(config->getDefaultCurve());
     defaultCurveCombo.addListener(this);
@@ -39,12 +38,10 @@ WorkflowPage::WorkflowPage()
     addAndMakeVisible(defaultSmoothSlider);
 
     // --- Default Shape ---
-    currentEnvelopesCombo.setLookAndFeel(&comboBoxLNF);
     currentEnvelopesCombo.setTextWhenNoChoicesAvailable("No Envelopes Found");
     currentEnvelopesCombo.addListener(this);
     addAndMakeVisible(currentEnvelopesCombo);
 
-    importFromBrowserButton.setLookAndFeel(&textButtonLNF);
     importFromBrowserButton.onClick = [this]
     {
         if (onImportFromBrowser) onImportFromBrowser();
@@ -59,9 +56,6 @@ WorkflowPage::WorkflowPage()
 
 WorkflowPage::~WorkflowPage() 
 {
-    defaultCurveCombo.setLookAndFeel(nullptr);
-    currentEnvelopesCombo.setLookAndFeel(nullptr);
-    importFromBrowserButton.setLookAndFeel(nullptr);
 }
 
 void WorkflowPage::setProcessor(DuqAudioProcessor* p)

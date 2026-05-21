@@ -1,12 +1,10 @@
 #include "ControlKnobComponent.h"
 #include "../utils/FontManager.h"
 #include "../../Globals.h"
-
 ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float initialValue,
     const juce::String& unitSuffix)
     : labelText(name), unit(unitSuffix)
 {
-    knob.setLookAndFeel(&lnf);
     knob.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     knob.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
 
@@ -36,16 +34,16 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
     addAndMakeVisible(knob);
     addAndMakeVisible(valueLabel);
 
-    valueLabel.setColour(juce::Label::textColourId, T_COL(textMain));
     valueLabel.setJustificationType(juce::Justification::centredRight);
     valueLabel.setFont(FontManager::getJetBrainsMono(13.0f));
 
     updateValueLabel();
+    lookAndFeelChanged();
 }
 
-void ControlKnobComponent::setLabel(const juce::String& text)
+ControlKnobComponent::~ControlKnobComponent()
 {
-    labelText = text;
+}
     repaint();
 }
 

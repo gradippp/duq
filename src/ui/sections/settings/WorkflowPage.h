@@ -47,8 +47,6 @@ private:
     juce::TextButton importFromBrowserButton{ "Import from Preset Browser" };
     ShapePreviewComponent shapePreview;
 
-    ComboBoxLookAndFeel comboBoxLNF;
-    TextButtonLookAndFeel textButtonLNF;
     juce::SharedResourcePointer<ConfigManager> config;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WorkflowPage)

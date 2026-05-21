@@ -1,10 +1,8 @@
 #pragma once
 
 #include "SettingsPageBase.h"
-#include "../../utils/ComboBoxLookAndFeel.h"
 #include "../../utils/ThemeManager.h"
 #include "../../utils/ThemeEditor.h"
-#include "../../utils/TextButtonLookAndFeel.h"
 
 class GeneralPage : public SettingsPageBase,
                     private juce::ComboBox::Listener,
@@ -43,8 +41,6 @@ private:
 
     ThemeEditor editor;
 
-    ComboBoxLookAndFeel comboBoxLNF;
-    TextButtonLookAndFeel buttonLNF;
     juce::SharedResourcePointer<ConfigManager> config;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GeneralPage)

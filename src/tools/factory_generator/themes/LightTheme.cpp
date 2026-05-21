@@ -31,12 +31,12 @@ namespace FactoryData {
         tm.setColour(ThemeManager::playheadGlow, accentColour.withAlpha(0.2f));
 
         tm.setColour(ThemeManager::textMain, juce::Colour(0xFF000000));
-        tm.setColour(ThemeManager::textDimmed, juce::Colour(0xFF000000).withAlpha(0.7f));
+        tm.setColour(ThemeManager::textDimmed, juce::Colour(0xFF000000).withAlpha(0.6f));
         tm.setColour(ThemeManager::textLabel, juce::Colour(0xFF000000));
 
-        tm.setColour(ThemeManager::uiHover, juce::Colour(0xFF000000).withAlpha(0.12f));
-        tm.setColour(ThemeManager::uiSelected, accentColour.withAlpha(0.3f));
-        tm.setColour(ThemeManager::uiDisabledOverlay, juce::Colour(0xFF000000).withAlpha(0.4f));
+        tm.setColour(ThemeManager::uiHover, juce::Colour(0xFF000000).withAlpha(0.1f));
+        tm.setColour(ThemeManager::uiSelected, accentColour.withAlpha(0.25f));
+        tm.setColour(ThemeManager::uiDisabledOverlay, juce::Colour(0xFF000000).withAlpha(0.35f));
         
         tm.setColour(ThemeManager::midiIndicator, juce::Colour(0xFF27AE60));
         tm.setColour(ThemeManager::danger, juce::Colour(0xFFC0392B));
@@ -45,22 +45,22 @@ namespace FactoryData {
         tm.setColour(ThemeManager::meterFill, accentColour);
         tm.setColour(ThemeManager::meterReduction, juce::Colour(0xFFE74C3C));
 
-        tm.setColour(ThemeManager::knobTrack, juce::Colour(0xFFEEEEEE));
+        tm.setColour(ThemeManager::knobTrack, juce::Colour(0xFFDDDDDD));
         tm.setColour(ThemeManager::knobIndicator, accentColour);
         tm.setColour(ThemeManager::knobAccent, accentColour);
-        tm.setColour(ThemeManager::knobShadow, juce::Colour(0x08000000));
+        tm.setColour(ThemeManager::knobShadow, juce::Colour(0x05000000));
 
         tm.setColour(ThemeManager::presetBrowserBackground, juce::Colour(0xFFFFFFFF));
         tm.setColour(ThemeManager::presetBrowserFooter, juce::Colour(0xFFF9F9F9));
         tm.setColour(ThemeManager::presetBrowserFooterLine, borderColour);
 
         tm.setColour(ThemeManager::contextMenuBackground, juce::Colour(0xFFFFFFFF));
-        tm.setColour(ThemeManager::contextMenuText, juce::Colour(0xFF111111));
-        tm.setColour(ThemeManager::contextMenuHighlight, accentColour.withAlpha(0.2f));
+        tm.setColour(ThemeManager::contextMenuText, juce::Colour(0xFF000000));
+        tm.setColour(ThemeManager::contextMenuHighlight, accentColour.withAlpha(0.15f));
         tm.setColour(ThemeManager::contextMenuBorder, borderColour);
 
-        tm.setColour(ThemeManager::widgetBackground, juce::Colour(0xFFF8F8F8));
-        tm.setColour(ThemeManager::widgetOutline, juce::Colour(0xFFCCCCCC));
+        tm.setColour(ThemeManager::widgetBackground, juce::Colour(0xFFF4F4F4));
+        tm.setColour(ThemeManager::widgetOutline, juce::Colour(0xFFC0C0C0));
         tm.setColour(ThemeManager::widgetText, juce::Colour(0xFF000000));
         tm.setColour(ThemeManager::widgetTick, juce::Colour(0xFF000000));
 
