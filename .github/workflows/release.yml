@@ -1,16 +1,13 @@
-name: Build Plugin
+name: Release (Artifacts)
 
 on:
   push:
-    branches: [ "main", "dev", "feat/ci-test" ]
     tags: [ "v*.*.*", "*.*.*" ]
-  pull_request:
-    branches: [ "main", "dev", "feat/ci-test" ]
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build on ${{ matrix.os }}
+  release:
+    name: Build & Upload on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
