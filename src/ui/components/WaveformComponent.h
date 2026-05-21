@@ -3,6 +3,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../../utils/ConfigManager.h"
 
 class WaveformComponent : public juce::Component,
     private juce::Timer
@@ -34,4 +35,6 @@ private:
     float offsetX = 0.0f;
     float zoomY = 1.0f;
     float offsetY = 0.0f;
+
+    juce::SharedResourcePointer<ConfigManager> config;
 };

@@ -111,7 +111,7 @@ void WaveformComponent::paint(juce::Graphics& g)
     };
 
     // 1. Draw Sidechain (Background)
-    if (samplesSidechain)
+    if (samplesSidechain && config->getShowSidechainSignal())
     {
         auto scPath = createWaveformPath(samplesSidechain);
         g.setColour(T_COL(sidechain).withAlpha(1.0f)); 
@@ -119,9 +119,12 @@ void WaveformComponent::paint(juce::Graphics& g)
     }
 
     // 2. Draw Pre (Dry)
-    auto prePath = createWaveformPath(samplesPre);
-    g.setColour(T_COL(waveform).withAlpha(0.3f));
-    g.strokePath(prePath, juce::PathStrokeType(1.0f));
+    if (config->getShowSourceSignal())
+    {
+        auto prePath = createWaveformPath(samplesPre);
+        g.setColour(T_COL(waveform).withAlpha(0.3f));
+        g.strokePath(prePath, juce::PathStrokeType(1.0f));
+    }
 
     // 3. Draw Post (Wet)
     auto postPath = createWaveformPath(samplesPost);

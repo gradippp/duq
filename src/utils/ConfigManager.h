@@ -27,6 +27,12 @@ public:
     void setShowTooltips (bool show) { getProps()->setValue ("showTooltips", show); }
     bool getShowTooltips() const { return getProps()->getBoolValue ("showTooltips", true); }
 
+    void setShowSourceSignal (bool show) { getProps()->setValue ("showSourceSignal", show); }
+    bool getShowSourceSignal() const { return getProps()->getBoolValue ("showSourceSignal", true); }
+
+    void setShowSidechainSignal (bool show) { getProps()->setValue ("showSidechainSignal", show); }
+    bool getShowSidechainSignal() const { return getProps()->getBoolValue ("showSidechainSignal", true); }
+
     void setSnapSensitivity (float sensitivity) { getProps()->setValue ("snapSensitivity", sensitivity); }
     float getSnapSensitivity() const { return (float)getProps()->getDoubleValue ("snapSensitivity", 0.01); }
 

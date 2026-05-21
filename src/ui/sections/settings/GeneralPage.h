@@ -31,7 +31,8 @@ private:
     void exportTheme();
 
     juce::ComboBox waveformQualityCombo;
-    juce::ComboBox oscilloscopeView;
+    juce::ToggleButton showSourceToggle{ "View Source Signal" };
+    juce::ToggleButton showSidechainToggle{ "View Sidechain Signal" };
     juce::ToggleButton tooltipsToggle{ "Show Tooltips" };
     
     juce::ComboBox themeCombo;

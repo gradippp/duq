@@ -13,6 +13,14 @@ GeneralPage::GeneralPage()
     waveformQualityCombo.addListener(this);
     addAndMakeVisible(waveformQualityCombo);
 
+    showSourceToggle.setToggleState(config->getShowSourceSignal(), juce::dontSendNotification);
+    showSourceToggle.addListener(this);
+    addAndMakeVisible(showSourceToggle);
+
+    showSidechainToggle.setToggleState(config->getShowSidechainSignal(), juce::dontSendNotification);
+    showSidechainToggle.addListener(this);
+    addAndMakeVisible(showSidechainToggle);
+
     tooltipsToggle.setToggleState(config->getShowTooltips(), juce::dontSendNotification);
     tooltipsToggle.addListener(this);
     addAndMakeVisible(tooltipsToggle);
@@ -59,14 +67,14 @@ void GeneralPage::paint(juce::Graphics& g)
     drawControlLabel(g, "Waveform Quality", waveformQualityCombo.getBounds());
 
     // Separator between general and theme settings
-    float sepY1 = (float)(tooltipsToggle.getBottom() + 30);
+    float sepY1 = (float)(showSidechainToggle.getBottom() + 30);
     g.setColour(T_COL(border).withAlpha(0.2f));
     g.drawLine(20.0f, sepY1, (float)getWidth() - 20.0f, sepY1, 1.0f);
 
     // Theme Section Title
     g.setColour(T_COL(accent).withAlpha(0.8f));
     g.setFont(FontManager::getInterBold(14.0f));
-    g.drawText("UI THEMES & COLOURS", 20, (int)sepY1 + 20, 300, 20, juce::Justification::centredLeft);
+    g.drawText("UI THEMES & COLOURS (EXPERIMENTAL)", 20, (int)sepY1 + 20, 350, 20, juce::Justification::centredLeft);
 
     drawControlLabel(g, "Select Theme", themeCombo.getBounds());
 }
@@ -87,6 +95,10 @@ void GeneralPage::resized()
 
     // Row 2: Tooltips
     tooltipsToggle.setBounds(area.removeFromTop(rowHeight));
+    area.removeFromTop(10);
+    showSourceToggle.setBounds(area.removeFromTop(rowHeight));
+    area.removeFromTop(10);
+    showSidechainToggle.setBounds(area.removeFromTop(rowHeight));
 
     // Space before Theme Section
     area.removeFromTop(100); 
@@ -113,7 +125,7 @@ void GeneralPage::resized()
 
 int GeneralPage::getRequiredHeight()
 {
-    return 80 + 30 + 40 + 30 + 100 + 40 + 20 + editor.getRequiredHeight() + 40;
+    return 80 + 30 + 40 + 30 + 10 + 30 + 10 + 30 + 100 + 40 + 20 + editor.getRequiredHeight() + 40;
 }
 
 void GeneralPage::comboBoxChanged(juce::ComboBox* cb)
@@ -133,6 +145,14 @@ void GeneralPage::buttonClicked(juce::Button* b)
     if (b == &tooltipsToggle)
     {
         config->setShowTooltips(tooltipsToggle.getToggleState());
+    }
+    else if (b == &showSourceToggle)
+    {
+        config->setShowSourceSignal(showSourceToggle.getToggleState());
+    }
+    else if (b == &showSidechainToggle)
+    {
+        config->setShowSidechainSignal(showSidechainToggle.getToggleState());
     }
     else if (b == &importButton) importTheme();
     else if (b == &exportButton) exportTheme();
