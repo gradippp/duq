@@ -1,6 +1,5 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../utils/FlatKnobLookAndFeel.h"
 
 class ContextSlider : public juce::Slider
 {

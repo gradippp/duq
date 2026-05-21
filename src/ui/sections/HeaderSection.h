@@ -4,7 +4,6 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../components/ControlKnobComponent.h"
 #include "../components/SelectableLabel.h"
-#include "../utils/FlatKnobLookAndFeel.h"
 #include "../../Globals.h"
 
 class CompactTimingSlider : public juce::Slider
