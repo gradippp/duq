@@ -158,14 +158,12 @@ void GeneralPage::changeListenerCallback(juce::ChangeBroadcaster* source)
 
 void GeneralPage::lookAndFeelChanged()
 {
-    auto textCol = T_COL(textMain);
+    showSourceToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    showSidechainToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    tooltipsToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
     
-    showSourceToggle.setColour(juce::ToggleButton::textColourId, textCol);
-    showSidechainToggle.setColour(juce::ToggleButton::textColourId, textCol);
-    tooltipsToggle.setColour(juce::ToggleButton::textColourId, textCol);
-    
-    waveformQualityCombo.setColour(juce::ComboBox::textColourId, textCol);
-    themeCombo.setColour(juce::ComboBox::textColourId, textCol);
+    waveformQualityCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+    themeCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
 
     repaint();
 }

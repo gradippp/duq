@@ -51,7 +51,7 @@ void AudioPage::resized()
 
 void AudioPage::lookAndFeelChanged()
 {
-    latencyToggle.setColour(juce::ToggleButton::textColourId, T_COL(textMain));
+    latencyToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
     sampleRateLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
     repaint();
 }

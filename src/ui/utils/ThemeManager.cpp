@@ -17,6 +17,27 @@ juce::Colour ThemeManager::getColour(ColourID id) const
     if (it != colours.end())
         return it->second;
     
+    // Sensible fallbacks for missing keys in stale theme files
+    switch (id)
+    {
+        case widgetText:
+        case contextMenuText: return getColour(textMain);
+        
+        case widgetTick:
+        case knobIndicator:
+        case knobAccent: return getColour(accent);
+
+        case widgetBackground:
+        case contextMenuBackground: return getColour(sectionBackground);
+
+        case widgetOutline:
+        case contextMenuBorder: return getColour(border);
+
+        case sidechain: return juce::Colours::orange;
+        
+        default: break;
+    }
+
     return juce::Colours::black;
 }
 
@@ -97,6 +118,9 @@ bool ThemeManager::loadThemeFromFile(const juce::File& file)
     std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument::parse(file);
     if (xml == nullptr || !xml->hasTagName("THEME"))
         return false;
+
+    // Reset to defaults first so missing keys in the file don't keep stale values
+    initializeDefaultColours();
 
     for (int i = 0; i < xml->getNumChildElements(); ++i)
     {
