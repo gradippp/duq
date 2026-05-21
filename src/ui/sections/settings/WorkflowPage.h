@@ -1,8 +1,4 @@
-#pragma once
-
 #include "SettingsPageBase.h"
-#include "../../utils/ComboBoxLookAndFeel.h"
-#include "../../utils/TextButtonLookAndFeel.h"
 #include "../../components/ShapePreviewComponent.h"
 
 class WorkflowPage : public SettingsPageBase,

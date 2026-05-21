@@ -70,7 +70,6 @@ void CompactTimingSlider::showValueEntryDialog()
 
 CompactKnob::CompactKnob(const juce::String& label) : labelName(label)
 {
-    setLookAndFeel(&lnf);
     setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     setRotaryParameters(juce::degreesToRadians(135.0f), juce::degreesToRadians(405.0f), true);
@@ -80,7 +79,6 @@ CompactKnob::CompactKnob(const juce::String& label) : labelName(label)
 
 CompactKnob::~CompactKnob()
 {
-    setLookAndFeel(nullptr);
 }
 
 void CompactKnob::paint(juce::Graphics& g)

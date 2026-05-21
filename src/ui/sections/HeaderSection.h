@@ -28,7 +28,6 @@ public:
 
 private:
     juce::String labelName;
-    FlatKnobLookAndFeel lnf;
 };
 
 class HeaderSection : public juce::Component,

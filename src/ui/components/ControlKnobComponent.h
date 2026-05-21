@@ -47,7 +47,6 @@ private:
     juce::String labelText;
     juce::String unit;
 
-    FlatKnobLookAndFeel lnf;
     ContextSlider knob;
     juce::Label valueLabel;
 
