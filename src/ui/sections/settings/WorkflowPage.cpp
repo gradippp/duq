@@ -197,3 +197,10 @@ void WorkflowPage::comboBoxChanged(juce::ComboBox* cb)
         }
     }
 }
+
+void WorkflowPage::lookAndFeelChanged()
+{
+    defaultCurveCombo.setColour(juce::ComboBox::textColourId, T_COL(textMain));
+    currentEnvelopesCombo.setColour(juce::ComboBox::textColourId, T_COL(textMain));
+    repaint();
+}

@@ -15,6 +15,7 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void lookAndFeelChanged() override;
 
     void setProcessor(class DuqAudioProcessor* p);
     void updateEnvelopeList();

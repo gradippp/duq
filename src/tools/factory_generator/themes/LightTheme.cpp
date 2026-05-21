@@ -16,27 +16,27 @@ namespace FactoryData {
         tm.setColour(ThemeManager::border, borderColour);
         tm.setColour(ThemeManager::accent, accentColour);
 
-        tm.setColour(ThemeManager::gridMajor, juce::Colour(0xFF000000).withAlpha(0.08f));
-        tm.setColour(ThemeManager::gridMinor, juce::Colour(0xFF000000).withAlpha(0.03f));
-        tm.setColour(ThemeManager::waveform, juce::Colour(0xFF666666));
-        tm.setColour(ThemeManager::sidechain, juce::Colour(0xFFE67E22)); 
+        tm.setColour(ThemeManager::gridMajor, juce::Colour(0xFF000000).withAlpha(0.12f));
+        tm.setColour(ThemeManager::gridMinor, juce::Colour(0xFF000000).withAlpha(0.06f));
+        tm.setColour(ThemeManager::waveform, juce::Colour(0xFF444444));
+        tm.setColour(ThemeManager::sidechain, juce::Colour(0xFFD35400)); 
 
         tm.setColour(ThemeManager::envelopeLine, accentColour);
-        tm.setColour(ThemeManager::envelopeFillTop, accentColour.withAlpha(0.15f));
-        tm.setColour(ThemeManager::envelopeFillBot, accentColour.withAlpha(0.02f));
+        tm.setColour(ThemeManager::envelopeFillTop, accentColour.withAlpha(0.2f));
+        tm.setColour(ThemeManager::envelopeFillBot, accentColour.withAlpha(0.05f));
         tm.setColour(ThemeManager::point, accentColour);
-        tm.setColour(ThemeManager::anchor, accentColour.withAlpha(0.7f));
+        tm.setColour(ThemeManager::anchor, accentColour.withAlpha(0.8f));
 
-        tm.setColour(ThemeManager::playhead, accentColour.withAlpha(0.8f));
-        tm.setColour(ThemeManager::playheadGlow, accentColour.withAlpha(0.15f));
+        tm.setColour(ThemeManager::playhead, accentColour.withAlpha(0.9f));
+        tm.setColour(ThemeManager::playheadGlow, accentColour.withAlpha(0.2f));
 
-        tm.setColour(ThemeManager::textMain, textMainColour);
-        tm.setColour(ThemeManager::textDimmed, textMainColour.withAlpha(0.5f));
-        tm.setColour(ThemeManager::textLabel, textMainColour.withAlpha(0.7f));
+        tm.setColour(ThemeManager::textMain, juce::Colour(0xFF000000));
+        tm.setColour(ThemeManager::textDimmed, juce::Colour(0xFF000000).withAlpha(0.65f));
+        tm.setColour(ThemeManager::textLabel, juce::Colour(0xFF000000).withAlpha(0.85f));
 
-        tm.setColour(ThemeManager::uiHover, juce::Colour(0xFF000000).withAlpha(0.05f));
-        tm.setColour(ThemeManager::uiSelected, accentColour.withAlpha(0.15f));
-        tm.setColour(ThemeManager::uiDisabledOverlay, juce::Colour(0xFFFFFFFF).withAlpha(0.5f));
+        tm.setColour(ThemeManager::uiHover, juce::Colour(0xFF000000).withAlpha(0.15f));
+        tm.setColour(ThemeManager::uiSelected, accentColour.withAlpha(0.25f));
+        tm.setColour(ThemeManager::uiDisabledOverlay, juce::Colour(0xFF000000).withAlpha(0.3f));
         
         tm.setColour(ThemeManager::midiIndicator, juce::Colour(0xFF27AE60));
         tm.setColour(ThemeManager::danger, juce::Colour(0xFFC0392B));

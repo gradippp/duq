@@ -169,6 +169,20 @@ void GeneralPage::changeListenerCallback(juce::ChangeBroadcaster* source)
     repaint();
 }
 
+void GeneralPage::lookAndFeelChanged()
+{
+    auto textCol = T_COL(textMain);
+    
+    showSourceToggle.setColour(juce::ToggleButton::textColourId, textCol);
+    showSidechainToggle.setColour(juce::ToggleButton::textColourId, textCol);
+    tooltipsToggle.setColour(juce::ToggleButton::textColourId, textCol);
+    
+    waveformQualityCombo.setColour(juce::ComboBox::textColourId, textCol);
+    themeCombo.setColour(juce::ComboBox::textColourId, textCol);
+
+    repaint();
+}
+
 void GeneralPage::refreshThemeList()
 {
     themeCombo.clear(juce::dontSendNotification);

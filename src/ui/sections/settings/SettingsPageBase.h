@@ -18,7 +18,7 @@ public:
     void paint(juce::Graphics& g) override
     {
         // Category Header
-        g.setColour(T_COL(textLabel));
+        g.setColour(T_COL(textMain));
         g.setFont(FontManager::getBarlowBold(14.0f));
         g.drawText(title, 20, 20, getWidth() - 40, 30, juce::Justification::centredLeft);
 
@@ -37,7 +37,7 @@ public:
     void drawControlLabel(juce::Graphics& g, const juce::String& label, const juce::Rectangle<int>& controlBounds)
     {
         g.setFont(FontManager::getInterRegular(12.0f));
-        g.setColour(T_COL(textDimmed));
+        g.setColour(T_COL(textLabel));
         g.drawText(label, controlBounds.getX(), controlBounds.getY() - 20, controlBounds.getWidth(), 20, juce::Justification::centredLeft);
     }
 

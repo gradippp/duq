@@ -24,6 +24,7 @@ private:
     void comboBoxChanged(juce::ComboBox* cb) override;
     void buttonClicked(juce::Button* b) override;
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+    void lookAndFeelChanged() override;
 
     void refreshThemeList();
     void loadSelectedTheme();

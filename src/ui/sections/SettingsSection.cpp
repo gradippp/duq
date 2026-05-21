@@ -161,3 +161,31 @@ void SettingsSection::resized()
         }
     }
 }
+
+void SettingsSection::lookAndFeelChanged()
+{
+    auto setupIconButton = [](juce::DrawableButton& button, const juce::String& iconName)
+    {
+        button.setClickingTogglesState(false);
+        button.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
+        button.setColour(juce::DrawableButton::backgroundOnColourId, T_COL(uiHover));
+
+        auto normal = Icons::load(iconName, T_COL(textMain));
+        auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
+        auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
+
+        if (normal != nullptr)
+            button.setImages(normal.get(), over.get(), down.get(), nullptr);
+    };
+
+    setupIconButton(backButton, "close");
+
+    for (auto& btn : sidebarButtons)
+    {
+        btn->setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
+        btn->setColour(juce::TextButton::textColourOffId, T_COL(textDimmed));
+        btn->setColour(juce::TextButton::textColourOnId, T_COL(accent));
+    }
+
+    repaint();
+}
