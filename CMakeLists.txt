@@ -181,6 +181,12 @@ file(GLOB_RECURSE GENERATOR_SRCS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator/*.h"
 )
 
+# We also need these core plugin logic files for the generator
+list(APPEND GENERATOR_SRCS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/ThemeManager.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/FontManager.cpp"
+)
+
 add_executable(FactoryGenerator ${GENERATOR_SRCS})
 target_include_directories(FactoryGenerator PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator"
@@ -191,6 +197,9 @@ target_include_directories(FactoryGenerator PRIVATE
 target_link_libraries(FactoryGenerator PRIVATE
     juce::juce_core
     juce::juce_data_structures
+    juce::juce_graphics
+    juce::juce_gui_basics
+    juce::juce_events
 )
 
 set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
