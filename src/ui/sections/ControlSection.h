@@ -13,6 +13,7 @@ public:
 
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void lookAndFeelChanged() override;
 
     void setEnvelope(juce::ValueTree env);
     void clearEnvelope();

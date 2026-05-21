@@ -4,12 +4,46 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "Build for 10.13")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# macOS Universal Binary support (Intel + Apple Silicon)
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build for both Silicon and Intel")
+endif()
+
 option(BUILD_STANDALONE "Build Standalone plugin format" ON)
 option(BUILD_VST3 "Build VST3 plugin format" ON)
-option(BUILD_LV2 "Build LV2 plugin format" ON)
+option(BUILD_LV2 "Build LV2 plugin format" OFF)
+
+if(APPLE)
+    option(BUILD_AU "Build AU plugin format" ON)
+else()
+    set(BUILD_AU OFF)
+endif()
+
+if(NOT DEFINED PLUGIN_VERSION)
+    set(PLUGIN_VERSION "0.0.0")
+endif()
+
+if(NOT DEFINED FULL_PLUGIN_VERSION)
+    set(FULL_PLUGIN_VERSION "${PLUGIN_VERSION}")
+endif()
 
 set(PLUGIN_NAME Duq)
-project(${PLUGIN_NAME} VERSION 0.0.0)
+project(${PLUGIN_NAME} VERSION ${PLUGIN_VERSION})
+
+# Build Format List
+set(PLUGIN_FORMATS "")
+if(BUILD_VST3)
+    list(APPEND PLUGIN_FORMATS VST3)
+endif()
+if(BUILD_STANDALONE)
+    list(APPEND PLUGIN_FORMATS Standalone)
+endif()
+if(BUILD_AU)
+    list(APPEND PLUGIN_FORMATS AU)
+endif()
+if(BUILD_LV2)
+    list(APPEND PLUGIN_FORMATS LV2)
+endif()
 
 # Get the current git hash
 execute_process(
@@ -28,7 +62,7 @@ set(PROJECT_URI "https://agradip.fyi/duq")
 set(PROJECT_GITHUB_URL "https://github.com/gradippp/duq")
 
 add_compile_definitions(
-    PROJECT_VERSION="${PROJECT_VERSION}"
+    PROJECT_VERSION="${FULL_PLUGIN_VERSION}"
     PROJECT_GIT_COMMIT="${GIT_COMMIT}"
     PROJECT_URI="${PROJECT_URI}"
     PROJECT_GITHUB_URL="${PROJECT_GITHUB_URL}"
@@ -51,7 +85,7 @@ juce_add_plugin(${PLUGIN_NAME}
         COPY_PLUGIN_AFTER_BUILD FALSE
         PLUGIN_MANUFACTURER_CODE Agra
         PLUGIN_CODE duq1
-        FORMATS VST3 Standalone
+        FORMATS ${PLUGIN_FORMATS}
         PRODUCT_NAME ${PLUGIN_NAME}
         BUNDLE_ID "fyi.agradip.duq"
         LV2URI "${PROJECT_URI}"
@@ -62,6 +96,9 @@ file(GLOB_RECURSE src
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
+
+# Exclude tools from the main plugin target
+list(FILTER src EXCLUDE REGEX "src/tools/.*")
 
 target_sources(${PLUGIN_NAME}
     PRIVATE
@@ -120,10 +157,6 @@ target_link_libraries(${PLUGIN_NAME}
         juce::juce_recommended_warning_flags
 )
 
-if(APPLE)
-    target_compile_definitions(${PLUGIN_NAME} PUBLIC JUCE_AU=1)
-endif()
-
 set_target_properties(${PLUGIN_NAME} PROPERTIES FOLDER "Shared Code")
 if (TARGET ${PLUGIN_NAME}_VST3)
     set_target_properties(${PLUGIN_NAME}_VST3 PROPERTIES FOLDER "Wrappers")
@@ -131,9 +164,67 @@ endif()
 if (TARGET ${PLUGIN_NAME}_Standalone)
     set_target_properties(${PLUGIN_NAME}_Standalone PROPERTIES FOLDER "Wrappers")
 endif()
+if (TARGET ${PLUGIN_NAME}_AU)
+    set_target_properties(${PLUGIN_NAME}_AU PROPERTIES FOLDER "Wrappers")
+endif()
+if (TARGET ${PLUGIN_NAME}_LV2)
+    set_target_properties(${PLUGIN_NAME}_LV2 PROPERTIES FOLDER "Wrappers")
+endif()
 
 if (TARGET ${PLUGIN_NAME}_VST3)
     message(STATUS "${PLUGIN_NAME}_VST3 target created successfully")
-else()
-    message(WARNING "${PLUGIN_NAME}_VST3 target NOT created! Check JUCE configuration.")
 endif()
+
+# --- Factory Content Generation ---
+file(GLOB_RECURSE GENERATOR_SRCS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator/*.h"
+)
+
+# We also need these core plugin logic files for the generator
+list(APPEND GENERATOR_SRCS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/ThemeManager.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/FontManager.cpp"
+)
+
+add_executable(FactoryGenerator ${GENERATOR_SRCS})
+target_include_directories(FactoryGenerator PRIVATE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_BINARY_DIR}/juce_binarydata_${PLUGIN_NAME}BinaryData/JuceLibraryCode"
+)
+
+# Link to JUCE modules needed for serialization
+target_link_libraries(FactoryGenerator PRIVATE
+    juce::juce_core
+    juce::juce_data_structures
+    juce::juce_graphics
+    juce::juce_gui_basics
+    juce::juce_events
+    ${PLUGIN_NAME}BinaryData
+)
+
+set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
+
+# FactoryGenerator uses std::filesystem, which requires macOS 10.15+
+if(APPLE)
+    set_target_properties(FactoryGenerator PROPERTIES XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.15")
+endif()
+
+set(FACTORY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/FactoryContent")
+set(FACTORY_STAMP_FILE "${CMAKE_BINARY_DIR}/factory_content.stamp")
+
+add_custom_command(
+    OUTPUT "${FACTORY_STAMP_FILE}"
+    COMMAND FactoryGenerator "${FACTORY_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${FACTORY_STAMP_FILE}"
+    DEPENDS FactoryGenerator
+    COMMENT "Generating Factory Themes and Envelopes from source..."
+)
+
+add_custom_target(GenerateFactoryContent ALL 
+    DEPENDS "${FACTORY_STAMP_FILE}"
+)
+
+# Ensure the entire directory is cleaned
+set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${FACTORY_OUTPUT_DIR}")

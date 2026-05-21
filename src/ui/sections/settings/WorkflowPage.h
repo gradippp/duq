@@ -1,8 +1,4 @@
-#pragma once
-
 #include "SettingsPageBase.h"
-#include "../../utils/ComboBoxLookAndFeel.h"
-#include "../../utils/TextButtonLookAndFeel.h"
 #include "../../components/ShapePreviewComponent.h"
 
 class WorkflowPage : public SettingsPageBase,
@@ -15,6 +11,7 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void lookAndFeelChanged() override;
 
     void setProcessor(class DuqAudioProcessor* p);
     void updateEnvelopeList();
@@ -46,8 +43,6 @@ private:
     juce::TextButton importFromBrowserButton{ "Import from Preset Browser" };
     ShapePreviewComponent shapePreview;
 
-    ComboBoxLookAndFeel comboBoxLNF;
-    TextButtonLookAndFeel textButtonLNF;
     juce::SharedResourcePointer<ConfigManager> config;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WorkflowPage)

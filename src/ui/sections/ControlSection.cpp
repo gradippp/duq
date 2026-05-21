@@ -255,6 +255,15 @@ void ControlSection::applyRateMode()
     rateKnob.refreshValueLabel();
 }
 
+void ControlSection::lookAndFeelChanged()
+{
+    for (auto* knob : knobList)
+    {
+        knob->sendLookAndFeelChange();
+    }
+    repaint();
+}
+
 void ControlSection::resized()
 {
     auto bounds = getLocalBounds();

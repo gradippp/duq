@@ -1,13 +1,14 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../../Globals.h"
+#include "GlobalLookAndFeel.h"
 
-class ViewportLookAndFeel : public juce::LookAndFeel_V4
+class ViewportLookAndFeel : public GlobalLookAndFeel
 {
 public:
     ViewportLookAndFeel()
     {
+        refreshColours();
         setColour(juce::ScrollBar::backgroundColourId, juce::Colours::transparentBlack);
         setColour(juce::ScrollBar::thumbColourId, T_COL(accent).withAlpha(0.15f));
         setColour(juce::ScrollBar::trackColourId, juce::Colours::transparentBlack);

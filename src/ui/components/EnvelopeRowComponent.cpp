@@ -11,34 +11,13 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     : envelope(envelopeTree)
 {
     envelope.addListener(this);
-
-    auto setupIconButton = [](juce::DrawableButton& button,
-        const juce::String& iconName)
-        {
-            button.setClickingTogglesState(false);
-
-            button.setColour(juce::DrawableButton::backgroundColourId,
-                juce::Colours::transparentBlack);
-
-            button.setColour(juce::DrawableButton::backgroundOnColourId,
-                T_COL(uiHover));
-
-            auto normal = Icons::load(iconName, T_COL(textMain));
-            auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
-            auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
-
-            if (normal != nullptr)
-                button.setImages(normal.get(), over.get(), down.get(), nullptr);
-
-            button.setTooltip(iconName);
-        };
+    ThemeManager::getInstance().addChangeListener(this);
 
     // ===============================
     // Name label
     // ===============================
 
     nameLabel.setEditable(false, true, false);
-    nameLabel.setColour(juce::Label::textColourId, T_COL(textMain));
     nameLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
     nameLabel.setJustificationType(juce::Justification::centredLeft);
     nameLabel.setFont(FontManager::getInterRegular(13.0f));
@@ -71,12 +50,6 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
 
     noteButton.setClickingTogglesState(false);
     noteButton.setTooltip("Trigger MIDI note");
-    noteButton.setColour(juce::TextButton::buttonColourId,
-        T_COL(uiHover));
-    noteButton.setColour(juce::TextButton::textColourOffId,
-        T_COL(textMain));
-    noteButton.setColour(juce::TextButton::buttonOnColourId,
-        T_COL(uiSelected));
     noteButton.getLookAndFeel().setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
 
     noteButton.onClick = [this]
@@ -100,10 +73,6 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     // ===============================
     // Icons
     // ===============================
-
-    setupIconButton(saveButton, "save");
-    setupIconButton(replaceButton, "replace");
-    setupIconButton(deleteButton, "delete");
 
     saveButton.onClick = [this]()
         {
@@ -129,12 +98,54 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
     addAndMakeVisible(noteButton);
     addAndMakeVisible(nameLabel);
 
+    refreshTheme();
     refreshFromTree();
 }
 
 EnvelopeRowComponent::~EnvelopeRowComponent()
 {
+    ThemeManager::getInstance().removeChangeListener(this);
     envelope.removeListener(this);
+}
+
+void EnvelopeRowComponent::refreshTheme()
+{
+    auto setupIconButton = [](juce::DrawableButton& button,
+        const juce::String& iconName)
+        {
+            button.setClickingTogglesState(false);
+
+            button.setColour(juce::DrawableButton::backgroundColourId,
+                juce::Colours::transparentBlack);
+
+            button.setColour(juce::DrawableButton::backgroundOnColourId,
+                T_COL(uiHover));
+
+            auto normal = Icons::load(iconName, T_COL(textMain));
+            auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
+            auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
+
+            if (normal != nullptr)
+                button.setImages(normal.get(), over.get(), down.get(), nullptr);
+        };
+
+    setupIconButton(saveButton, "save");
+    setupIconButton(replaceButton, "replace");
+    setupIconButton(deleteButton, "delete");
+
+    noteButton.setColour(juce::TextButton::buttonColourId, T_COL(uiHover));
+    noteButton.setColour(juce::TextButton::textColourOffId, T_COL(textMain));
+    noteButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiSelected));
+
+    bool isDisabled = (bool)envelope.getProperty("disabled", false);
+    nameLabel.setColour(juce::Label::textColourId, isDisabled ? T_COL(textDimmed) : T_COL(textMain));
+
+    repaint();
+}
+
+void EnvelopeRowComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    refreshTheme();
 }
 
 void EnvelopeRowComponent::refreshFromTree()

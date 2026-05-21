@@ -7,33 +7,33 @@ GeneralPage::GeneralPage()
     ThemeManager::getInstance().addChangeListener(this);
 
     // General Settings
-    waveformQualityCombo.setLookAndFeel(&comboBoxLNF);
     waveformQualityCombo.addItemList({"Low", "Medium", "High"}, 1);
     waveformQualityCombo.setSelectedItemIndex(config->getWaveformQuality());
     waveformQualityCombo.addListener(this);
     addAndMakeVisible(waveformQualityCombo);
+
+    showSourceToggle.setToggleState(config->getShowSourceSignal(), juce::dontSendNotification);
+    showSourceToggle.addListener(this);
+    addAndMakeVisible(showSourceToggle);
+
+    showSidechainToggle.setToggleState(config->getShowSidechainSignal(), juce::dontSendNotification);
+    showSidechainToggle.addListener(this);
+    addAndMakeVisible(showSidechainToggle);
 
     tooltipsToggle.setToggleState(config->getShowTooltips(), juce::dontSendNotification);
     tooltipsToggle.addListener(this);
     addAndMakeVisible(tooltipsToggle);
 
     // Theme Settings
-    themeCombo.setLookAndFeel(&comboBoxLNF);
     themeCombo.addListener(this);
     addAndMakeVisible(themeCombo);
 
-    importButton.setButtonText("IMPORT");
-    importButton.setLookAndFeel(&buttonLNF);
     importButton.addListener(this);
     addAndMakeVisible(importButton);
 
-    exportButton.setButtonText("EXPORT");
-    exportButton.setLookAndFeel(&buttonLNF);
     exportButton.addListener(this);
     addAndMakeVisible(exportButton);
 
-    resetButton.setButtonText("RESET");
-    resetButton.setLookAndFeel(&buttonLNF);
     resetButton.addListener(this);
     addAndMakeVisible(resetButton);
 
@@ -45,11 +45,6 @@ GeneralPage::GeneralPage()
 GeneralPage::~GeneralPage() 
 {
     ThemeManager::getInstance().removeChangeListener(this);
-    waveformQualityCombo.setLookAndFeel(nullptr);
-    themeCombo.setLookAndFeel(nullptr);
-    importButton.setLookAndFeel(nullptr);
-    exportButton.setLookAndFeel(nullptr);
-    resetButton.setLookAndFeel(nullptr);
 }
 
 void GeneralPage::paint(juce::Graphics& g)
@@ -59,14 +54,14 @@ void GeneralPage::paint(juce::Graphics& g)
     drawControlLabel(g, "Waveform Quality", waveformQualityCombo.getBounds());
 
     // Separator between general and theme settings
-    float sepY1 = (float)(tooltipsToggle.getBottom() + 30);
+    float sepY1 = (float)(showSidechainToggle.getBottom() + 30);
     g.setColour(T_COL(border).withAlpha(0.2f));
     g.drawLine(20.0f, sepY1, (float)getWidth() - 20.0f, sepY1, 1.0f);
 
     // Theme Section Title
     g.setColour(T_COL(accent).withAlpha(0.8f));
     g.setFont(FontManager::getInterBold(14.0f));
-    g.drawText("UI THEMES & COLOURS", 20, (int)sepY1 + 20, 300, 20, juce::Justification::centredLeft);
+    g.drawText("UI THEMES & COLOURS (EXPERIMENTAL)", 20, (int)sepY1 + 20, 350, 20, juce::Justification::centredLeft);
 
     drawControlLabel(g, "Select Theme", themeCombo.getBounds());
 }
@@ -87,6 +82,10 @@ void GeneralPage::resized()
 
     // Row 2: Tooltips
     tooltipsToggle.setBounds(area.removeFromTop(rowHeight));
+    area.removeFromTop(10);
+    showSourceToggle.setBounds(area.removeFromTop(rowHeight));
+    area.removeFromTop(10);
+    showSidechainToggle.setBounds(area.removeFromTop(rowHeight));
 
     // Space before Theme Section
     area.removeFromTop(100); 
@@ -113,7 +112,7 @@ void GeneralPage::resized()
 
 int GeneralPage::getRequiredHeight()
 {
-    return 80 + 30 + 40 + 30 + 100 + 40 + 20 + editor.getRequiredHeight() + 40;
+    return 80 + 30 + 40 + 30 + 10 + 30 + 10 + 30 + 100 + 40 + 20 + editor.getRequiredHeight() + 40;
 }
 
 void GeneralPage::comboBoxChanged(juce::ComboBox* cb)
@@ -134,6 +133,14 @@ void GeneralPage::buttonClicked(juce::Button* b)
     {
         config->setShowTooltips(tooltipsToggle.getToggleState());
     }
+    else if (b == &showSourceToggle)
+    {
+        config->setShowSourceSignal(showSourceToggle.getToggleState());
+    }
+    else if (b == &showSidechainToggle)
+    {
+        config->setShowSidechainSignal(showSidechainToggle.getToggleState());
+    }
     else if (b == &importButton) importTheme();
     else if (b == &exportButton) exportTheme();
     else if (b == &resetButton)
@@ -146,6 +153,18 @@ void GeneralPage::buttonClicked(juce::Button* b)
 
 void GeneralPage::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
+    repaint();
+}
+
+void GeneralPage::lookAndFeelChanged()
+{
+    showSourceToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    showSidechainToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    tooltipsToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    
+    waveformQualityCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+    themeCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+
     repaint();
 }
 

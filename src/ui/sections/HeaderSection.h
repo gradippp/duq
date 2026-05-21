@@ -4,7 +4,6 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../components/ControlKnobComponent.h"
 #include "../components/SelectableLabel.h"
-#include "../utils/FlatKnobLookAndFeel.h"
 #include "../../Globals.h"
 
 class CompactTimingSlider : public juce::Slider
@@ -28,14 +27,14 @@ public:
 
 private:
     juce::String labelName;
-    FlatKnobLookAndFeel lnf;
 };
 
-class HeaderSection : public juce::Component
+class HeaderSection : public juce::Component,
+                      public juce::ChangeListener
 {
 public:
     HeaderSection();
-    ~HeaderSection() override = default;
+    ~HeaderSection() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -56,8 +55,11 @@ public:
     void setupAttachments(juce::AudioProcessorValueTreeState& vts);
 
     void updateUndoState(bool canUndo, bool canRedo);
+    void refreshTheme();
 
 private:
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
     juce::String presetName{ "Default Project" };

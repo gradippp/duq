@@ -180,6 +180,22 @@ void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent& e)
     }
 }
 
+void PresetSection::lookAndFeelChanged()
+{
+    titleLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.8f));
+    
+    auto normal = Icons::load("close", T_COL(textMain).withAlpha(0.6f));
+    auto over = Icons::load("close", T_COL(textMain));
+    auto down = Icons::load("close", T_COL(textMain).withAlpha(0.4f));
+    closeButton.setImages(normal.get(), over.get(), down.get());
+
+    searchEditor.setColour(juce::TextEditor::backgroundColourId, T_COL(presetBrowserFooter).withAlpha(0.2f));
+    searchEditor.setColour(juce::TextEditor::outlineColourId, T_COL(border).withAlpha(0.1f));
+    searchEditor.setColour(juce::TextEditor::focusedOutlineColourId, T_COL(border).withAlpha(0.3f));
+
+    repaint();
+}
+
 void PresetSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();

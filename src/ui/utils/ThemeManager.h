@@ -44,7 +44,12 @@ public:
         contextMenuBackground,
         contextMenuText,
         contextMenuHighlight,
-        contextMenuBorder
+        contextMenuBorder,
+        sidechain,
+        widgetBackground,
+        widgetOutline,
+        widgetText,
+        widgetTick
     };
 
     static ThemeManager& getInstance();
@@ -55,6 +60,7 @@ public:
     void loadDefaultTheme();
     bool loadThemeFromFile(const juce::File& file);
     bool saveThemeToFile(const juce::File& file);
+    juce::String saveThemeToXmlString() const;
 
     juce::String getColourName(ColourID id) const;
     juce::String getColourDescription(ColourID id) const;

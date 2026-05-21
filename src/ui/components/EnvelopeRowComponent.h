@@ -3,7 +3,8 @@
 #include "SelectableLabel.h"
 
 class EnvelopeRowComponent : public juce::Component,
-    private juce::ValueTree::Listener
+    private juce::ValueTree::Listener,
+    private juce::ChangeListener
 {
 public:
     EnvelopeRowComponent(juce::ValueTree envelopeTree);
@@ -25,6 +26,9 @@ public:
     std::function<void(const juce::String&)> onNameChanged;
 
 private:
+    void refreshTheme();
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+
     // ValueTree model
     juce::ValueTree envelope;
 

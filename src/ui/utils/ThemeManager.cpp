@@ -17,7 +17,32 @@ juce::Colour ThemeManager::getColour(ColourID id) const
     if (it != colours.end())
         return it->second;
     
-    return juce::Colours::black;
+    // --- INTELLIGENT FALLBACKS ---
+    // These trigger if a theme file is old and missing the newer keys.
+    switch (id)
+    {
+        case widgetBackground: 
+        case contextMenuBackground: return getColour(sectionBackground);
+        
+        case widgetOutline:    
+        case contextMenuBorder:     return getColour(border);
+        
+        case widgetText:       
+        case contextMenuText:       return getColour(textMain);
+        
+        case widgetTick:       
+        case knobIndicator:
+        case knobAccent:            return getColour(accent);
+
+        case contextMenuHighlight:  return getColour(uiSelected);
+        case knobTrack:             return getColour(border).withAlpha(0.2f);
+        
+        case sidechain:             return juce::Colours::orange;
+
+        default: break;
+    }
+
+    return juce::Colours::hotpink;
 }
 
 void ThemeManager::setColour(ColourID id, juce::Colour colour)
@@ -41,6 +66,7 @@ void ThemeManager::initializeDefaultColours()
     colours[gridMajor] = accentColour.withAlpha(0.12f);
     colours[gridMinor] = accentColour.withAlpha(0.04f);
     colours[waveform] = juce::Colours::azure;
+    colours[sidechain] = juce::Colour(0xFFFFA500); // Orange
 
     colours[envelopeLine] = accentColour;
     colours[envelopeFillTop] = accentColour.withAlpha(0.15f);
@@ -78,11 +104,20 @@ void ThemeManager::initializeDefaultColours()
     colours[contextMenuText] = accentColour.withAlpha(0.9f);
     colours[contextMenuHighlight] = uiSelectedColour;
     colours[contextMenuBorder] = borderColour;
+
+    // Specifically DON'T set widget colors here so fallbacks trigger for old themes
 }
 
 void ThemeManager::loadDefaultTheme()
 {
     initializeDefaultColours();
+    
+    // Explicitly set default widget colors for the built-in dark theme
+    colours[widgetBackground] = juce::Colour(0xFF1A1A1A);
+    colours[widgetOutline] = colours[border];
+    colours[widgetText] = colours[accent];
+    colours[widgetTick] = colours[accent];
+
     sendChangeMessage();
 }
 
@@ -91,6 +126,9 @@ bool ThemeManager::loadThemeFromFile(const juce::File& file)
     std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument::parse(file);
     if (xml == nullptr || !xml->hasTagName("THEME"))
         return false;
+
+    // Force factory reset before loading to prevent stale leakage
+    initializeDefaultColours();
 
     for (int i = 0; i < xml->getNumChildElements(); ++i)
     {
@@ -114,6 +152,11 @@ bool ThemeManager::loadThemeFromFile(const juce::File& file)
 
 bool ThemeManager::saveThemeToFile(const juce::File& file)
 {
+    return file.replaceWithText(saveThemeToXmlString());
+}
+
+juce::String ThemeManager::saveThemeToXmlString() const
+{
     juce::XmlElement xml("THEME");
 
     for (auto const& [id, color] : colours)
@@ -123,7 +166,7 @@ bool ThemeManager::saveThemeToFile(const juce::File& file)
         child->setAttribute("hex", color.toDisplayString(true));
     }
 
-    return xml.writeTo(file);
+    return xml.createDocument(juce::String());
 }
 
 juce::String ThemeManager::getColourDescription(ColourID id) const
@@ -167,6 +210,11 @@ juce::String ThemeManager::getColourDescription(ColourID id) const
         case contextMenuText: return "Text color within popup menus.";
         case contextMenuHighlight: return "Highlight for selected menu items.";
         case contextMenuBorder: return "Outline for popup and dropdown menus.";
+        case sidechain: return "The waveform color for the sidechain input signal.";
+        case widgetBackground: return "Background for checkboxes, dropdowns, and text boxes.";
+        case widgetOutline: return "Border for UI widgets.";
+        case widgetText: return "Text color inside UI widgets.";
+        case widgetTick: return "Color of the checkmark in checkboxes.";
     }
     return "";
 }
@@ -212,6 +260,11 @@ juce::String ThemeManager::getColourName(ColourID id) const
         case contextMenuText: return "contextMenuText";
         case contextMenuHighlight: return "contextMenuHighlight";
         case contextMenuBorder: return "contextMenuBorder";
+        case sidechain: return "sidechain";
+        case widgetBackground: return "widgetBackground";
+        case widgetOutline: return "widgetOutline";
+        case widgetText: return "widgetText";
+        case widgetTick: return "widgetTick";
     }
     return "unknown";
 }
@@ -255,6 +308,11 @@ ThemeManager::ColourID ThemeManager::getIDFromName(const juce::String& name) con
     if (name == "contextMenuText") return contextMenuText;
     if (name == "contextMenuHighlight") return contextMenuHighlight;
     if (name == "contextMenuBorder") return contextMenuBorder;
+    if (name == "sidechain") return sidechain;
+    if (name == "widgetBackground") return widgetBackground;
+    if (name == "widgetOutline") return widgetOutline;
+    if (name == "widgetText") return widgetText;
+    if (name == "widgetTick") return widgetTick;
     return (ColourID)-1;
 }
 
@@ -270,6 +328,8 @@ std::vector<ThemeManager::ColourID> ThemeManager::getAllIDs()
         meterBackground, meterFill, meterReduction,
         knobTrack, knobIndicator, knobAccent, knobShadow,
         presetBrowserBackground, presetBrowserFooter, presetBrowserFooterLine,
-        contextMenuBackground, contextMenuText, contextMenuHighlight, contextMenuBorder
+        contextMenuBackground, contextMenuText, contextMenuHighlight, contextMenuBorder,
+        sidechain,
+        widgetBackground, widgetOutline, widgetText, widgetTick
     };
 }

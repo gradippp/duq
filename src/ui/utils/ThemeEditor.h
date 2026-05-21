@@ -6,18 +6,20 @@
 #include "../../Globals.h"
 #include "FontManager.h"
 
-class ColorRow : public juce::Component, public juce::SettableTooltipClient
+class ColorRow : public juce::Component, 
+                 public juce::SettableTooltipClient,
+                 private juce::ChangeListener
 {
 public:
     ColorRow(ThemeManager::ColourID id) : colourID(id)
     {
+        ThemeManager::getInstance().addChangeListener(this);
         auto description = ThemeManager::getInstance().getColourDescription(id);
         setTooltip(description);
 
         colorButton.id = id;
         nameLabel.setText(ThemeManager::getInstance().getColourName(id).toUpperCase(), juce::dontSendNotification);
         nameLabel.setFont(FontManager::getJetBrainsMono(10.0f));
-        nameLabel.setColour(juce::Label::textColourId, T_COL(textLabel));
         nameLabel.setTooltip(description);
         addAndMakeVisible(nameLabel);
 
@@ -25,6 +27,24 @@ public:
         colorButton.setTooltip(description);
         addAndMakeVisible(colorButton);
         colorButton.onClick = [this] { openPicker(); };
+
+        refreshTheme();
+    }
+
+    ~ColorRow() override
+    {
+        ThemeManager::getInstance().removeChangeListener(this);
+    }
+
+    void refreshTheme()
+    {
+        nameLabel.setColour(juce::Label::textColourId, T_COL(textLabel));
+        repaint();
+    }
+
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override
+    {
+        refreshTheme();
     }
 
     void paint(juce::Graphics& g) override

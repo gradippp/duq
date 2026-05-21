@@ -1,6 +1,5 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../utils/FlatKnobLookAndFeel.h"
 
 class ContextSlider : public juce::Slider
 {
@@ -24,11 +23,13 @@ class ControlKnobComponent : public juce::Component
 public:
     ControlKnobComponent(const juce::String& name, const float initialValue,
         const juce::String& unitSuffix);
+    ~ControlKnobComponent() override;
 
     std::function<void(juce::PopupMenu&)> extendContextMenu;
 
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void lookAndFeelChanged() override;
     std::function<void(int)> onCustomMenuResult;
     void showContextMenu();
 
@@ -46,7 +47,6 @@ private:
     juce::String labelText;
     juce::String unit;
 
-    FlatKnobLookAndFeel lnf;
     ContextSlider knob;
     juce::Label valueLabel;
 

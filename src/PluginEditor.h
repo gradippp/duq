@@ -12,8 +12,7 @@
 #include "ui/sections/HeaderSection.h"
 #include "ui/sections/EnvelopeListSection.h"
 #include "ui/sections/ControlSection.h"
-#include "ui/utils/FlatKnobLookAndFeel.h"
-#include "ui/utils/ContextMenuLookAndFeel.h"
+#include "ui/utils/GlobalLookAndFeel.h"
 #include "ui/sections/GridSection.h"
 #include "ui/sections/MeterSection.h"
 #include "ui/sections/PresetSection.h"
@@ -44,8 +43,7 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    std::unique_ptr<FlatKnobLookAndFeel> knobLookAndFeel;
-    std::unique_ptr<ContextMenuLookAndFeel> contextMenuLookAndFeel;
+    std::unique_ptr<GlobalLookAndFeel> globalLookAndFeel;
 
     DuqAudioProcessor& audioProcessor;
     HeaderSection header;

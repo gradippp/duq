@@ -49,5 +49,12 @@ void AudioPage::resized()
     sampleRateLabel.setBounds(area.removeFromTop(20).withWidth(200));
 }
 
+void AudioPage::lookAndFeelChanged()
+{
+    latencyToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    sampleRateLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
+    repaint();
+}
+
 void AudioPage::buttonClicked(juce::Button* b) {}
 void AudioPage::sliderValueChanged(juce::Slider* s) {}
