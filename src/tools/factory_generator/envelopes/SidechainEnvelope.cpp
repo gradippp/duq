@@ -7,9 +7,8 @@ namespace FactoryData {
         shape.addPoint(0.0f, 0.0f);
         
         // Classic kick sidechain curve
-        // Start at 0, quick rise to 1.0
-        auto* p = shape.addPoint(0.25f, 1.0f);
-        if (p) p->tension = 0.7f; // Add some tension for a smoother curve if your model supports it
+        // Start at 0, quick rise to 1.0 with a curve of 0.7
+        shape.addPoint(0.25f, 1.0f, 0.7f);
         
         shape.addPoint(1.0f, 1.0f);
         
