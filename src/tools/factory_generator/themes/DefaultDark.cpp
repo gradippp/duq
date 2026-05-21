@@ -6,8 +6,8 @@ namespace FactoryData {
         auto& tm = ThemeManager::getInstance();
         tm.loadDefaultTheme();
         
-        return {
-            { "Default_Dark.theme", tm.saveThemeToXmlString() }
-        };
+        std::vector<FactoryAsset> assets;
+        assets.push_back({ "Default_Dark.theme", tm.saveThemeToXmlString().toStdString() });
+        return assets;
     }
 }

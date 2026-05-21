@@ -97,6 +97,9 @@ file(GLOB_RECURSE src
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
+# Exclude tools from the main plugin target
+list(FILTER src EXCLUDE REGEX "src/tools/.*")
+
 target_sources(${PLUGIN_NAME}
     PRIVATE
         ${src}

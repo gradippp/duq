@@ -9,8 +9,8 @@ namespace FactoryData {
         
         auto xml = pluck.toValueTree().createXml();
         
-        return {
-            { "Basic_Pluck.env", xml->toString() }
-        };
+        std::vector<FactoryAsset> assets;
+        assets.push_back({ "Basic_Pluck.env", xml->toString().toStdString() });
+        return assets;
     }
 }
