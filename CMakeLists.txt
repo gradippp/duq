@@ -212,14 +212,19 @@ if(APPLE)
 endif()
 
 set(FACTORY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/FactoryContent")
+set(FACTORY_STAMP_FILE "${CMAKE_BINARY_DIR}/factory_content.stamp")
 
 add_custom_command(
-    OUTPUT "${FACTORY_OUTPUT_DIR}/themes" "${FACTORY_OUTPUT_DIR}/envelopes"
+    OUTPUT "${FACTORY_STAMP_FILE}"
     COMMAND FactoryGenerator "${FACTORY_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${FACTORY_STAMP_FILE}"
     DEPENDS FactoryGenerator
     COMMENT "Generating Factory Themes and Envelopes from source..."
 )
 
 add_custom_target(GenerateFactoryContent ALL 
-    DEPENDS "${FACTORY_OUTPUT_DIR}/themes" "${FACTORY_OUTPUT_DIR}/envelopes"
+    DEPENDS "${FACTORY_STAMP_FILE}"
 )
+
+# Ensure the entire directory is cleaned
+set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${FACTORY_OUTPUT_DIR}")
