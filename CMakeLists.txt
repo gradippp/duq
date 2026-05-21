@@ -201,10 +201,8 @@ target_link_libraries(FactoryGenerator PRIVATE
     juce::juce_graphics
     juce::juce_gui_basics
     juce::juce_events
+    ${PLUGIN_NAME}BinaryData
 )
-
-# Ensure BinaryData is generated before compiling FontManager
-add_dependencies(FactoryGenerator ${PLUGIN_NAME}BinaryData)
 
 set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
 
