@@ -23,6 +23,10 @@ if(NOT DEFINED PLUGIN_VERSION)
     set(PLUGIN_VERSION "0.0.0")
 endif()
 
+if(NOT DEFINED FULL_PLUGIN_VERSION)
+    set(FULL_PLUGIN_VERSION "${PLUGIN_VERSION}")
+endif()
+
 set(PLUGIN_NAME Duq)
 project(${PLUGIN_NAME} VERSION ${PLUGIN_VERSION})
 
@@ -58,7 +62,7 @@ set(PROJECT_URI "https://agradip.fyi/duq")
 set(PROJECT_GITHUB_URL "https://github.com/gradippp/duq")
 
 add_compile_definitions(
-    PROJECT_VERSION="${PROJECT_VERSION}"
+    PROJECT_VERSION="${FULL_PLUGIN_VERSION}"
     PROJECT_GIT_COMMIT="${GIT_COMMIT}"
     PROJECT_URI="${PROJECT_URI}"
     PROJECT_GITHUB_URL="${PROJECT_GITHUB_URL}"
