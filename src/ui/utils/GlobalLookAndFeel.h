@@ -100,6 +100,7 @@ public:
                      const bool ticked, const bool isEnabled,
                      const bool isMouseOverButton, const bool isButtonDown) override
     {
+        juce::ignoreUnused(isEnabled, isButtonDown, component);
         auto boxRect = juce::Rectangle<float>(x, y, w, h).reduced(1.0f);
 
         // Background
@@ -156,6 +157,7 @@ public:
         label.setBounds(1, 1, box.getWidth() - 30, box.getHeight() - 2);
         label.setFont(getComboBoxFont(box));
         label.setJustificationType(juce::Justification::centredLeft);
+        label.setColour(juce::Label::textColourId, box.findColour(juce::ComboBox::textColourId));
     }
 
     juce::Font getComboBoxFont(juce::ComboBox&) override

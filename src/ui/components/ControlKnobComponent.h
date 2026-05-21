@@ -23,6 +23,7 @@ class ControlKnobComponent : public juce::Component
 public:
     ControlKnobComponent(const juce::String& name, const float initialValue,
         const juce::String& unitSuffix);
+    ~ControlKnobComponent() override;
 
     std::function<void(juce::PopupMenu&)> extendContextMenu;
 

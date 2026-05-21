@@ -44,6 +44,10 @@ ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float
 ControlKnobComponent::~ControlKnobComponent()
 {
 }
+
+void ControlKnobComponent::setLabel(const juce::String& text)
+{
+    labelText = text;
     repaint();
 }
 
