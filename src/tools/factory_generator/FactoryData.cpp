@@ -11,7 +11,9 @@ namespace FactoryData {
 
     std::vector<FactoryAsset> getAllEnvelopes() {
         std::vector<FactoryAsset> assets;
-        assets.push_back(getBasicPluckEnvelope());
+        assets.push_back(getDefaultEnvelope());
+        assets.push_back(getSidechainEnvelope());
+        assets.push_back(getSineEnvelope());
         return assets;
     }
 }

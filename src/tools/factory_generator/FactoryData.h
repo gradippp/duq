@@ -12,7 +12,9 @@ namespace FactoryData {
     FactoryAsset getLightTheme();
     FactoryAsset getRedTheme();
 
-    FactoryAsset getBasicPluckEnvelope();
+    FactoryAsset getDefaultEnvelope();
+    FactoryAsset getSidechainEnvelope();
+    FactoryAsset getSineEnvelope();
 
     std::vector<FactoryAsset> getAllThemes();
     std::vector<FactoryAsset> getAllEnvelopes();
