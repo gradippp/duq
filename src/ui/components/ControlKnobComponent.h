@@ -29,6 +29,7 @@ public:
 
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void lookAndFeelChanged() override;
     std::function<void(int)> onCustomMenuResult;
     void showContextMenu();
 

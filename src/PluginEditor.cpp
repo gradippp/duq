@@ -279,6 +279,17 @@ void DuqAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* so
 {
     if (source == &ThemeManager::getInstance())
     {
+        // 1. Refresh global LookAndFeel instances
+        if (knobLookAndFeel) knobLookAndFeel->setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
+        if (contextMenuLookAndFeel) contextMenuLookAndFeel->refreshColours();
+
+        // 2. Refresh local LookAndFeel and trigger LookAndFeelChanged recursively
+        sendLookAndFeelChange();
+
+        // 3. Manual refresh for components with custom refreshTheme methods
+        header.refreshTheme();
+        
+        // 4. Force repaint
         repaint();
     }
 }

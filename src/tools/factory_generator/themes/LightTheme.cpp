@@ -18,8 +18,8 @@ namespace FactoryData {
 
         tm.setColour(ThemeManager::gridMajor, juce::Colour(0xFF000000).withAlpha(0.08f));
         tm.setColour(ThemeManager::gridMinor, juce::Colour(0xFF000000).withAlpha(0.03f));
-        tm.setColour(ThemeManager::waveform, juce::Colour(0xFF888888));
-        tm.setColour(ThemeManager::sidechain, juce::Colour(0xFFFF9800)); 
+        tm.setColour(ThemeManager::waveform, juce::Colour(0xFF666666));
+        tm.setColour(ThemeManager::sidechain, juce::Colour(0xFFE67E22)); 
 
         tm.setColour(ThemeManager::envelopeLine, accentColour);
         tm.setColour(ThemeManager::envelopeFillTop, accentColour.withAlpha(0.15f));
@@ -36,22 +36,22 @@ namespace FactoryData {
 
         tm.setColour(ThemeManager::uiHover, juce::Colour(0xFF000000).withAlpha(0.05f));
         tm.setColour(ThemeManager::uiSelected, accentColour.withAlpha(0.15f));
-        tm.setColour(ThemeManager::uiDisabledOverlay, juce::Colour(0xFFFFFFFF).withAlpha(0.6f));
+        tm.setColour(ThemeManager::uiDisabledOverlay, juce::Colour(0xFFFFFFFF).withAlpha(0.5f));
         
-        tm.setColour(ThemeManager::midiIndicator, juce::Colour(0xFF32CD32));
-        tm.setColour(ThemeManager::danger, juce::Colour(0xFFFF4444));
+        tm.setColour(ThemeManager::midiIndicator, juce::Colour(0xFF27AE60));
+        tm.setColour(ThemeManager::danger, juce::Colour(0xFFC0392B));
 
-        tm.setColour(ThemeManager::meterBackground, juce::Colour(0xFFE0E0E0));
+        tm.setColour(ThemeManager::meterBackground, juce::Colour(0xFFDDDDDD));
         tm.setColour(ThemeManager::meterFill, accentColour);
-        tm.setColour(ThemeManager::meterReduction, juce::Colour(0xFFFF4444));
+        tm.setColour(ThemeManager::meterReduction, juce::Colour(0xFFE74C3C));
 
-        tm.setColour(ThemeManager::knobTrack, juce::Colour(0xFFE8E8E8));
+        tm.setColour(ThemeManager::knobTrack, juce::Colour(0xFFEEEEEE));
         tm.setColour(ThemeManager::knobIndicator, accentColour);
         tm.setColour(ThemeManager::knobAccent, accentColour);
-        tm.setColour(ThemeManager::knobShadow, juce::Colour(0x10000000));
+        tm.setColour(ThemeManager::knobShadow, juce::Colour(0x08000000));
 
         tm.setColour(ThemeManager::presetBrowserBackground, juce::Colour(0xFFFFFFFF));
-        tm.setColour(ThemeManager::presetBrowserFooter, juce::Colour(0xFFF5F5F5));
+        tm.setColour(ThemeManager::presetBrowserFooter, juce::Colour(0xFFF9F9F9));
         tm.setColour(ThemeManager::presetBrowserFooterLine, borderColour);
 
         tm.setColour(ThemeManager::contextMenuBackground, juce::Colour(0xFFFFFFFF));

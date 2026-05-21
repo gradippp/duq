@@ -117,6 +117,52 @@ HeaderSection::HeaderSection()
     : lookaheadSlider("LOOKAHEAD"),
       mixKnob("MIX")
 {
+    ThemeManager::getInstance().addChangeListener(this);
+    addAndMakeVisible(undoButton);
+    addAndMakeVisible(redoButton);
+    addAndMakeVisible(saveProjectButton);
+    addAndMakeVisible(initPresetButton);
+    addAndMakeVisible(settingsButton);
+
+    addAndMakeVisible(presetNameLabel);
+    presetNameLabel.setJustificationType(juce::Justification::centred);
+    presetNameLabel.setFont(FontManager::getJetBrainsMono(15.0f));
+    presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
+
+    addAndMakeVisible(brandLabel);
+    brandLabel.setText("DUQ", juce::dontSendNotification);
+    brandLabel.setFont(FontManager::getInterBold(28.0f));
+    brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
+
+    addAndMakeVisible(mixKnob);
+    mixKnob.setTooltip("Global Wet/Dry Mix");
+
+    undoButton.onClick = [this] { if (undoCallback) undoCallback(); };
+    redoButton.onClick = [this] { if (redoCallback) redoCallback(); };
+    saveProjectButton.onClick = [this] { if (onSaveProject) onSaveProject(); };
+    initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
+    settingsButton.onClick = [this] { if (onSettingsClicked) onSettingsClicked(); };
+
+    // --- Lookahead ---
+    addAndMakeVisible(lookaheadSlider);
+
+    lookaheadSlider.onValueChange = [this] { repaint(); };
+
+    refreshTheme();
+}
+
+HeaderSection::~HeaderSection()
+{
+    ThemeManager::getInstance().removeChangeListener(this);
+}
+
+void HeaderSection::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    refreshTheme();
+}
+
+void HeaderSection::refreshTheme()
+{
     auto setupIconButton = [](juce::DrawableButton& button,
         const juce::String& iconName)
         {
@@ -141,45 +187,11 @@ HeaderSection::HeaderSection()
     setupIconButton(saveProjectButton, "save");
     setupIconButton(initPresetButton, "close"); 
     setupIconButton(settingsButton, "settings");
-    
-    undoButton.setTooltip("Undo");
-    redoButton.setTooltip("Redo");
-    saveProjectButton.setTooltip("Save Project Preset");
-    initPresetButton.setTooltip("Init Preset (Reset State)");
-    settingsButton.setTooltip("Settings");
 
-    addAndMakeVisible(undoButton);
-    addAndMakeVisible(redoButton);
-    addAndMakeVisible(saveProjectButton);
-    addAndMakeVisible(initPresetButton);
-    addAndMakeVisible(settingsButton);
-
-    addAndMakeVisible(presetNameLabel);
-    presetNameLabel.setJustificationType(juce::Justification::centred);
-    presetNameLabel.setFont(FontManager::getJetBrainsMono(15.0f));
     presetNameLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.85f));
-    presetNameLabel.setText(presetName.toUpperCase(), juce::dontSendNotification);
-    presetNameLabel.onSingleClick = [this] { if (onLoadProject) onLoadProject(); };
-
-    addAndMakeVisible(brandLabel);
-    brandLabel.setText("DUQ", juce::dontSendNotification);
-    brandLabel.setFont(FontManager::getInterBold(28.0f));
     brandLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.9f));
-    brandLabel.onSingleClick = [this] { if (onAboutClicked) onAboutClicked(); };
-
-    addAndMakeVisible(mixKnob);
-    mixKnob.setTooltip("Global Wet/Dry Mix");
-
-    undoButton.onClick = [this] { if (undoCallback) undoCallback(); };
-    redoButton.onClick = [this] { if (redoCallback) redoCallback(); };
-    saveProjectButton.onClick = [this] { if (onSaveProject) onSaveProject(); };
-    initPresetButton.onClick = [this] { if (onInitPreset) onInitPreset(); };
-    settingsButton.onClick = [this] { if (onSettingsClicked) onSettingsClicked(); };
-
-    // --- Lookahead ---
-    addAndMakeVisible(lookaheadSlider);
-
-    lookaheadSlider.onValueChange = [this] { repaint(); };
+    
+    repaint();
 }
 
 void HeaderSection::setupAttachments(juce::AudioProcessorValueTreeState& vts)

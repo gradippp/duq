@@ -135,6 +135,12 @@ void ControlKnobComponent::handleCustomMenuResult(int result)
         onCustomMenuResult(result);
 }
 
+void ControlKnobComponent::lookAndFeelChanged()
+{
+    valueLabel.setColour(juce::Label::textColourId, T_COL(textMain));
+    repaint();
+}
+
 void ControlKnobComponent::resized()
 {
     auto bounds = getLocalBounds().reduced(6, 4);

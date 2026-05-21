@@ -9,6 +9,11 @@ class ContextMenuLookAndFeel : public juce::LookAndFeel_V4
 public:
     ContextMenuLookAndFeel()
     {
+        refreshColours();
+    }
+
+    void refreshColours()
+    {
         setColour(juce::PopupMenu::backgroundColourId, T_COL(contextMenuBackground));
         setColour(juce::PopupMenu::textColourId, T_COL(contextMenuText));
         setColour(juce::PopupMenu::highlightedBackgroundColourId, T_COL(contextMenuHighlight));

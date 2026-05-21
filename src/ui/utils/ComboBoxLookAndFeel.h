@@ -7,6 +7,12 @@ class ComboBoxLookAndFeel : public ContextMenuLookAndFeel
 public:
     ComboBoxLookAndFeel()
     {
+        refreshColours();
+    }
+
+    void refreshColours()
+    {
+        ContextMenuLookAndFeel::refreshColours();
         setColour(juce::ComboBox::backgroundColourId, T_COL(sectionBackground));
         setColour(juce::ComboBox::outlineColourId, T_COL(border).withAlpha(0.5f));
         setColour(juce::ComboBox::textColourId, T_COL(textMain));

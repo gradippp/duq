@@ -130,6 +130,21 @@ void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, const juc
 }
 
 
+void EnvelopeListSection::lookAndFeelChanged()
+{
+    addButton.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
+    addButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
+    addButton.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));
+    addButton.setColour(juce::TextButton::textColourOnId, T_COL(textMain));
+
+    importButton.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
+    importButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
+    importButton.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));
+    importButton.setColour(juce::TextButton::textColourOnId, T_COL(textMain));
+
+    repaint();
+}
+
 void EnvelopeListSection::rebuildRowsFromModel()
 {
     rowContainer.removeAllChildren();
