@@ -4,12 +4,38 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "Build for 10.13")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# macOS Universal Binary support (Intel + Apple Silicon)
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build for both Silicon and Intel")
+endif()
+
 option(BUILD_STANDALONE "Build Standalone plugin format" ON)
 option(BUILD_VST3 "Build VST3 plugin format" ON)
-option(BUILD_LV2 "Build LV2 plugin format" ON)
+option(BUILD_LV2 "Build LV2 plugin format" OFF)
+
+if(APPLE)
+    option(BUILD_AU "Build AU plugin format" ON)
+else()
+    set(BUILD_AU OFF)
+endif()
 
 set(PLUGIN_NAME Duq)
 project(${PLUGIN_NAME} VERSION 0.0.0)
+
+# Build Format List
+set(PLUGIN_FORMATS "")
+if(BUILD_VST3)
+    list(APPEND PLUGIN_FORMATS VST3)
+endif()
+if(BUILD_STANDALONE)
+    list(APPEND PLUGIN_FORMATS Standalone)
+endif()
+if(BUILD_AU)
+    list(APPEND PLUGIN_FORMATS AU)
+endif()
+if(BUILD_LV2)
+    list(APPEND PLUGIN_FORMATS LV2)
+endif()
 
 # Get the current git hash
 execute_process(
@@ -51,7 +77,7 @@ juce_add_plugin(${PLUGIN_NAME}
         COPY_PLUGIN_AFTER_BUILD FALSE
         PLUGIN_MANUFACTURER_CODE Agra
         PLUGIN_CODE duq1
-        FORMATS VST3 Standalone
+        FORMATS ${PLUGIN_FORMATS}
         PRODUCT_NAME ${PLUGIN_NAME}
         BUNDLE_ID "fyi.agradip.duq"
         LV2URI "${PROJECT_URI}"
@@ -120,10 +146,6 @@ target_link_libraries(${PLUGIN_NAME}
         juce::juce_recommended_warning_flags
 )
 
-if(APPLE)
-    target_compile_definitions(${PLUGIN_NAME} PUBLIC JUCE_AU=1)
-endif()
-
 set_target_properties(${PLUGIN_NAME} PROPERTIES FOLDER "Shared Code")
 if (TARGET ${PLUGIN_NAME}_VST3)
     set_target_properties(${PLUGIN_NAME}_VST3 PROPERTIES FOLDER "Wrappers")
@@ -131,9 +153,13 @@ endif()
 if (TARGET ${PLUGIN_NAME}_Standalone)
     set_target_properties(${PLUGIN_NAME}_Standalone PROPERTIES FOLDER "Wrappers")
 endif()
+if (TARGET ${PLUGIN_NAME}_AU)
+    set_target_properties(${PLUGIN_NAME}_AU PROPERTIES FOLDER "Wrappers")
+endif()
+if (TARGET ${PLUGIN_NAME}_LV2)
+    set_target_properties(${PLUGIN_NAME}_LV2 PROPERTIES FOLDER "Wrappers")
+endif()
 
 if (TARGET ${PLUGIN_NAME}_VST3)
     message(STATUS "${PLUGIN_NAME}_VST3 target created successfully")
-else()
-    message(WARNING "${PLUGIN_NAME}_VST3 target NOT created! Check JUCE configuration.")
 endif()
