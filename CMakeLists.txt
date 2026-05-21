@@ -19,8 +19,12 @@ else()
     set(BUILD_AU OFF)
 endif()
 
+if(NOT DEFINED PLUGIN_VERSION)
+    set(PLUGIN_VERSION "0.0.0")
+endif()
+
 set(PLUGIN_NAME Duq)
-project(${PLUGIN_NAME} VERSION 0.0.0)
+project(${PLUGIN_NAME} VERSION ${PLUGIN_VERSION})
 
 # Build Format List
 set(PLUGIN_FORMATS "")
