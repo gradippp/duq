@@ -13,6 +13,6 @@ namespace FactoryData {
         shape.addPoint(1.0f, 1.0f);
         
         auto xml = shape.toValueTree().createXml();
-        return { "Kick_Sidechain.env", xml->toString().toStdString() };
+        return { "Kick_Sidechain.duq.env", xml->toString().toStdString() };
     }
 }

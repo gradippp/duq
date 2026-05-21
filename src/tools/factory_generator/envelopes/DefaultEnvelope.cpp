@@ -8,6 +8,6 @@ namespace FactoryData {
         shape.addPoint(1.0f, 1.0f);
         
         auto xml = shape.toValueTree().createXml();
-        return { "Default.env", xml->toString().toStdString() };
+        return { "Default.duq.env", xml->toString().toStdString() };
     }
 }

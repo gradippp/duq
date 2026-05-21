@@ -59,6 +59,6 @@ namespace FactoryData {
         tm.setColour(ThemeManager::contextMenuHighlight, accentColour.withAlpha(0.15f));
         tm.setColour(ThemeManager::contextMenuBorder, borderColour);
 
-        return { "Light.theme", tm.saveThemeToXmlString().toStdString() };
+        return { "Light.duq.theme", tm.saveThemeToXmlString().toStdString() };
     }
 }

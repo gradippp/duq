@@ -16,6 +16,6 @@ namespace FactoryData {
         }
         
         auto xml = shape.toValueTree().createXml();
-        return { "Sine_Wave.env", xml->toString().toStdString() };
+        return { "Sine_Wave.duq.env", xml->toString().toStdString() };
     }
 }

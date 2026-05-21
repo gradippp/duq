@@ -6,6 +6,6 @@ namespace FactoryData {
         auto& tm = ThemeManager::getInstance();
         tm.loadDefaultTheme();
         
-        return { "Default_Dark.theme", tm.saveThemeToXmlString().toStdString() };
+        return { "Default_Dark.duq.theme", tm.saveThemeToXmlString().toStdString() };
     }
 }
