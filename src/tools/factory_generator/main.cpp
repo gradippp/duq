@@ -31,8 +31,8 @@ int main(int argc, char* argv[]) {
     std::string outputDir = argv[1];
     
     try {
-        writeAssets("themes", FactoryData::getThemes(), outputDir);
-        writeAssets("envelopes", FactoryData::getEnvelopes(), outputDir);
+        writeAssets("themes", FactoryData::getAllThemes(), outputDir);
+        writeAssets("envelopes", FactoryData::getAllEnvelopes(), outputDir);
     } catch (const std::exception& e) {
         std::cerr << "Fatal Error: " << e.what() << std::endl;
         return 1;

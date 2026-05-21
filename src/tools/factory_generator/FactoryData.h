@@ -8,6 +8,12 @@ struct FactoryAsset {
 };
 
 namespace FactoryData {
-    std::vector<FactoryAsset> getThemes();
-    std::vector<FactoryAsset> getEnvelopes();
+    FactoryAsset getDefaultDarkTheme();
+    FactoryAsset getLightTheme();
+    FactoryAsset getRedTheme();
+
+    FactoryAsset getBasicPluckEnvelope();
+
+    std::vector<FactoryAsset> getAllThemes();
+    std::vector<FactoryAsset> getAllEnvelopes();
 }
