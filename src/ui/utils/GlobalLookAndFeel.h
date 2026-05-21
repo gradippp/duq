@@ -51,11 +51,11 @@ public:
         auto bounds = button.getLocalBounds().toFloat();
         auto cornerSize = 2.0f;
 
-        auto baseColour = backgroundColour;
+        auto baseColour = T_COL(sectionBackground);
         if (isButtonDown)
-            baseColour = baseColour.darker(0.1f);
+            baseColour = T_COL(uiSelected).withAlpha(0.4f);
         else if (isMouseOverButton)
-            baseColour = baseColour.brighter(0.1f);
+            baseColour = T_COL(uiHover);
 
         g.setColour(baseColour);
         g.fillRoundedRectangle(bounds, cornerSize);

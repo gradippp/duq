@@ -17,28 +17,32 @@ juce::Colour ThemeManager::getColour(ColourID id) const
     if (it != colours.end())
         return it->second;
     
-    // Sensible fallbacks for missing keys in stale theme files
+    // --- INTELLIGENT FALLBACKS ---
+    // These trigger if a theme file is old and missing the newer keys.
     switch (id)
     {
-        case widgetText:
-        case contextMenuText: return getColour(textMain);
-        
-        case widgetTick:
-        case knobIndicator:
-        case knobAccent: return getColour(accent);
-
-        case widgetBackground:
+        case widgetBackground: 
         case contextMenuBackground: return getColour(sectionBackground);
-
-        case widgetOutline:
-        case contextMenuBorder: return getColour(border);
-
-        case sidechain: return juce::Colours::orange;
         
+        case widgetOutline:    
+        case contextMenuBorder:     return getColour(border);
+        
+        case widgetText:       
+        case contextMenuText:       return getColour(textMain);
+        
+        case widgetTick:       
+        case knobIndicator:
+        case knobAccent:            return getColour(accent);
+
+        case contextMenuHighlight:  return getColour(uiSelected);
+        case knobTrack:             return getColour(border).withAlpha(0.2f);
+        
+        case sidechain:             return juce::Colours::orange;
+
         default: break;
     }
 
-    return juce::Colours::black;
+    return juce::Colours::hotpink;
 }
 
 void ThemeManager::setColour(ColourID id, juce::Colour colour)
@@ -101,15 +105,19 @@ void ThemeManager::initializeDefaultColours()
     colours[contextMenuHighlight] = uiSelectedColour;
     colours[contextMenuBorder] = borderColour;
 
-    colours[widgetBackground] = juce::Colour(0xFF121212);
-    colours[widgetOutline] = borderColour;
-    colours[widgetText] = accentColour;
-    colours[widgetTick] = accentColour;
+    // Specifically DON'T set widget colors here so fallbacks trigger for old themes
 }
 
 void ThemeManager::loadDefaultTheme()
 {
     initializeDefaultColours();
+    
+    // Explicitly set default widget colors for the built-in dark theme
+    colours[widgetBackground] = juce::Colour(0xFF1A1A1A);
+    colours[widgetOutline] = colours[border];
+    colours[widgetText] = colours[accent];
+    colours[widgetTick] = colours[accent];
+
     sendChangeMessage();
 }
 
@@ -119,7 +127,7 @@ bool ThemeManager::loadThemeFromFile(const juce::File& file)
     if (xml == nullptr || !xml->hasTagName("THEME"))
         return false;
 
-    // Reset to defaults first so missing keys in the file don't keep stale values
+    // Force factory reset before loading to prevent stale leakage
     initializeDefaultColours();
 
     for (int i = 0; i < xml->getNumChildElements(); ++i)
