@@ -23,6 +23,11 @@ namespace FactoryData {
         tm.setColour(ThemeManager::knobAccent, redAccent);
         tm.setColour(ThemeManager::contextMenuHighlight, redAccent.withAlpha(0.3f));
         
+        tm.setColour(ThemeManager::widgetBackground, juce::Colour(0xFF000000));
+        tm.setColour(ThemeManager::widgetOutline, redAccent.withAlpha(0.4f));
+        tm.setColour(ThemeManager::widgetText, juce::Colour(0xFFFFFFFF));
+        tm.setColour(ThemeManager::widgetTick, redAccent);
+
         return { "Red.duq.theme", tm.saveThemeToXmlString().toStdString() };
     }
 }

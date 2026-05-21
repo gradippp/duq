@@ -24,7 +24,7 @@ public:
         // --- Combo Boxes ---
         setColour(juce::ComboBox::backgroundColourId, T_COL(widgetBackground));
         setColour(juce::ComboBox::outlineColourId, T_COL(widgetOutline));
-        setColour(juce::ComboBox::textColourId, T_COL(textMain));
+        setColour(juce::ComboBox::textColourId, T_COL(widgetText));
         setColour(juce::ComboBox::arrowColourId, T_COL(accent).withAlpha(0.8f));
         setColour(juce::ComboBox::focusedOutlineColourId, T_COL(accent).withAlpha(0.5f));
 
@@ -110,7 +110,7 @@ public:
         {
             g.setColour(T_COL(widgetTick));
             auto tickPath = getTickShape(w * 0.7f);
-            g.fillPath(tickPath, tickPath.getTransformToScaleExtent(x + w * 0.15f, y + h * 0.15f, w * 0.7f, h * 0.7f));
+            g.fillPath(tickPath, tickPath.getTransformToScaleToFit(x + w * 0.15f, y + h * 0.15f, w * 0.7f, h * 0.7f, true));
         }
     }
 
