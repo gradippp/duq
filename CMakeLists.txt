@@ -171,3 +171,25 @@ endif()
 if (TARGET ${PLUGIN_NAME}_VST3)
     message(STATUS "${PLUGIN_NAME}_VST3 target created successfully")
 endif()
+
+# --- Factory Content Generation ---
+file(GLOB_RECURSE GENERATOR_SRCS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator/*.h"
+)
+
+add_executable(FactoryGenerator ${GENERATOR_SRCS})
+set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
+
+set(FACTORY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/FactoryContent")
+
+add_custom_command(
+    OUTPUT "${FACTORY_OUTPUT_DIR}/themes" "${FACTORY_OUTPUT_DIR}/envelopes"
+    COMMAND FactoryGenerator "${FACTORY_OUTPUT_DIR}"
+    DEPENDS FactoryGenerator
+    COMMENT "Generating Factory Themes and Envelopes from source..."
+)
+
+add_custom_target(GenerateFactoryContent ALL 
+    DEPENDS "${FACTORY_OUTPUT_DIR}/themes" "${FACTORY_OUTPUT_DIR}/envelopes"
+)

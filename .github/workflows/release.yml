@@ -73,11 +73,19 @@ jobs:
 
       - name: Zip Artifacts
         run: |
+          # Copy INSTALLATION.md to factory content folder before zipping
+          mkdir -p build/FactoryContent
+          cp res/INSTALLATION.md build/FactoryContent/
+          
+          # Zip the Factory Content separately
+          cd build/FactoryContent
+          zip -r "../../Duq-Factory-Content-${{ env.FULL_PLUGIN_VERSION }}.zip" .
+          cd ../..
+
+          # Zip the Plugin Artifacts
           cd artifacts
           for dir in */; do
-            # Remove trailing slash
             dir=${dir%/}
-            # Zip the contents of the directory, not the directory itself, to keep the zip clean
             cd "$dir"
             zip -r "../../${dir}.zip" .
             cd ..
