@@ -189,9 +189,12 @@ void PresetSection::lookAndFeelChanged()
     auto down = Icons::load("close", T_COL(textMain).withAlpha(0.4f));
     closeButton.setImages(normal.get(), over.get(), down.get());
 
-    searchEditor.setColour(juce::TextEditor::backgroundColourId, T_COL(presetBrowserFooter).withAlpha(0.2f));
-    searchEditor.setColour(juce::TextEditor::outlineColourId, T_COL(border).withAlpha(0.1f));
-    searchEditor.setColour(juce::TextEditor::focusedOutlineColourId, T_COL(border).withAlpha(0.3f));
+    searchEditor.setColour(juce::TextEditor::backgroundColourId, T_COL(presetBrowserFooter).withAlpha(0.3f));
+    searchEditor.setColour(juce::TextEditor::outlineColourId, T_COL(border).withAlpha(0.2f));
+    searchEditor.setColour(juce::TextEditor::focusedOutlineColourId, T_COL(border).withAlpha(0.5f));
+    
+    // Explicitly re-set placeholder text to update its color
+    searchEditor.setTextToShowWhenEmpty("SEARCH PRESETS...", T_COL(textDimmed));
 
     repaint();
 }
