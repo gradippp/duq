@@ -124,7 +124,7 @@ void MeterComponent::paint(juce::Graphics& g)
 
             juce::Colour baseColor = (mode == MeterMode::Envelope) ? 
                                     T_COL(meterReduction) : 
-                                    T_COL(waveform);
+                                    T_COL(meterFill);
 
             juce::ColourGradient grad(baseColor.withAlpha(0.6f), fillArea.getX(), 0,
                                       baseColor, fillArea.getRight(), 0, false);

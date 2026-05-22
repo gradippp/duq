@@ -53,6 +53,8 @@ void ThemeManager::setColour(ColourID id, juce::Colour colour)
 
 void ThemeManager::initializeDefaultColours()
 {
+    colours.clear();
+
     const juce::Colour accentColour = juce::Colour(0xFFFFFFFF);
     const juce::Colour borderColour = juce::Colour(0xFF333333);
     const juce::Colour uiSelectedColour = accentColour.withAlpha(0.3f);

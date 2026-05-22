@@ -3,7 +3,8 @@
 
 class WorkflowPage : public SettingsPageBase,
                      private juce::Slider::Listener,
-                     private juce::ComboBox::Listener
+                     private juce::ComboBox::Listener,
+                     public juce::ChangeListener
 {
 public:
     WorkflowPage();
@@ -12,6 +13,7 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
     void lookAndFeelChanged() override;
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     void setProcessor(class DuqAudioProcessor* p);
     void updateEnvelopeList();

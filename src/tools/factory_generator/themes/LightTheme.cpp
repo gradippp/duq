@@ -7,9 +7,9 @@ namespace FactoryData {
         tm.loadDefaultTheme(); // Reset first to ensure all fields are populated
         
         const juce::Colour accentColour(0xFFD32F2F); // Vibrant Red Accent
-        const juce::Colour borderColour(0xFFCCCCCC);
-        const juce::Colour textMainColour(0xFF000000); // Pure Black
-        const juce::Colour widgetBgColour(0xFFEFEFEF); // Light Grey (Improved Contrast)
+        const juce::Colour borderColour(0xFFBBBBBB);
+        const juce::Colour textMainColour(0xFF111111); // Very Dark Grey (Better than pure black)
+        const juce::Colour widgetBgColour(0xFFE5E5E5); // Slightly darker for better definition
 
         tm.setColour(ThemeManager::background, juce::Colour(0xFFF2F2F2));
         tm.setColour(ThemeManager::sectionBackground, juce::Colour(0xFFFFFFFF));
@@ -32,7 +32,7 @@ namespace FactoryData {
         tm.setColour(ThemeManager::playheadGlow, accentColour.withAlpha(0.2f));
 
         tm.setColour(ThemeManager::textMain, textMainColour);
-        tm.setColour(ThemeManager::textDimmed, textMainColour.withAlpha(0.7f));
+        tm.setColour(ThemeManager::textDimmed, textMainColour.withAlpha(0.8f));
         tm.setColour(ThemeManager::textLabel, textMainColour);
 
         tm.setColour(ThemeManager::uiHover, juce::Colour(0xFF000000).withAlpha(0.12f));
@@ -61,7 +61,7 @@ namespace FactoryData {
         tm.setColour(ThemeManager::contextMenuBorder, borderColour);
 
         tm.setColour(ThemeManager::widgetBackground, widgetBgColour);
-        tm.setColour(ThemeManager::widgetOutline, juce::Colour(0xFFBBBBBB));
+        tm.setColour(ThemeManager::widgetOutline, juce::Colour(0xFF999999));
         tm.setColour(ThemeManager::widgetText, textMainColour);
         tm.setColour(ThemeManager::widgetTick, textMainColour);
 

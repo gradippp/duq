@@ -187,5 +187,12 @@ void SettingsSection::lookAndFeelChanged()
         btn->setColour(juce::TextButton::textColourOnId, T_COL(accent));
     }
 
+    // Explicitly notify all pages, even if they aren't currently in the component tree
+    for (auto& page : pages)
+    {
+        if (page != nullptr)
+            page->sendLookAndFeelChange();
+    }
+
     repaint();
 }

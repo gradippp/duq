@@ -5,6 +5,7 @@
 WorkflowPage::WorkflowPage()
     : SettingsPageBase("WORKFLOW & EDITING")
 {
+    ThemeManager::getInstance().addChangeListener(this);
     // --- Grid & Editing ---
     defaultCurveCombo.addItemList({"Exponential", "Linear", "Logarithmic", "S-Curve", "Step"}, 1);
     defaultCurveCombo.setSelectedItemIndex(config->getDefaultCurve());
@@ -56,6 +57,12 @@ WorkflowPage::WorkflowPage()
 
 WorkflowPage::~WorkflowPage() 
 {
+    ThemeManager::getInstance().removeChangeListener(this);
+}
+
+void WorkflowPage::changeListenerCallback([[maybe_unused]] juce::ChangeBroadcaster* source)
+{
+    lookAndFeelChanged();
 }
 
 void WorkflowPage::setProcessor(DuqAudioProcessor* p)
@@ -194,5 +201,30 @@ void WorkflowPage::lookAndFeelChanged()
 {
     defaultCurveCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
     currentEnvelopesCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+    
+    // Explicitly update slider text box colors and their internal labels
+    auto updateSlider = [this](juce::Slider& s) {
+        s.setColour(juce::Slider::textBoxTextColourId, T_COL(widgetText));
+        s.setColour(juce::Slider::textBoxBackgroundColourId, T_COL(widgetBackground));
+        s.setColour(juce::Slider::textBoxOutlineColourId, T_COL(widgetOutline));
+        
+        // Brute-force child traversal to clear any local color overrides
+        for (auto* child : s.getChildren())
+        {
+            if (auto* l = dynamic_cast<juce::Label*>(child))
+            {
+                l->setColour(juce::Label::textColourId, T_COL(widgetText));
+                l->setColour(juce::Label::backgroundColourId, T_COL(widgetBackground));
+                l->setColour(juce::Label::outlineColourId, T_COL(widgetOutline));
+            }
+        }
+    };
+
+    updateSlider(defaultTensionSlider);
+    updateSlider(undoLimitSlider);
+    updateSlider(defaultRateSlider);
+    updateSlider(defaultDepthSlider);
+    updateSlider(defaultSmoothSlider);
+
     repaint();
 }

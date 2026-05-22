@@ -31,6 +31,8 @@ public:
         setColour(juce::ComboBox::textColourId, T_COL(widgetText));
 
         setColour(juce::Label::textColourId, T_COL(textMain));
+        setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        setColour(juce::Label::outlineColourId, juce::Colours::transparentBlack);
         
         setColour(juce::Slider::backgroundColourId, T_COL(widgetBackground));
         setColour(juce::Slider::thumbColourId, T_COL(accent));
@@ -42,6 +44,52 @@ public:
         setColour(juce::TextEditor::backgroundColourId, T_COL(widgetBackground));
         setColour(juce::TextEditor::textColourId, T_COL(widgetText));
         setColour(juce::TextEditor::outlineColourId, T_COL(widgetOutline));
+    }
+
+    // ==============================================================================
+    // LABELS
+    // ==============================================================================
+
+    void drawLabel(juce::Graphics& g, juce::Label& label) override
+    {
+        auto bounds = label.getLocalBounds().toFloat();
+        
+        // Brute force: Check if this label looks like it belongs to a slider 
+        // (usually it's centered and has a specific font in our app)
+        bool isWidget = label.getJustificationType() == juce::Justification::centred;
+
+        auto bg = label.findColour(juce::Label::backgroundColourId);
+        auto outline = label.findColour(juce::Label::outlineColourId);
+
+        if (isWidget || bg.getAlpha() > 0)
+        {
+            g.setColour(isWidget ? T_COL(widgetBackground) : bg);
+            g.fillRoundedRectangle(bounds, 2.0f);
+        }
+
+        if (isWidget || outline.getAlpha() > 0)
+        {
+            g.setColour(isWidget ? T_COL(widgetOutline) : outline);
+            g.drawRoundedRectangle(bounds.reduced(0.5f), 2.0f, 1.0f);
+        }
+
+        if (!label.isBeingEdited())
+        {
+            auto alpha = label.isEnabled() ? 1.0f : 0.5f;
+            g.setColour(label.findColour(juce::Label::textColourId).withMultipliedAlpha(alpha));
+            g.setFont(label.getFont());
+
+            auto textArea = label.getLocalBounds().reduced(4, 0);
+            g.drawFittedText(label.getText(), textArea, label.getJustificationType(), 1);
+        }
+    }
+
+    void drawTextEditorOutline(juce::Graphics& g, int width, int height, juce::TextEditor& ed) override
+    {
+        if (ed.isReadOnly()) return;
+
+        g.setColour(T_COL(widgetOutline));
+        g.drawRoundedRectangle(0.5f, 0.5f, width - 1.0f, height - 1.0f, 2.0f, 1.0f);
     }
 
     // ==============================================================================
@@ -262,10 +310,17 @@ public:
 
     juce::Label* createSliderTextBox(juce::Slider& slider) override
     {
-        auto* l = juce::LookAndFeel_V4::createSliderTextBox(slider);
-        l->setColour(juce::Label::textColourId, T_COL(widgetText));
-        l->setColour(juce::Label::backgroundColourId, T_COL(widgetBackground));
-        l->setColour(juce::Label::outlineColourId, T_COL(widgetOutline).withAlpha(0.3f));
+        auto* l = new juce::Label();
+        l->setLookAndFeel(this); // FORCE the label to use our custom drawLabel
+        l->setJustificationType(juce::Justification::centred);
+        l->setEditable(false, true, false);
+        l->setFont(FontManager::getJetBrainsMono(12.0f));
+        
+        // We DO NOT set colors locally here (e.g., via l->setColour).
+        // By leaving them unset, the Label will dynamically look up 
+        // Label::textColourId and Label::backgroundColourId from this 
+        // LookAndFeel whenever it paints, ensuring perfect theme sync.
+        
         return l;
     }
 
