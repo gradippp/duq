@@ -91,6 +91,8 @@ public:
     std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
     double getPhaseIncrement(int envelopeIndex) const;
 
+    void performUndoRedo(bool isUndo);
+
     ConfigManager& getConfig() { return *config; }
 
 private:
@@ -119,8 +121,6 @@ private:
 
     // AsyncUpdater
     void handleAsyncUpdate() override;
-
-    void performUndoRedo(bool isUndo);
 
     //==============================================================================
     juce::UndoManager undoManager{ 200 };
