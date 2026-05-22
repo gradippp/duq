@@ -9,7 +9,9 @@
 class DuqAudioProcessor : public juce::AudioProcessor,
     private juce::ValueTree::Listener,
     private juce::AudioProcessorValueTreeState::Listener,
-    private juce::Timer
+    private juce::Timer,
+    public juce::ChangeListener,
+    public juce::AudioProcessorParameter::Listener
 {
 public:
     //==============================================================================
@@ -104,11 +106,23 @@ private:
     // APVTS::Listener
     void parameterChanged(const juce::String& parameterID, float newValue) override;
 
+    // ChangeListener
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+
+    // AudioProcessorParameter::Listener
+    void parameterValueChanged(int parameterIndex, float newValue) override;
+    void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override;
+
     // Timer
     void timerCallback() override;
 
     //==============================================================================
     juce::UndoManager undoManager{ 200 };
+
+    juce::AudioParameterInt* undoTriggerParam = nullptr;
+    std::atomic<int> lastUndoTriggerValue{ 0 };
+    std::atomic<bool> isInternalAction{ false };
+    std::atomic<bool> isHostUndoing{ false };
 
     // DSP State
     struct InternalDSPState

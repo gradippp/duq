@@ -72,6 +72,15 @@ DuqAudioProcessor::DuqAudioProcessor()
         parameters.addParameterListener(prefix + "smooth", this);
     }
 
+    undoTriggerParam = new juce::AudioParameterInt(juce::ParameterID{ "undoTrigger", 1 }, "Undo Trigger", 0, 1000000, 0);
+    addParameter(undoTriggerParam);
+    undoTriggerParam->addListener(this);
+
+    if (undoTriggerParam)
+        lastUndoTriggerValue = undoTriggerParam->get();
+
+    undoManager.addChangeListener(this);
+
     voices.resize(maxVoices);
     for (auto& v : voices) v.isActive = false;
 
@@ -94,6 +103,86 @@ DuqAudioProcessor::~DuqAudioProcessor()
         parameters.removeParameterListener(prefix + "depth", this);
         parameters.removeParameterListener(prefix + "smooth", this);
     }
+
+    if (undoTriggerParam)
+        undoTriggerParam->removeListener(this);
+
+    undoManager.removeChangeListener(this);
+}
+
+void DuqAudioProcessor::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    if (source == &undoManager && !isHostUndoing.load())
+    {
+        if (undoTriggerParam != nullptr)
+        {
+            isInternalAction.store(true);
+            int nextValue = undoTriggerParam->get() + 1;
+            lastUndoTriggerValue.store(nextValue);
+            
+            undoTriggerParam->beginChangeGesture();
+            undoTriggerParam->setValueNotifyingHost(undoTriggerParam->convertTo0to1(nextValue));
+            undoTriggerParam->endChangeGesture();
+            isInternalAction.store(false);
+        }
+    }
+}
+
+void DuqAudioProcessor::parameterValueChanged(int parameterIndex, float newValue)
+{
+    if (undoTriggerParam && parameterIndex == undoTriggerParam->getParameterIndex())
+    {
+        int newTriggerValue = undoTriggerParam->get();
+        int lastVal = lastUndoTriggerValue.load();
+        
+        // Ignore echo from our own notifications or duplicate host events
+        if (newTriggerValue == lastVal)
+            return; 
+
+        if (!isInternalAction.load())
+        {
+            if (newTriggerValue < lastVal)
+            {
+                int steps = lastVal - newTriggerValue;
+                lastUndoTriggerValue.store(newTriggerValue);
+                
+                juce::MessageManager::callAsync([this, steps]() {
+                    isHostUndoing.store(true);
+                    for (int i = 0; i < steps; ++i)
+                        undoManager.undo();
+                        
+                    // Post a message to reset the flag AFTER coalesced ChangeBroadcaster messages
+                    juce::MessageManager::callAsync([this]() {
+                        isHostUndoing.store(false);
+                    });
+                });
+            }
+            else if (newTriggerValue > lastVal)
+            {
+                int steps = newTriggerValue - lastVal;
+                lastUndoTriggerValue.store(newTriggerValue);
+                
+                juce::MessageManager::callAsync([this, steps]() {
+                    isHostUndoing.store(true);
+                    for (int i = 0; i < steps; ++i)
+                        undoManager.redo();
+                        
+                    juce::MessageManager::callAsync([this]() {
+                        isHostUndoing.store(false);
+                    });
+                });
+            }
+        }
+        else
+        {
+            lastUndoTriggerValue.store(newTriggerValue);
+        }
+    }
+}
+
+void DuqAudioProcessor::parameterGestureChanged(int parameterIndex, bool gestureIsStarting)
+{
+    juce::ignoreUnused(parameterIndex, gestureIsStarting);
 }
 
 void DuqAudioProcessor::timerCallback()
