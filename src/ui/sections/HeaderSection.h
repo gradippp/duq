@@ -54,12 +54,14 @@ public:
 
     void setupAttachments(juce::AudioProcessorValueTreeState& vts);
 
+    void setUndoManager(juce::UndoManager* um);
     void updateUndoState(bool canUndo, bool canRedo);
     void refreshTheme();
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
+    juce::UndoManager* undoManager = nullptr;
     juce::String versionString{ PROJECT_VERSION };
     juce::String projectURI{ PROJECT_URI };
     juce::String presetName{ Defaults::projectName };

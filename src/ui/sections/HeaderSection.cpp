@@ -200,6 +200,14 @@ void HeaderSection::setupAttachments(juce::AudioProcessorValueTreeState& vts)
     mixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(vts, "mix", mixKnob);
 }
 
+void HeaderSection::setUndoManager(juce::UndoManager* um)
+{
+    undoManager = um;
+    
+    mixKnob.onDragStart = [this] { if (undoManager) undoManager->beginNewTransaction("Change Mix"); };
+    lookaheadSlider.onDragStart = [this] { if (undoManager) undoManager->beginNewTransaction("Change Lookahead"); };
+}
+
 
 //==============================================================================
 

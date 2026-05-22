@@ -50,6 +50,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     controlSection.setProcessor(&p);
     envelopeListSection.setProcessor(p);
+    header.setupAttachments(audioProcessor.parameters);
     presetSection.setUndoManager(undoManager);
 
     envelopeListSection.onReplaceRequested = [this](juce::ValueTree env)
@@ -165,6 +166,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     aboutSection.onClose = [this] { showSection(Section::Grid); };
 
+    header.setUndoManager(&undoManager);
     controlSection.setUndoManager(undoManager);
     gridSection.setUndoManager(undoManager);
 
