@@ -34,6 +34,7 @@ private:
     juce::ComboBox defaultCurveCombo;
     juce::Slider defaultTensionSlider;
     juce::Slider undoLimitSlider;
+    juce::TextButton clearUndoButton{ "Clear History" };
 
     // --- Envelope Defaults ---
     juce::Slider defaultRateSlider;

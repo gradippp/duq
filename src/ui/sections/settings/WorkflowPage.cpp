@@ -22,6 +22,12 @@ WorkflowPage::WorkflowPage()
     undoLimitSlider.addListener(this);
     addAndMakeVisible(undoLimitSlider);
 
+    addAndMakeVisible(clearUndoButton);
+    clearUndoButton.onClick = [this]
+    {
+        if (processor) processor->getUndoManager().clearUndoHistory();
+    };
+
     // --- Envelope Defaults ---
     defaultRateSlider.setRange(0.1, 100.0, 0.1);
     defaultRateSlider.setValue(config->getDefaultRate(), juce::dontSendNotification);
@@ -142,6 +148,8 @@ void WorkflowPage::resized()
     // Row 2: Undo Limit (Solo)
     auto row2 = area.removeFromTop(rowHeight);
     undoLimitSlider.setBounds(row2.removeFromLeft(180).reduced(0, 10));
+    row2.removeFromLeft(40);
+    clearUndoButton.setBounds(row2.removeFromLeft(120).reduced(0, 10));
 
     area.removeFromTop(sectionSpacing);
 
