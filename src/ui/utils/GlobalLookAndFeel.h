@@ -216,7 +216,7 @@ public:
 
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                           float sliderPos, float rotaryStartAngle, float rotaryEndAngle,
-                          juce::Slider& slider) override
+                          [[maybe_unused]] juce::Slider& slider) override
     {
         auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(4.0f);
         auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;

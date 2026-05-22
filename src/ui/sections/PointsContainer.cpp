@@ -84,7 +84,7 @@ void PointsContainer::rebuildPointComponents()
                 pos.y = safeGrid->snapValue(pos.y, snapStep);
             }
 
-            safeGrid->activeDragNode = node;
+            safeGrid->activeDragNode = targetNode;
             safeGrid->activeDragPosition = pos;
             compPtr->setNormalizedPosition(pos);
 

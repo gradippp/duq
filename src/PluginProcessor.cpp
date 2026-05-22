@@ -324,7 +324,7 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                         {
                             if (!v.isActive)
                             {
-                                v.envelopeIndex = i;
+                                v.envelopeIndex = static_cast<int>(i);
                                 v.currentPhase = 0.0;
                                 v.currentGain = 1.0f;
                                 v.lastSegmentIndex = 0;
@@ -362,8 +362,6 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     const int numOutputChannels = getBusCount(false) > 0 ? getBusBuffer(buffer, false, 0).getNumChannels() : 0;
     const int numChannels = std::min(numInputChannels, numOutputChannels);
     
-    const double sampleRate = getSampleRate();
-
     float inputPeak = 0.0f;
     float outputPeak = 0.0f;
     float maxReduction = 0.0f;
@@ -620,21 +618,21 @@ int DuqAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void DuqAudioProcessor::setCurrentProgram (int index)
+void DuqAudioProcessor::setCurrentProgram ([[maybe_unused]] int index)
 {
 }
 
-const juce::String DuqAudioProcessor::getProgramName (int index)
+const juce::String DuqAudioProcessor::getProgramName ([[maybe_unused]] int index)
 {
     return {};
 }
 
-void DuqAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void DuqAudioProcessor::changeProgramName ([[maybe_unused]] int index, [[maybe_unused]] const juce::String& newName)
 {
 }
 
 //==============================================================================
-void DuqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void DuqAudioProcessor::prepareToPlay (double sampleRate, [[maybe_unused]] int samplesPerBlock)
 {
     masterGain.reset(sampleRate, 0.001); // 1ms smoothing for punchy transients
     masterGain.setCurrentAndTargetValue(1.0f);

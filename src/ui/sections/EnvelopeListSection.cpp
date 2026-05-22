@@ -123,7 +123,7 @@ void EnvelopeListSection::valueTreeChildOrderChanged(juce::ValueTree& v, int, in
         rebuildRowsFromModel();
 }
 
-void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, const juce::Identifier& i)
+void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, [[maybe_unused]] const juce::Identifier& i)
 {
     if (v == envelopesTree)
         rebuildRowsFromModel();
@@ -281,7 +281,7 @@ void EnvelopeListSection::paint(juce::Graphics& g)
 
     auto footerBounds = getLocalBounds().removeFromBottom(40);
     g.setColour(T_COL(border).withAlpha(0.5f));
-    g.drawLine(0.0f, footerBounds.getY(), (float)getWidth(), footerBounds.getY(), 1.0f);
+    g.drawLine(0.0f, static_cast<float>(footerBounds.getY()), static_cast<float>(getWidth()), static_cast<float>(footerBounds.getY()), 1.0f);
 }
 
 void EnvelopeListSection::paintOverChildren(juce::Graphics& g)
@@ -403,12 +403,12 @@ int EnvelopeListSection::getNextFreeNote(int startFrom) const
     return startFrom;
 }
 
-void EnvelopeListSection::updateMidiActivity(DuqAudioProcessor& processor)
+void EnvelopeListSection::updateMidiActivity(DuqAudioProcessor& p)
 {
     for (int i = 0; i < rows.size(); ++i)
     {
         int note = (int)envelopesTree.getChild(i)["triggerNote"];
-        bool isActive = processor.isNoteActive(note);
+        bool isActive = p.isNoteActive(note);
         rows[i]->setActive(isActive);
     }
 }

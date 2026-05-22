@@ -4,7 +4,7 @@
 #include "settings/WorkflowPage.h"
 #include "../utils/IconFactory.h"
 
-void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouseOverButton, bool isMouseDownOnButton)
+void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouseOverButton, [[maybe_unused]] bool isMouseDownOnButton)
 {
     auto bounds = getLocalBounds().toFloat();
     bool isSelected = getToggleState();

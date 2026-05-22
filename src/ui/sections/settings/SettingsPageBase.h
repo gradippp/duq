@@ -24,7 +24,7 @@ public:
 
         // Underline Divider
         g.setColour(T_COL(border).withAlpha(0.3f));
-        g.drawLine(20, 45, getWidth() - 20, 45, 1.0f);
+        g.drawLine(20.0f, 45.0f, static_cast<float>(getWidth()) - 20.0f, 45.0f, 1.0f);
     }
 
     /** Helper to get a standard content area for settings controls */

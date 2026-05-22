@@ -143,12 +143,12 @@ juce::Component* PresetSection::refreshComponentForRow(int rowNumber, bool isSel
     return row;
 }
 
-void PresetSection::listBoxItemClicked(int rowNumber, const juce::MouseEvent& e)
+void PresetSection::listBoxItemClicked(int rowNumber, [[maybe_unused]] const juce::MouseEvent& e)
 {
     if (isSavingMode && rowNumber == 0) return;
     
     int dataIdx = isSavingMode ? rowNumber - 1 : rowNumber;
-    if (dataIdx < 0 || dataIdx >= (int)filteredFiles.size()) return;
+    if (dataIdx < 0 || dataIdx >= static_cast<int>(filteredFiles.size())) return;
     
     auto file = filteredFiles[dataIdx];
 

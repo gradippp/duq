@@ -220,7 +220,7 @@ void EnvelopeRowComponent::mouseDrag(const juce::MouseEvent& e)
                     paint(g);
 
                     auto desc = juce::var(envelope["name"].toString());
-                    container->startDragging(desc, this, preview);
+                    container->startDragging(desc, this, preview, true, nullptr);
                 }
             }
         }
@@ -295,9 +295,9 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
         
         for (int i = 0; i < 3; ++i)
         {
-            float y = handleArea.getY() + (float)i * 4.0f;
-            g.fillEllipse(handleArea.getX(), y, 2.0f, 2.0f);
-            g.fillEllipse(handleArea.getX() + 3.0f, y, 2.0f, 2.0f);
+            float y = static_cast<float>(handleArea.getY()) + static_cast<float>(i) * 4.0f;
+            g.fillEllipse(static_cast<float>(handleArea.getX()), y, 2.0f, 2.0f);
+            g.fillEllipse(static_cast<float>(handleArea.getX()) + 3.0f, y, 2.0f, 2.0f);
         }
     }
 
