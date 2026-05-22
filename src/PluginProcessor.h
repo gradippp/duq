@@ -77,7 +77,7 @@ public:
     //==============================================================================
     bool isNoteActive(int note) const
     {
-        return activeNotes[note].load(std::memory_order_relaxed);
+        return activeNotes[static_cast<size_t>(note)].load(std::memory_order_relaxed);
     }
 
     void triggerEnvelope(int index) { manualTriggerIndex = index; }

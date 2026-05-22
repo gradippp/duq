@@ -92,8 +92,8 @@ public:
             pxPerGridY *= 2.0f;
         }
 
-        int firstX = std::floor(startX / baseStep);
-        int lastX = std::ceil(endX / baseStep);
+        int firstX = static_cast<int>(std::floor(startX / baseStep));
+        int lastX = static_cast<int>(std::ceil(endX / baseStep));
 
         for (int i = firstX; i <= lastX; ++i)
         {
@@ -106,8 +106,8 @@ public:
             g.drawLine(p.x, (float)viewArea.getY(), p.x, (float)viewArea.getBottom());
         }
 
-        int firstY = std::floor(startY / baseStep);
-        int lastY = std::ceil(endY / baseStep);
+        int firstY = static_cast<int>(std::floor(startY / baseStep));
+        int lastY = static_cast<int>(std::ceil(endY / baseStep));
 
         for (int i = firstY; i <= lastY; ++i)
         {

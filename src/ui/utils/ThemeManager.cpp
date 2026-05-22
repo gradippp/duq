@@ -139,7 +139,7 @@ bool ThemeManager::loadThemeFromFile(const juce::File& file)
             auto colorHex = child->getStringAttribute("hex");
             
             ColourID id = getIDFromName(name);
-            if (id != (ColourID)-1)
+            if (static_cast<int>(id) != -1)
             {
                 colours[id] = juce::Colour::fromString(colorHex);
             }

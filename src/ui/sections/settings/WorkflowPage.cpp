@@ -86,8 +86,6 @@ void WorkflowPage::paint(juce::Graphics& g)
 {
     SettingsPageBase::paint(g);
 
-    auto area = getContentArea();
-    
     // Group 1: Editing
     drawControlLabel(g, "Default Curve Type", defaultCurveCombo.getBounds());
     drawControlLabel(g, "Default Tension", defaultTensionSlider.getBounds());

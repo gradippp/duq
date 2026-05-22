@@ -42,7 +42,7 @@ public:
         repaint();
     }
 
-    void changeListenerCallback(juce::ChangeBroadcaster* source) override
+    void changeListenerCallback(juce::ChangeBroadcaster* [[maybe_unused]] source) override
     {
         refreshTheme();
     }
@@ -86,7 +86,7 @@ private:
         }
 
     private:
-        void changeListenerCallback(juce::ChangeBroadcaster* source) override
+        void changeListenerCallback(juce::ChangeBroadcaster* [[maybe_unused]] source) override
         {
             if (safeRow != nullptr)
             {
