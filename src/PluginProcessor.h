@@ -11,7 +11,8 @@ class DuqAudioProcessor : public juce::AudioProcessor,
     private juce::AudioProcessorValueTreeState::Listener,
     private juce::Timer,
     public juce::ChangeListener,
-    public juce::AudioProcessorParameter::Listener
+    public juce::AudioProcessorParameter::Listener,
+    public juce::AsyncUpdater
 {
 public:
     //==============================================================================
@@ -115,6 +116,11 @@ private:
 
     // Timer
     void timerCallback() override;
+
+    // AsyncUpdater
+    void handleAsyncUpdate() override;
+
+    void performUndoRedo(bool isUndo);
 
     //==============================================================================
     juce::UndoManager undoManager{ 200 };

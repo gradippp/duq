@@ -143,34 +143,13 @@ void DuqAudioProcessor::parameterValueChanged(int parameterIndex, float newValue
         {
             if (newTriggerValue < lastVal)
             {
-                int steps = lastVal - newTriggerValue;
                 lastUndoTriggerValue.store(newTriggerValue);
-                
-                juce::MessageManager::callAsync([this, steps]() {
-                    isHostUndoing.store(true);
-                    for (int i = 0; i < steps; ++i)
-                        undoManager.undo();
-                        
-                    // Post a message to reset the flag AFTER coalesced ChangeBroadcaster messages
-                    juce::MessageManager::callAsync([this]() {
-                        isHostUndoing.store(false);
-                    });
-                });
+                juce::MessageManager::callAsync([this]() { performUndoRedo(true); });
             }
             else if (newTriggerValue > lastVal)
             {
-                int steps = newTriggerValue - lastVal;
                 lastUndoTriggerValue.store(newTriggerValue);
-                
-                juce::MessageManager::callAsync([this, steps]() {
-                    isHostUndoing.store(true);
-                    for (int i = 0; i < steps; ++i)
-                        undoManager.redo();
-                        
-                    juce::MessageManager::callAsync([this]() {
-                        isHostUndoing.store(false);
-                    });
-                });
+                juce::MessageManager::callAsync([this]() { performUndoRedo(false); });
             }
         }
         else
@@ -178,6 +157,19 @@ void DuqAudioProcessor::parameterValueChanged(int parameterIndex, float newValue
             lastUndoTriggerValue.store(newTriggerValue);
         }
     }
+}
+
+void DuqAudioProcessor::performUndoRedo(bool isUndo)
+{
+    isHostUndoing.store(true);
+    if (isUndo) undoManager.undo();
+    else        undoManager.redo();
+    triggerAsyncUpdate();
+}
+
+void DuqAudioProcessor::handleAsyncUpdate()
+{
+    isHostUndoing.store(false);
 }
 
 void DuqAudioProcessor::parameterGestureChanged(int parameterIndex, bool gestureIsStarting)

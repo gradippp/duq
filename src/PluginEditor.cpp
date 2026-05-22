@@ -174,13 +174,13 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     header.setUndoCallback([this]
         {
             if (undoManager.canUndo())
-                undoManager.undo();
+                audioProcessor.performUndoRedo(true);
         });
 
     header.setRedoCallback([this]
         {
             if (undoManager.canRedo())
-                undoManager.redo();
+                audioProcessor.performUndoRedo(false);
         });
 
     header.setSaveProjectCallback([this]
