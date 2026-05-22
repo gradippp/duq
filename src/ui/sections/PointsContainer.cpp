@@ -47,7 +47,7 @@ void PointsContainer::rebuildPointComponents()
         auto node = points.getChild(i);
         auto comp = std::make_unique<PointComponent>(grid, node);
 
-        comp->onDragStart = [safeGrid, node](juce::ValueTree vt)
+        comp->onDragStart = [safeGrid, node]([[maybe_unused]] juce::ValueTree vt)
         {
             if (safeGrid == nullptr) return;
             safeGrid->setDraggingPoint(true);
@@ -57,14 +57,14 @@ void PointsContainer::rebuildPointComponents()
                 safeGrid->getUndoManagerPtr()->beginNewTransaction("Move Envelope Point");
         };
 
-        comp->onDragMove = [safeGrid, safeThis, compPtr = comp.get()](juce::ValueTree node, juce::Point<float> pos, bool snapMode)
+        comp->onDragMove = [safeGrid, safeThis, compPtr = comp.get()](juce::ValueTree targetNode, juce::Point<float> pos, bool snapMode)
         {
-            if (safeGrid == nullptr || safeThis == nullptr || !node.isValid()) return;
+            if (safeGrid == nullptr || safeThis == nullptr || !targetNode.isValid()) return;
 
             auto pointsVT = safeGrid->getEnvelope().getChildWithName("POINTS");
             if (!pointsVT.isValid()) return;
 
-            const int index = pointsVT.indexOf(node);
+            const int index = pointsVT.indexOf(targetNode);
             const int totalPoints = pointsVT.getNumChildren();
 
             // X constraints
@@ -126,20 +126,20 @@ void PointsContainer::rebuildPointComponents()
             auto node = segments.getChild(i);
             auto anchor = std::make_unique<AnchorComponent>(grid, node);
 
-            anchor->onDragStart = [safeGrid, i](juce::ValueTree node)
+            anchor->onDragStart = [safeGrid](juce::ValueTree targetNode)
             {
                 if (safeGrid == nullptr) return;
                 safeGrid->setDraggingAnchor(true);
-                safeGrid->activeAnchorNode = node;
-                safeGrid->activeDragCurve = (float)node["curve"];
+                safeGrid->activeAnchorNode = targetNode;
+                safeGrid->activeDragCurve = (float)targetNode["curve"];
                 if (safeGrid->getUndoManagerPtr())
                     safeGrid->getUndoManagerPtr()->beginNewTransaction("Move Curve");
             };
 
-            anchor->onDragMove = [safeGrid](juce::ValueTree node, float newCurve)
+            anchor->onDragMove = [safeGrid](juce::ValueTree targetNode, float newCurve)
             {
-                if (safeGrid == nullptr || !node.isValid()) return;
-                safeGrid->activeAnchorNode = node;
+                if (safeGrid == nullptr || !targetNode.isValid()) return;
+                safeGrid->activeAnchorNode = targetNode;
                 safeGrid->activeDragCurve = juce::jlimit(-1.0f, 1.0f, newCurve);
                 safeGrid->updatePointPositions();
                 
@@ -148,10 +148,10 @@ void PointsContainer::rebuildPointComponents()
                 safeGrid->repaint();
             };
 
-            anchor->onDragEnd = [safeGrid](juce::ValueTree node)
+            anchor->onDragEnd = [safeGrid](juce::ValueTree targetNode)
             {
-                if (safeGrid == nullptr || !node.isValid()) return;
-                node.setProperty("curve", safeGrid->activeDragCurve, safeGrid->getUndoManagerPtr());
+                if (safeGrid == nullptr || !targetNode.isValid()) return;
+                targetNode.setProperty("curve", safeGrid->activeDragCurve, safeGrid->getUndoManagerPtr());
                 safeGrid->activeAnchorNode = {};
                 safeGrid->setDraggingAnchor(false);
             };

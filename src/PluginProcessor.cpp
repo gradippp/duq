@@ -47,11 +47,10 @@ DuqAudioProcessor::DuqAudioProcessor()
     parameters(*this, &undoManager, "PARAMETERS", createParameterLayout())
 #endif
 {
-    juce::SharedResourcePointer<ConfigManager> config;
     undoManager.setMaxNumberOfStoredUnits(30000, config->getUndoLimit());
 
-    for (auto& n : activeNotes)
-        n.store(false);
+    for (size_t i = 0; i < activeNotes.size(); ++i)
+        activeNotes[i].store(false);
 
     parameters.state.getOrCreateChildWithName("ENVELOPES", &undoManager);
 
@@ -297,10 +296,10 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
         if (msg.isNoteOn())
         {
             int note = msg.getNoteNumber();
-            activeNotes[note].store(true, std::memory_order_relaxed);
+            activeNotes[static_cast<size_t>(note)].store(true, std::memory_order_relaxed);
 
             // Find envelopes that match this note
-            for (int i = 0; i < (int)dspState.envelopes.size(); ++i)
+            for (size_t i = 0; i < dspState.envelopes.size(); ++i)
             {
                 const auto& env = dspState.envelopes[i];
                 if (!env.isDisabled && env.triggerNote == note)
@@ -433,7 +432,7 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                         v.currentPhase = std::fmod(v.currentPhase, 1.0);
 
                         // If note is released, stop at end of cycle (noteNumber < 0 means manual trigger, which loops)
-                        if (v.noteNumber >= 0 && !activeNotes[v.noteNumber].load(std::memory_order_relaxed))
+                        if (v.noteNumber >= 0 && !activeNotes[static_cast<size_t>(v.noteNumber)].load(std::memory_order_relaxed))
                         {
                             v.isActive = false;
                             v.currentPhase = 1.0;

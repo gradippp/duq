@@ -14,7 +14,7 @@ public:
         setColour(juce::ScrollBar::trackColourId, juce::Colours::transparentBlack);
     }
 
-    void drawScrollbar(juce::Graphics& g, juce::ScrollBar& scrollbar,
+    void drawScrollbar(juce::Graphics& g, [[maybe_unused]] juce::ScrollBar& scrollbar,
                        int x, int y, int width, int height,
                        bool isScrollbarVertical, int thumbStartPosition,
                        int thumbSize, bool isMouseOver, bool isMouseDown) override

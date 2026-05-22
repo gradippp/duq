@@ -151,7 +151,7 @@ void GeneralPage::buttonClicked(juce::Button* b)
     }
 }
 
-void GeneralPage::changeListenerCallback(juce::ChangeBroadcaster* [[maybe_unused]] source)
+void GeneralPage::changeListenerCallback([[maybe_unused]] juce::ChangeBroadcaster* source)
 {
     repaint();
 }

@@ -200,8 +200,8 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
             
             // Reset global parameters
             auto& vts = audioProcessor.parameters;
-            if (auto* p = vts.getParameter("mix")) p->setValueNotifyingHost(p->getDefaultValue());
-            if (auto* p = vts.getParameter("lookahead")) p->setValueNotifyingHost(vts.getParameterRange("lookahead").convertTo0to1(Defaults::lookahead));
+            if (auto* param = vts.getParameter("mix")) param->setValueNotifyingHost(param->getDefaultValue());
+            if (auto* param = vts.getParameter("lookahead")) param->setValueNotifyingHost(vts.getParameterRange("lookahead").convertTo0to1(Defaults::lookahead));
 
             auto envelopes = audioProcessor.getEnvelopesTree();
             envelopes.removeAllChildren(&undoManager);

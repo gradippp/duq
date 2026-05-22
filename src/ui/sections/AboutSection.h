@@ -28,10 +28,10 @@ private:
             bool isScrollbarVertical, int thumbStartPosition,
             int thumbSize, bool isMouseOver, bool isMouseDown) override;
 
-        void drawScrollbarButton(juce::Graphics& g, juce::ScrollBar& scrollbar,
-            int width, int height, int buttonDirection,
-            bool isScrollbarVertical,
-            bool isMouseOverButton, bool isMouseDownOnButton) override {}
+        void drawScrollbarButton([[maybe_unused]] juce::Graphics& g, [[maybe_unused]] juce::ScrollBar& scrollbar,
+            [[maybe_unused]] int width, [[maybe_unused]] int height, [[maybe_unused]] int buttonDirection,
+            [[maybe_unused]] bool isScrollbarVertical,
+            [[maybe_unused]] bool isMouseOverButton, [[maybe_unused]] bool isMouseDownOnButton) override {}
     } scrollbarLF;
 
     struct AboutContent : public juce::Component

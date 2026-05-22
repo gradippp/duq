@@ -48,7 +48,7 @@ public:
     // BUTTONS
     // ==============================================================================
 
-    void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+    void drawButtonBackground(juce::Graphics& g, juce::Button& button, [[maybe_unused]] const juce::Colour& backgroundColour,
                               bool isMouseOverButton, bool isButtonDown) override
     {
         auto bounds = button.getLocalBounds().toFloat();

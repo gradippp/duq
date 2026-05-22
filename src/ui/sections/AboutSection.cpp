@@ -93,10 +93,10 @@ int AboutSection::AboutContent::getRequiredHeight(int width)
 }
 
 // --- ModernScrollbarLF Implementation ---
-void AboutSection::ModernScrollbarLF::drawScrollbar(juce::Graphics& g, juce::ScrollBar& scrollbar,
-    int x, int y, int width, int height,
+void AboutSection::ModernScrollbarLF::drawScrollbar(juce::Graphics& g, [[maybe_unused]] juce::ScrollBar& scrollbar,
+    [[maybe_unused]] int x, [[maybe_unused]] int y, int width, int height,
     bool isScrollbarVertical, int thumbStartPosition,
-    int thumbSize, bool isMouseOver, bool isMouseDown)
+    int thumbSize, bool isMouseOver, [[maybe_unused]] bool isMouseDown)
 {
     if (thumbSize <= 0)
         return;

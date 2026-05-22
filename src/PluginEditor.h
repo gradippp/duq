@@ -46,6 +46,7 @@ private:
     std::unique_ptr<GlobalLookAndFeel> globalLookAndFeel;
 
     DuqAudioProcessor& audioProcessor;
+    juce::UndoManager& undoManager;
     HeaderSection header;
     EnvelopeListSection envelopeListSection;
     ControlSection controlSection;
@@ -56,8 +57,6 @@ private:
     SettingsSection settingsSection;
 
     juce::TooltipWindow tooltipWindow{ this };
-
-    juce::UndoManager& undoManager;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessorEditor)
 };

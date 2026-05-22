@@ -1,23 +1,17 @@
 #include <iostream>
-#include <fstream>
-#include <filesystem>
+#include <juce_core/juce_core.h>
 #include "FactoryData.h"
 
-namespace fs = std::filesystem;
-
-void writeAssets(const std::string& subDir, const std::vector<FactoryAsset>& assets, const std::string& outputRoot) {
-    fs::path dir = fs::path(outputRoot) / subDir;
-    fs::create_directories(dir);
+void writeAssets(const juce::String& subDir, const std::vector<FactoryAsset>& assets, const juce::String& outputRoot) {
+    juce::File dir = juce::File(outputRoot).getChildFile(subDir);
+    dir.createDirectory();
 
     for (const auto& asset : assets) {
-        fs::path filePath = dir / asset.filename;
-        std::ofstream out(filePath);
-        if (out.is_open()) {
-            out << asset.content;
-            out.close();
-            std::cout << "Generated: " << filePath.string() << std::endl;
+        juce::File filePath = dir.getChildFile(asset.filename);
+        if (filePath.replaceWithText(asset.content)) {
+            std::cout << "Generated: " << filePath.getFullPathName() << std::endl;
         } else {
-            std::cerr << "Error: Could not write to " << filePath.string() << std::endl;
+            std::cerr << "Error: Could not write to " << filePath.getFullPathName() << std::endl;
         }
     }
 }
@@ -28,7 +22,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string outputDir = argv[1];
+    juce::String outputDir = argv[1];
     
     try {
         writeAssets("themes", FactoryData::getAllThemes(), outputDir);

@@ -52,7 +52,7 @@ ControlSection::ControlSection()
 
             // Map 0..100 to 0..5
             int index = juce::jlimit(0, 5, (int)(value / 16.66f));
-            return rateDivisions[index];
+            return rateDivisions[static_cast<size_t>(index)];
         };
 
     rateKnob.onValueChanged = [this](double value) {

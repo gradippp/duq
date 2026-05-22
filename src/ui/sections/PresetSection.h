@@ -38,7 +38,7 @@ public:
     void listBoxItemClicked(int rowNumber, const juce::MouseEvent& e) override;
     juce::Component* refreshComponentForRow(int rowNumber, bool isSelected, juce::Component* existingComponentToUpdate) override;
 
-    void lookAndFeelChanged();
+    void lookAndFeelChanged() override;
 
 private:
     void refreshPresetList();

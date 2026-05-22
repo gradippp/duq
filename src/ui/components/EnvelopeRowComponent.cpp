@@ -143,7 +143,7 @@ void EnvelopeRowComponent::refreshTheme()
     repaint();
 }
 
-void EnvelopeRowComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
+void EnvelopeRowComponent::changeListenerCallback([[maybe_unused]] juce::ChangeBroadcaster* source)
 {
     refreshTheme();
 }
