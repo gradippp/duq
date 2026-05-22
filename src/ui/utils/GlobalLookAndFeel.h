@@ -35,6 +35,9 @@ public:
         setColour(juce::Slider::backgroundColourId, T_COL(widgetBackground));
         setColour(juce::Slider::thumbColourId, T_COL(accent));
         setColour(juce::Slider::trackColourId, T_COL(accent).withAlpha(0.5f));
+        setColour(juce::Slider::textBoxTextColourId, T_COL(widgetText));
+        setColour(juce::Slider::textBoxBackgroundColourId, T_COL(widgetBackground));
+        setColour(juce::Slider::textBoxOutlineColourId, T_COL(widgetOutline).withAlpha(0.3f));
 
         setColour(juce::TextEditor::backgroundColourId, T_COL(widgetBackground));
         setColour(juce::TextEditor::textColourId, T_COL(widgetText));
@@ -131,7 +134,7 @@ public:
 
         // Arrow Area
         auto arrowArea = juce::Rectangle<int>(buttonX, buttonY, buttonW, buttonH).toFloat();
-        float arrowSize = 0.35f * juce::jmin(arrowArea.getWidth(), arrowArea.getHeight());
+        float arrowSize = 0.20f * juce::jmin(arrowArea.getWidth(), arrowArea.getHeight());
         auto centre = arrowArea.getCentre();
 
         juce::Path p;
@@ -139,7 +142,7 @@ public:
                       centre.x + arrowSize, centre.y - arrowSize * 0.5f,
                       centre.x, centre.y + arrowSize * 0.5f);
 
-        g.setColour(T_COL(accent).withAlpha(0.9f));
+        g.setColour(T_COL(widgetText).withAlpha(0.7f));
         g.fillPath(p);
     }
 
@@ -255,6 +258,15 @@ public:
 
         g.setColour(T_COL(knobIndicator));
         g.fillEllipse(dotPos.x - dotRadius, dotPos.y - dotRadius, dotRadius * 2.0f, dotRadius * 2.0f);
+    }
+
+    juce::Label* createSliderTextBox(juce::Slider& slider) override
+    {
+        auto* l = juce::LookAndFeel_V4::createSliderTextBox(slider);
+        l->setColour(juce::Label::textColourId, T_COL(widgetText));
+        l->setColour(juce::Label::backgroundColourId, T_COL(widgetBackground));
+        l->setColour(juce::Label::outlineColourId, T_COL(widgetOutline).withAlpha(0.3f));
+        return l;
     }
 
     // ==============================================================================

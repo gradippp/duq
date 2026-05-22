@@ -132,6 +132,9 @@ void EnvelopeListSection::valueTreePropertyChanged(juce::ValueTree& v, const juc
 
 void EnvelopeListSection::lookAndFeelChanged()
 {
+    buttonLnf.refreshColours();
+    viewportLnf.refreshColours();
+
     addButton.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
     addButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
     addButton.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));

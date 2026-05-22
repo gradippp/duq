@@ -9,7 +9,7 @@ namespace FactoryData {
         const juce::Colour accentColour(0xFFD32F2F); // Vibrant Red Accent
         const juce::Colour borderColour(0xFFCCCCCC);
         const juce::Colour textMainColour(0xFF000000); // Pure Black
-        const juce::Colour widgetBgColour(0xFFF8F8F8); // Very Light Grey
+        const juce::Colour widgetBgColour(0xFFEFEFEF); // Light Grey (Improved Contrast)
 
         tm.setColour(ThemeManager::background, juce::Colour(0xFFF2F2F2));
         tm.setColour(ThemeManager::sectionBackground, juce::Colour(0xFFFFFFFF));

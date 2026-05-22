@@ -108,6 +108,12 @@ void AboutSection::ModernScrollbarLF::drawScrollbar(juce::Graphics& g, juce::Scr
     g.fillRoundedRectangle(thumbBounds.reduced(3).toFloat(), 2.0f);
 }
 
+void AboutSection::lookAndFeelChanged()
+{
+    scrollbarLF.refreshColours();
+    repaint();
+}
+
 void AboutSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
