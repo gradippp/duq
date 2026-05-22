@@ -19,7 +19,7 @@ juce::Colour ThemeManager::getColour(ColourID id) const
     
     // --- INTELLIGENT FALLBACKS ---
     // These trigger if a theme file is old and missing the newer keys.
-    switch (id)
+    switch ((int)id)
     {
         case widgetBackground: 
         case contextMenuBackground: return getColour(sectionBackground);
@@ -166,7 +166,7 @@ juce::String ThemeManager::saveThemeToXmlString() const
         child->setAttribute("hex", color.toDisplayString(true));
     }
 
-    return xml.createDocument(juce::String());
+    return xml.toString();
 }
 
 juce::String ThemeManager::getColourDescription(ColourID id) const

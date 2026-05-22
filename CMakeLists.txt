@@ -194,6 +194,12 @@ target_include_directories(FactoryGenerator PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/juce_binarydata_${PLUGIN_NAME}BinaryData/JuceLibraryCode"
 )
 
+target_compile_definitions(FactoryGenerator
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+
 # Link to JUCE modules needed for serialization
 target_link_libraries(FactoryGenerator PRIVATE
     juce::juce_core
@@ -202,6 +208,9 @@ target_link_libraries(FactoryGenerator PRIVATE
     juce::juce_gui_basics
     juce::juce_events
     ${PLUGIN_NAME}BinaryData
+    juce::juce_recommended_config_flags
+    juce::juce_recommended_lto_flags
+    juce::juce_recommended_warning_flags
 )
 
 set_target_properties(FactoryGenerator PROPERTIES FOLDER "Tools")
