@@ -61,12 +61,18 @@ void WaveformComponent::paint(juce::Graphics& g)
         juce::Path path;
         if (!data) return path;
 
+        int step = 1;
+        int quality = config->getWaveformQuality();
+        if (quality == 0)      step = 4;
+        else if (quality == 1) step = 2;
+
         bool started = false;
-        for (int x = 0; x < width; ++x)
+        for (int x = 0; x < width; x += step)
         {
+            float curSamplesPerPixel = samplesPerPixel * step;
             float sampleIdx = startSample + (x * samplesPerPixel);
             int start = (int)sampleIdx;
-            int end = (int)(sampleIdx + samplesPerPixel);
+            int end = (int)(sampleIdx + curSamplesPerPixel);
 
             start = juce::jlimit(0, bufferLength - 1, start);
             end = juce::jlimit(start + 1, bufferLength, end);
@@ -74,7 +80,8 @@ void WaveformComponent::paint(juce::Graphics& g)
             float minVal = 1.0f;
             float maxVal = -1.0f;
 
-            for (int i = start; i < end; ++i)
+            int sampleStep = (quality == 0) ? 16 : (quality == 1) ? 4 : 1;
+            for (int i = start; i < end; i += sampleStep)
             {
                 float v = data[i];
                 minVal = std::min(minVal, v);

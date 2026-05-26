@@ -48,22 +48,30 @@ void MeterComponent::timerCallback()
 
     normalized = juce::jlimit(0.0f, 1.0f, normalized);
 
-    // Faster smoothing to catch blips
-    smoothedLevel += (normalized - smoothedLevel) * 0.4f;
-
-    // Peak Logic
-    if (normalized >= peakLevel)
+    if (mode == MeterMode::Envelope)
     {
-        peakLevel = normalized;
-        peakHoldCount = clipHoldFrames;
-    }
-    else if (peakHoldCount > 0)
-    {
-        peakHoldCount--;
+        smoothedLevel = normalized;
+        peakLevel = 0.0f;
     }
     else
     {
-        peakLevel *= 0.95f; // Faster decay for peak when not held
+        // Faster smoothing to catch blips
+        smoothedLevel += (normalized - smoothedLevel) * 0.4f;
+
+        // Peak Logic
+        if (normalized >= peakLevel)
+        {
+            peakLevel = normalized;
+            peakHoldCount = clipHoldFrames;
+        }
+        else if (peakHoldCount > 0)
+        {
+            peakHoldCount--;
+        }
+        else
+        {
+            peakLevel *= 0.95f; // Faster decay for peak when not held
+        }
     }
 
     repaint();

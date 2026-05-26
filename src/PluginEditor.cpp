@@ -246,12 +246,18 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     showSection(Section::Grid);
 
     ThemeManager::getInstance().addChangeListener(this);
+    config->addChangeListener(this);
+
+    // Initial tooltip state
+    if (!config->getShowTooltips())
+        tooltipWindow.setMillisecondsBeforeTipAppears(std::numeric_limits<int>::max());
 
     undoManager.clearUndoHistory();
 }
 
 DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
 {
+    config->removeChangeListener(this);
     ThemeManager::getInstance().removeChangeListener(this);
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
@@ -270,7 +276,16 @@ void DuqAudioProcessorEditor::timerCallback()
 
 void DuqAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
-    if (source == &ThemeManager::getInstance())
+    if (source == &config.get())
+    {
+        if (config->getShowTooltips())
+            tooltipWindow.setMillisecondsBeforeTipAppears(500);
+        else
+            tooltipWindow.setMillisecondsBeforeTipAppears(std::numeric_limits<int>::max());
+            
+        repaint();
+    }
+    else if (source == &ThemeManager::getInstance())
     {
         // 1. Refresh global LookAndFeel
         if (globalLookAndFeel) 

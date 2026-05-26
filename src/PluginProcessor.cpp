@@ -75,13 +75,15 @@ DuqAudioProcessor::DuqAudioProcessor()
     undoTriggerParam = new juce::AudioParameterInt(juce::ParameterID{ "undoTrigger", 1 }, "Undo Trigger", 0, 1000000, 0);
     addParameter(undoTriggerParam);
     undoTriggerParam->addListener(this);
+if (undoTriggerParam)
+    lastUndoTriggerValue = undoTriggerParam->get();
 
-    if (undoTriggerParam)
-        lastUndoTriggerValue = undoTriggerParam->get();
+undoManager.addChangeListener(this);
+config->addChangeListener(this);
 
-    undoManager.addChangeListener(this);
+// Envelope Voices
+voices.resize(maxVoices);
 
-    voices.resize(maxVoices);
     for (auto& v : voices) v.isActive = false;
 
     syncToDSP();
@@ -108,11 +110,16 @@ DuqAudioProcessor::~DuqAudioProcessor()
         undoTriggerParam->removeListener(this);
 
     undoManager.removeChangeListener(this);
+    config->removeChangeListener(this);
 }
 
 void DuqAudioProcessor::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
-    if (source == &undoManager && !isHostUndoing.load())
+    if (source == &config.get())
+    {
+        undoManager.setMaxNumberOfStoredUnits(30000, config->getUndoLimit());
+    }
+    else if (source == &undoManager && !isHostUndoing.load())
     {
         if (undoTriggerParam != nullptr)
         {
@@ -510,8 +517,10 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                     {
                         v.currentPhase = std::fmod(v.currentPhase, 1.0);
 
-                        // If note is released, stop at end of cycle (noteNumber < 0 means manual trigger, which loops)
-                        if (v.noteNumber >= 0 && !activeNotes[static_cast<size_t>(v.noteNumber)].load(std::memory_order_relaxed))
+                        // If note is released (or it was a manual trigger), stop at end of cycle
+                        bool isNoteHeld = (v.noteNumber >= 0 && activeNotes[static_cast<size_t>(v.noteNumber)].load(std::memory_order_relaxed));
+
+                        if (!isNoteHeld)
                         {
                             v.isActive = false;
                             v.currentPhase = 1.0;
@@ -520,8 +529,7 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                     else
                     {
                         v.currentPhase = 1.0;
-                        if (voiceGain >= 0.999f)
-                            v.isActive = false;
+                        v.isActive = false;
                     }
                 }
             }
@@ -600,13 +608,8 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     inputMeterLevel.store(inputPeak, std::memory_order_relaxed);
     outputMeterLevel.store(outputPeak, std::memory_order_relaxed);
 
-    // Peak-hold release logic for meter
-    if (maxReduction > reductionPeak)
-        reductionPeak = maxReduction;
-    else
-        reductionPeak *= 0.95f; // Slower release for better visual tracking
-
-    reductionMeterLevel.store(reductionPeak, std::memory_order_relaxed);
+    // For reduction, just show the instantaneous state at the end of the block
+    reductionMeterLevel.store(1.0f - masterGain.getCurrentValue(), std::memory_order_relaxed);
 }
 
 juce::UndoManager& DuqAudioProcessor::getUndoManager()
