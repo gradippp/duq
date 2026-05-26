@@ -149,7 +149,12 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         };
 
     header.setAboutCallback([this] { showSection(Section::About); });
-    header.setSettingsCallback([this] { showSection(Section::Settings); });
+    header.setSettingsCallback([this] { 
+        if (settingsSection.isVisible())
+            showSection(Section::Grid);
+        else
+            showSection(Section::Settings); 
+    });
     
     settingsSection.onClose = [this] { showSection(Section::Grid); };
 
@@ -312,6 +317,8 @@ void DuqAudioProcessorEditor::showSection(Section section)
     settingsSection.setVisible(section == Section::Settings);
     aboutSection.setVisible(section == Section::About);
     
+    header.setSettingsActive(section == Section::Settings);
+
     // Always show left panel and meters unless it's About section
     bool showMainUI = (section != Section::About);
     envelopeListSection.setVisible(showMainUI);

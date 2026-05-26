@@ -227,6 +227,11 @@ void HeaderSection::updateUndoState(bool canUndo, bool canRedo)
     redoButton.setAlpha(canRedo ? 1.0f : 0.4f);
 }
 
+void HeaderSection::setSettingsActive(bool active)
+{
+    settingsButton.setToggleState(active, juce::dontSendNotification);
+}
+
 void HeaderSection::setUndoCallback(std::function<void()> cb)
 {
     undoCallback = std::move(cb);

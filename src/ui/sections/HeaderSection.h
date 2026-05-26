@@ -56,6 +56,7 @@ public:
 
     void setUndoManager(juce::UndoManager* um);
     void updateUndoState(bool canUndo, bool canRedo);
+    void setSettingsActive(bool active);
     void refreshTheme();
 
 private:
