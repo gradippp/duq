@@ -24,16 +24,24 @@ namespace EnvelopeEvaluator
         if (segmentIndex >= env.points.size() - 1)
             segmentIndex = 0;
 
-        // If phase moved backwards or jump, reset search
-        if (phase < (double)env.points[segmentIndex].x)
-            segmentIndex = 0;
-
-        for (size_t i = segmentIndex; i < env.points.size() - 1; ++i)
+        // Check if we are still in the same segment (Common case)
+        if (phase >= (double)env.points[segmentIndex].x && phase <= (double)env.points[segmentIndex + 1].x)
         {
-            if (phase >= (double)env.points[i].x && phase <= (double)env.points[i + 1].x)
+            // Do nothing, segmentIndex is correct
+        }
+        else
+        {
+            // If phase moved backwards or jump, reset search
+            if (phase < (double)env.points[segmentIndex].x)
+                segmentIndex = 0;
+
+            for (size_t i = segmentIndex; i < env.points.size() - 1; ++i)
             {
-                segmentIndex = i;
-                break;
+                if (phase >= (double)env.points[i].x && phase <= (double)env.points[i + 1].x)
+                {
+                    segmentIndex = i;
+                    break;
+                }
             }
         }
 

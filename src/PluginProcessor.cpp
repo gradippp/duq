@@ -526,9 +526,34 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     const int delaySize = delayBuffer.getNumSamples();
+    constexpr int controlRate = 32;
 
     for (int i = 0; i < numSamples; ++i)
     {
+        // --- Control Rate Update ---
+        if (i % controlRate == 0)
+        {
+            const int samplesToNextControl = std::min(controlRate, numSamples - i);
+            const float invSamples = 1.0f / (float)samplesToNextControl;
+
+            for (auto& v : voices)
+            {
+                if (v.isActive && v.envelopeIndex >= 0 && v.envelopeIndex < (int)dspState.envelopes.size())
+                {
+                    const auto& env = dspState.envelopes[v.envelopeIndex];
+                    
+                    // Evaluate at current phase
+                    float envVal = EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex);
+                    float mappedVal = envVal * envVal;
+                    float targetVoiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
+                    
+                    // Target with smoothing
+                    v.targetGain = v.currentGain + (targetVoiceGain - v.currentGain) * (env.smoothCoeff * (float)samplesToNextControl);
+                    v.gainDelta = (v.targetGain - v.currentGain) * invSamples;
+                }
+            }
+        }
+
         // --- Write to Delay Buffer ---
         for (int ch = 0; ch < numChannels; ++ch)
         {
@@ -537,7 +562,7 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
         // --- Read from Delay Buffer (Lookahead) ---
         // Smoothly approach target lookahead
-        dspState.currentLookaheadSamples += ( (float)dspState.lookaheadSamples - dspState.currentLookaheadSamples) * 0.005f; // Fast ramp
+        dspState.currentLookaheadSamples += ((float)dspState.lookaheadSamples - dspState.currentLookaheadSamples) * 0.005f;
 
         int readPos = (delayWritePos - (int)dspState.currentLookaheadSamples + delaySize) % delaySize;
         float sampleGain = 1.0f;
@@ -548,17 +573,7 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             {
                 const auto& env = dspState.envelopes[v.envelopeIndex];
                 
-                float envVal = EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex);
-                
-                // Map y -> y^2 for more natural volume control
-                float mappedVal = envVal * envVal;
-                
-                // Apply depth: If depth is 1.0, we use mappedVal. If depth is 0.0, we use 1.0.
-                float targetVoiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
-                
-                // Apply per-voice smoothing
-                v.currentGain += (targetVoiceGain - v.currentGain) * env.smoothCoeff;
-                
+                v.currentGain += v.gainDelta;
                 sampleGain *= juce::jlimit(0.0f, 1.0f, v.currentGain);
 
                 // Advance phase

@@ -44,4 +44,8 @@ struct EnvelopeVoice
     int noteNumber = -1;
     float currentGain = 1.0f;
     size_t lastSegmentIndex = 0;
+
+    // Block-rate interpolation
+    float targetGain = 1.0f;
+    float gainDelta = 0.0f;
 };
