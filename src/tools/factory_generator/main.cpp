@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
     juce::String outputDir = argv[1];
     
     try {
-        writeAssets("themes", FactoryData::getAllThemes(), outputDir);
-        writeAssets("envelopes", FactoryData::getAllEnvelopes(), outputDir);
+        writeAssets("Themes", FactoryData::getAllThemes(), outputDir);
+        writeAssets("Envelopes", FactoryData::getAllEnvelopes(), outputDir);
     } catch (const std::exception& e) {
         std::cerr << "Fatal Error: " << e.what() << std::endl;
         return 1;
