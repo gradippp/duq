@@ -55,6 +55,12 @@ ControlSection::ControlSection()
             return rateDivisions[static_cast<size_t>(index)];
         };
 
+    smoothKnob.valueFormatter =
+        [](double value)
+        {
+            return juce::String(value * 1.0, 1) + " ms";
+        };
+
     rateKnob.onValueChanged = [this](double value) {
         if (envelope.isValid() && rateAttachment == nullptr)
             envelope.setProperty("rate", value, undoManager);

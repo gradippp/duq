@@ -237,13 +237,20 @@ void DuqAudioProcessor::syncToDSP()
 
         de.depth = rawDepth / 100.0f;
         de.smooth = rawSmooth / 100.0f;
+        
+        // Map smooth % to time (0-100% -> 0-500ms)
+        double srate = getSampleRate();
+        if (srate <= 0) srate = 44100.0; // Fallback
+
+        float smoothTimeSec = de.smooth * 0.5f; 
+        if (smoothTimeSec > 0.0001f)
+            de.smoothCoeff = 1.0f - std::exp(-1.0f / (smoothTimeSec * (float)srate));
+        else
+            de.smoothCoeff = 1.0f;
+
         de.triggerNote = envVT.getProperty("triggerNote", 60);
         de.isFrequencyMode = (bool)envVT.getProperty("rateIsFrequencyMode", true);
         de.isDisabled = (bool)envVT.getProperty("disabled", false);
-
-        // Pre-calculate phase increment
-        double srate = getSampleRate();
-        if (srate <= 0) srate = 44100.0; // Fallback
 
         double currentRate = de.rate;
         if (!de.isFrequencyMode)
@@ -272,7 +279,6 @@ void DuqAudioProcessor::syncToDSP()
         auto segmentsVT = envVT.getChildWithName("SEGMENTS");
         if (segmentsVT.isValid())
         {
-            // We expect points.size() - 1 segments.
             int numSegmentsNeeded = std::max(0, (int)de.points.size() - 1);
             for (int j = 0; j < numSegmentsNeeded; ++j)
             {
@@ -284,7 +290,6 @@ void DuqAudioProcessor::syncToDSP()
                 }
                 else
                 {
-                    // Fallback for missing segments
                     de.segments.push_back({ 0.5f, CurveType::Exponential });
                 }
             }
@@ -337,7 +342,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
             juce::ParameterID{ prefix + "depth", 1 }, "Env " + juce::String(i + 1) + " Depth", 0.0f, 100.0f, controls.depth));
             
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
-            juce::ParameterID{ prefix + "smooth", 1 }, "Env " + juce::String(i + 1) + " Smooth", 0.0f, 100.0f, controls.smooth));
+            juce::ParameterID{ prefix + "smooth", 1 },
+            "Env " + juce::String(i + 1) + " Smooth",
+            juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
+            controls.smooth,
+            juce::AudioParameterFloatAttributes()
+                .withLabel("ms")
+                .withStringFromValueFunction([](float value, int) { return juce::String(value * 1.0f, 1); })
+                .withValueFromStringFunction([](const juce::String& text) { return text.getFloatValue() / 1.0f; })));
     }
 
     return { params.begin(), params.end() };
@@ -401,6 +413,7 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                             v.isActive = true;
                             v.currentPhase = 0.0;
                             v.lastSegmentIndex = 0;
+                            
                             foundVoice = true;
                             break;
                         }
@@ -414,7 +427,6 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
                             {
                                 v.envelopeIndex = static_cast<int>(i);
                                 v.currentPhase = 0.0;
-                                v.currentGain = 1.0f;
                                 v.lastSegmentIndex = 0;
                                 v.noteNumber = note;
                                 v.isActive = true;
@@ -467,11 +479,17 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         {
             if (!v.isActive)
             {
+                const auto& env = dspState.envelopes[mTrig];
                 v.envelopeIndex = mTrig;
                 v.currentPhase = 0.0;
-                v.currentGain = 1.0f;
                 v.lastSegmentIndex = 0;
                 v.noteNumber = -1; // Manual
+                
+                // Initialize gain to starting position
+                size_t dummyIndex = 0;
+                float startVal = EnvelopeEvaluator::evaluate(env, 0.0, dummyIndex);
+                v.currentGain = 1.0f - (1.0f - (startVal * startVal)) * env.depth;
+                
                 v.isActive = true;
                 break;
             }
@@ -500,13 +518,16 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 
                 float envVal = EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex);
                 
-                // Map y -> y^2 for more natural volume control (logarithmic/dB-like feel)
+                // Map y -> y^2 for more natural volume control
                 float mappedVal = envVal * envVal;
                 
                 // Apply depth: If depth is 1.0, we use mappedVal. If depth is 0.0, we use 1.0.
-                float voiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
+                float targetVoiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
                 
-                sampleGain *= juce::jlimit(0.0f, 1.0f, voiceGain);
+                // Apply per-voice smoothing
+                v.currentGain += (targetVoiceGain - v.currentGain) * env.smoothCoeff;
+                
+                sampleGain *= juce::jlimit(0.0f, 1.0f, v.currentGain);
 
                 // Advance phase
                 v.currentPhase += env.phaseIncrement;

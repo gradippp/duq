@@ -45,7 +45,7 @@ private:
 
     ControlKnobComponent rateKnob{ "Frequency", 20.0f, "Hz" };
     ControlKnobComponent depthKnob{ "Depth", 100.0f, "%" };
-    ControlKnobComponent smoothKnob{ "Smooth", 0.0f, "%" };
+    ControlKnobComponent smoothKnob{ "Smooth", 0.0f, " ms" };
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> rateAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> depthAttachment;

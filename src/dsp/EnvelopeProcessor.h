@@ -24,6 +24,7 @@ struct DSPEnvelope
     double phaseIncrement = 0.0;
     float depth = 1.0f;
     float smooth = 0.0f;
+    float smoothCoeff = 1.0f;
 
     int triggerNote = 60;
     bool isFrequencyMode = true;
