@@ -236,13 +236,14 @@ void DuqAudioProcessor::syncToDSP()
         }
 
         de.depth = rawDepth / 100.0f;
-        de.smooth = rawSmooth / 100.0f;
         
-        // Map smooth % to time (0-100% -> 0-500ms)
+        // rawSmooth is now 0-500 ms
+        float smoothTimeSec = rawSmooth / 1000.0f; 
+        de.smooth = rawSmooth / 500.0f; // Normalized 0..1 for UI/Internal consistency
+
         double srate = getSampleRate();
         if (srate <= 0) srate = 44100.0; // Fallback
 
-        float smoothTimeSec = de.smooth * 0.5f; 
         if (smoothTimeSec > 0.0001f)
             de.smoothCoeff = 1.0f - std::exp(-1.0f / (smoothTimeSec * (float)srate));
         else
@@ -344,12 +345,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
             juce::ParameterID{ prefix + "smooth", 1 },
             "Env " + juce::String(i + 1) + " Smooth",
-            juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f),
+            juce::NormalisableRange<float>(0.0f, 500.0f, 0.1f),
             controls.smooth,
             juce::AudioParameterFloatAttributes()
                 .withLabel("ms")
-                .withStringFromValueFunction([](float value, int) { return juce::String(value * 5.0f, 1); })
-                .withValueFromStringFunction([](const juce::String& text) { return text.getFloatValue() / 5.0f; })));
+                .withStringFromValueFunction([](float value, int) { return juce::String(value, 1); })
+                .withValueFromStringFunction([](const juce::String& text) { return text.getFloatValue(); })));
     }
 
     return { params.begin(), params.end() };

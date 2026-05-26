@@ -147,7 +147,8 @@ public:
             double durationSec = 1.0 / currentRate;
 
             const int smoothSteps = 400; 
-            float smoothTimeSec = smoothValue * 0.1f; // 100ms max
+            float smoothMs = (float)envelope.getProperty("smooth", 0.0);
+            float smoothTimeSec = smoothMs / 1000.0f; 
             
             double visualSrate = smoothSteps / durationSec;
             float coeff = 1.0f - std::exp(-1.0f / (smoothTimeSec * (float)visualSrate));

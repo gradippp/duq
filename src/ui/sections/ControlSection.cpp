@@ -58,7 +58,7 @@ ControlSection::ControlSection()
     smoothKnob.valueFormatter =
         [](double value)
         {
-            return juce::String(value * 5.0, 1) + " ms";
+            return juce::String(value, 1) + " ms";
         };
 
     rateKnob.onValueChanged = [this](double value) {
@@ -77,7 +77,7 @@ ControlSection::ControlSection()
     };
 
     depthKnob.getSlider().setRange(0.0, 100.0, 0.1);
-    smoothKnob.getSlider().setRange(0.0, 100.0, 0.1);
+    smoothKnob.getSlider().setRange(0.0, 500.0, 0.1);
 
     addAndMakeVisible(rateKnob);
     addAndMakeVisible(depthKnob);
