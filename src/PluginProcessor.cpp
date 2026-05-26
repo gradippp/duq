@@ -348,8 +348,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout DuqAudioProcessor::createPar
             controls.smooth,
             juce::AudioParameterFloatAttributes()
                 .withLabel("ms")
-                .withStringFromValueFunction([](float value, int) { return juce::String(value * 1.0f, 1); })
-                .withValueFromStringFunction([](const juce::String& text) { return text.getFloatValue() / 1.0f; })));
+                .withStringFromValueFunction([](float value, int) { return juce::String(value * 5.0f, 1); })
+                .withValueFromStringFunction([](const juce::String& text) { return text.getFloatValue() / 5.0f; })));
     }
 
     return { params.begin(), params.end() };

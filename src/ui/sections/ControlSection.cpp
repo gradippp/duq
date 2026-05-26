@@ -58,7 +58,7 @@ ControlSection::ControlSection()
     smoothKnob.valueFormatter =
         [](double value)
         {
-            return juce::String(value * 1.0, 1) + " ms";
+            return juce::String(value * 5.0, 1) + " ms";
         };
 
     rateKnob.onValueChanged = [this](double value) {
