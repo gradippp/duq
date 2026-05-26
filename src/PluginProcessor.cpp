@@ -128,7 +128,7 @@ void DuqAudioProcessor::changeListenerCallback(juce::ChangeBroadcaster* source)
             lastUndoTriggerValue.store(nextValue);
             
             undoTriggerParam->beginChangeGesture();
-            undoTriggerParam->setValueNotifyingHost(undoTriggerParam->convertTo0to1(nextValue));
+            undoTriggerParam->setValueNotifyingHost(undoTriggerParam->convertTo0to1((float)nextValue));
             undoTriggerParam->endChangeGesture();
             isInternalAction.store(false);
         }
@@ -177,6 +177,16 @@ void DuqAudioProcessor::performUndoRedo(bool isUndo)
 void DuqAudioProcessor::handleAsyncUpdate()
 {
     isHostUndoing.store(false);
+
+    int capturedNote = capturedCalibrationNote.exchange(-1);
+    if (capturedNote != -1)
+    {
+        // Calculate offset: offset = 1 - (note / 12)
+        // If note is 12 (C0 in many standards), offset is 1 - 1 = 0.
+        // If note is 24 (C0 in some standards), offset is 1 - 2 = -1.
+        int offset = 1 - (capturedNote / 12);
+        config->setMidiOctaveOffset(offset);
+    }
 }
 
 void DuqAudioProcessor::parameterGestureChanged(int parameterIndex, bool gestureIsStarting)
@@ -399,7 +409,7 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
 {
     const juce::ScopedLock sl(dspLock);
 
-    for (const auto metadata : midi)
+    for (const auto& metadata : midi)
     {
         const auto msg = metadata.getMessage();
 
@@ -407,6 +417,15 @@ void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
         {
             int note = msg.getNoteNumber();
             activeNotes[static_cast<size_t>(note)].store(true, std::memory_order_relaxed);
+
+            // MIDI Calibration
+            if (calibrationMode.load())
+            {
+                capturedCalibrationNote.store(note);
+                calibrationMode.store(false);
+                triggerAsyncUpdate();
+                continue; // Don't trigger envelopes while calibrating
+            }
 
             // Find envelopes that match this note
             for (size_t i = 0; i < dspState.envelopes.size(); ++i)

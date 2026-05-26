@@ -142,6 +142,6 @@ void WaveformComponent::paint(juce::Graphics& g)
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;
     float yCenter = (1.0f - nyCenter) * height;
     g.setColour(T_COL(gridMinor));
-    g.drawLine(0, yCenter, width, yCenter);
+    g.drawLine(0.0f, yCenter, (float)width, yCenter);
 }
 

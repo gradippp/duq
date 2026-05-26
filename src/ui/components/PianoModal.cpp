@@ -1,4 +1,5 @@
 #include "PianoModal.h"
+#include "../../utils/ConfigManager.h"
 
 PianoModal::PianoModal(int initialNote)
     : keyboard(keyboardState,
@@ -12,7 +13,11 @@ PianoModal::PianoModal(int initialNote)
     addAndMakeVisible(keyboard);
 
     // ===== Octave =====
-    currentOctave = (currentNote / 12) - 2;
+    juce::SharedResourcePointer<ConfigManager> config;
+    int offset = config->getMidiOctaveOffset();
+    // In our labeling: octave = (note / 12) - 1 + offset
+    // We want currentOctave to match this 'octave'
+    currentOctave = (currentNote / 12) - 1 + offset;
     currentOctave = juce::jlimit(-1, 8, currentOctave);
 
     addAndMakeVisible(octavePlus);
@@ -58,7 +63,12 @@ void PianoModal::updateOctaveView()
 
     keyboard.setKeyWidth(keyWidth);
 
-    int baseNote = (currentOctave + 2) * 12;
+    juce::SharedResourcePointer<ConfigManager> config;
+    int offset = config->getMidiOctaveOffset();
+    
+    // In our labeling: octave = (note / 12) - 1 + offset
+    // So note = (octave + 1 - offset) * 12
+    int baseNote = (currentOctave + 1 - offset) * 12;
     baseNote = juce::jlimit(0, 116, baseNote);
 
     keyboard.setAvailableRange(baseNote, baseNote + 11);

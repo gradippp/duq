@@ -4,7 +4,8 @@
 class WorkflowPage : public SettingsPageBase,
                      private juce::Slider::Listener,
                      private juce::ComboBox::Listener,
-                     public juce::ChangeListener
+                     public juce::ChangeListener,
+                     private juce::Timer
 {
 public:
     WorkflowPage();
@@ -14,6 +15,7 @@ public:
     void resized() override;
     void lookAndFeelChanged() override;
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+    void timerCallback() override;
 
     void setProcessor(class DuqAudioProcessor* p);
     void updateEnvelopeList();
@@ -45,6 +47,10 @@ private:
     juce::ComboBox currentEnvelopesCombo;
     juce::TextButton importFromBrowserButton{ "Import from Preset Browser" };
     ShapePreviewComponent shapePreview;
+
+    // --- MIDI Calibration ---
+    juce::TextButton calibrateMidiButton{ "Listen for C0" };
+    juce::Label midiStatusLabel;
 
     juce::SharedResourcePointer<ConfigManager> config;
 

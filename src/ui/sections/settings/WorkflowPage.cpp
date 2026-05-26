@@ -59,10 +59,28 @@ WorkflowPage::WorkflowPage()
     shapePreview.setShape(config->getDefaultShape());
 
     updateEnvelopeList();
+
+    // --- MIDI Calibration ---
+    addAndMakeVisible(calibrateMidiButton);
+    calibrateMidiButton.onClick = [this]
+    {
+        if (processor)
+        {
+            processor->setCalibrationMode(true);
+            startTimer(100);
+        }
+    };
+
+    addAndMakeVisible(midiStatusLabel);
+    midiStatusLabel.setFont(FontManager::getInterRegular(12.0f));
+    midiStatusLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
+    
+    config->addChangeListener(this);
 }
 
 WorkflowPage::~WorkflowPage() 
 {
+    config->removeChangeListener(this);
     ThemeManager::getInstance().removeChangeListener(this);
 }
 
@@ -107,24 +125,34 @@ void WorkflowPage::paint(juce::Graphics& g)
     // Group 2: Envelope Defaults
     g.setColour(T_COL(textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
-    int group2Y = undoLimitSlider.getBottom() + 40;
-    g.drawText("ENVELOPE DEFAULTS", 20, group2Y, 200, 30, juce::Justification::centredLeft);
+    int group2Y = undoLimitSlider.getBottom() + 30;
+    g.drawText("ENVELOPE DEFAULTS", 20.0f, (float)group2Y, 200.0f, 30.0f, juce::Justification::centredLeft);
     g.setColour(T_COL(border).withAlpha(0.3f));
-    g.drawLine(20, group2Y + 25, getWidth() - 20, group2Y + 25, 1.0f);
+    g.drawLine(20.0f, (float)group2Y + 25.0f, (float)getWidth() - 20.0f, (float)group2Y + 25.0f, 1.0f);
 
     drawControlLabel(g, "Default Rate", defaultRateSlider.getBounds());
     drawControlLabel(g, "Default Depth (%)", defaultDepthSlider.getBounds());
     drawControlLabel(g, "Default Smooth (ms)", defaultSmoothSlider.getBounds());
 
     // Group 3: Default Shape
-    int group3Y = defaultSmoothSlider.getBottom() + 40;
+    int group3Y = defaultSmoothSlider.getBottom() + 30;
     g.setColour(T_COL(textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
-    g.drawText("DEFAULT ENVELOPE SHAPE", 20, group3Y, 200, 30, juce::Justification::centredLeft);
+    g.drawText("DEFAULT ENVELOPE SHAPE", 20.0f, (float)group3Y, 200.0f, 30.0f, juce::Justification::centredLeft);
     g.setColour(T_COL(border).withAlpha(0.3f));
-    g.drawLine(20, group3Y + 25, getWidth() - 20, group3Y + 25, 1.0f);
+    g.drawLine(20.0f, (float)group3Y + 25.0f, (float)getWidth() - 20.0f, (float)group3Y + 25.0f, 1.0f);
 
     drawControlLabel(g, "Set default from current envelope:", currentEnvelopesCombo.getBounds());
+
+    // Group 4: MIDI Calibration
+    int group4Y = shapePreview.getBottom() + 30;
+    g.setColour(T_COL(textLabel));
+    g.setFont(FontManager::getBarlowBold(14.0f));
+    g.drawText("MIDI SETTINGS", 20.0f, (float)group4Y, 200.0f, 30.0f, juce::Justification::centredLeft);
+    g.setColour(T_COL(border).withAlpha(0.3f));
+    g.drawLine(20.0f, (float)group4Y + 25.0f, (float)getWidth() - 20.0f, (float)group4Y + 25.0f, 1.0f);
+
+    drawControlLabel(g, "MIDI Octave Calibration", calibrateMidiButton.getBounds());
 }
 
 void WorkflowPage::resized()
@@ -132,7 +160,7 @@ void WorkflowPage::resized()
     const int startY = 80;
     const int rowHeight = 50;
     const int spacingY = 20;
-    const int sectionSpacing = 60;
+    const int sectionSpacing = 70;
 
     auto area = getLocalBounds().withTrimmedTop(startY).reduced(20, 0);
     
@@ -177,6 +205,14 @@ void WorkflowPage::resized()
 
     area.removeFromTop(20);
     shapePreview.setBounds(area.removeFromTop(150).withWidth(440));
+
+    area.removeFromTop(sectionSpacing);
+
+    // Group 4: MIDI Calibration
+    auto row6 = area.removeFromTop(rowHeight);
+    calibrateMidiButton.setBounds(row6.removeFromLeft(180).reduced(0, 10));
+    row6.removeFromLeft(20);
+    midiStatusLabel.setBounds(row6.reduced(0, 10));
 }
 
 void WorkflowPage::sliderValueChanged(juce::Slider* s)
@@ -202,6 +238,27 @@ void WorkflowPage::comboBoxChanged(juce::ComboBox* cb)
             config->setDefaultShape(shape);
             shapePreview.setShape(shape);
         }
+    }
+}
+
+void WorkflowPage::timerCallback()
+{
+    if (processor == nullptr)
+    {
+        stopTimer();
+        return;
+    }
+
+    if (processor->isCalibrationMode())
+    {
+        calibrateMidiButton.setButtonText("Waiting for MIDI...");
+        calibrateMidiButton.setColour(juce::TextButton::buttonColourId, T_COL(accent).withAlpha(0.2f));
+    }
+    else
+    {
+        calibrateMidiButton.setButtonText("Listen for C0");
+        calibrateMidiButton.setColour(juce::TextButton::buttonColourId, T_COL(uiHover));
+        stopTimer();
     }
 }
 
@@ -233,6 +290,16 @@ void WorkflowPage::lookAndFeelChanged()
     updateSlider(defaultRateSlider);
     updateSlider(defaultDepthSlider);
     updateSlider(defaultSmoothSlider);
+
+    calibrateMidiButton.setColour(juce::TextButton::textColourOffId, T_COL(textMain));
+    calibrateMidiButton.setColour(juce::TextButton::buttonColourId, T_COL(uiHover));
+
+    midiStatusLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
+    
+    // Update status label
+    int offset = config->getMidiOctaveOffset();
+    int c0Note = 12 - (offset * 12);
+    midiStatusLabel.setText("Current C0 reference: MIDI Note " + juce::String(c0Note), juce::dontSendNotification);
 
     repaint();
 }

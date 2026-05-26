@@ -12,6 +12,9 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
 {
     envelope.addListener(this);
     ThemeManager::getInstance().addChangeListener(this);
+    
+    juce::SharedResourcePointer<ConfigManager> config;
+    config->addChangeListener(this);
 
     // ===============================
     // Name label
@@ -104,6 +107,8 @@ EnvelopeRowComponent::EnvelopeRowComponent(juce::ValueTree envelopeTree)
 
 EnvelopeRowComponent::~EnvelopeRowComponent()
 {
+    juce::SharedResourcePointer<ConfigManager> config;
+    config->removeChangeListener(this);
     ThemeManager::getInstance().removeChangeListener(this);
     envelope.removeListener(this);
 }
@@ -146,6 +151,7 @@ void EnvelopeRowComponent::refreshTheme()
 void EnvelopeRowComponent::changeListenerCallback([[maybe_unused]] juce::ChangeBroadcaster* source)
 {
     refreshTheme();
+    refreshFromTree();
 }
 
 void EnvelopeRowComponent::refreshFromTree()

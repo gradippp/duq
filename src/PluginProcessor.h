@@ -86,6 +86,9 @@ public:
     void triggerEnvelope(int index) { manualTriggerIndex = index; }
     void resetVoices();
 
+    void setCalibrationMode(bool enabled) { calibrationMode.store(enabled); }
+    bool isCalibrationMode() const { return calibrationMode.load(); }
+
     void addEnvelope(const juce::String& name, int note);
 
     std::vector<double> getActivePhasesForEnvelope(int envelopeIndex) const;
@@ -164,6 +167,9 @@ private:
     std::atomic<int> monpos{ 0 };
 
     std::array<std::atomic<bool>, 128> activeNotes{};
+
+    std::atomic<bool> calibrationMode{ false };
+    std::atomic<int> capturedCalibrationNote{ -1 };
 
     juce::SharedResourcePointer<ConfigManager> config;
 

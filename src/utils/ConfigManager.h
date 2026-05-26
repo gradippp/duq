@@ -63,6 +63,9 @@ public:
     void setActiveThemePath (const juce::String& path) { getProps()->setValue ("activeThemePath", path); sendChangeMessage(); }
     juce::String getActiveThemePath() const { return getProps()->getValue ("activeThemePath", ""); }
 
+    void setMidiOctaveOffset (int offset) { getProps()->setValue ("midiOctaveOffset", offset); sendChangeMessage(); }
+    int getMidiOctaveOffset() const { return getProps()->getIntValue ("midiOctaveOffset", 0); }
+
     // --- High-level Struct Helpers ---
 
     EnvelopeControls getDefaultControls() const
