@@ -135,6 +135,7 @@ private:
     {
         std::vector<DSPEnvelope> envelopes;
         int lookaheadSamples = 0;
+        float currentLookaheadSamples = 0.0f;
         float mixPercent = 100.0f;
     } dspState;
 

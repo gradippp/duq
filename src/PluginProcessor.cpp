@@ -307,9 +307,18 @@ void DuqAudioProcessor::syncToDSP()
         dspState.mixPercent = parameters.getRawParameterValue("mix")->load();
         double srate = getSampleRate();
 
-        dspState.lookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
+        int targetLookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
+        
+        if (dspState.lookaheadSamples != targetLookaheadSamples)
+        {
+            dspState.lookaheadSamples = targetLookaheadSamples;
+            setLatencySamples(dspState.lookaheadSamples);
+            updateHostDisplay();
+        }
 
-        setLatencySamples(dspState.lookaheadSamples);
+        // Initialize smoothing on first run or if it's way off
+        if (dspState.currentLookaheadSamples < 0.0f)
+            dspState.currentLookaheadSamples = (float)dspState.lookaheadSamples;
     }
 }
 
@@ -508,7 +517,10 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         }
 
         // --- Read from Delay Buffer (Lookahead) ---
-        int readPos = (delayWritePos - dspState.lookaheadSamples + delaySize) % delaySize;
+        // Smoothly approach target lookahead
+        dspState.currentLookaheadSamples += ( (float)dspState.lookaheadSamples - dspState.currentLookaheadSamples) * 0.005f; // Fast ramp
+
+        int readPos = (delayWritePos - (int)dspState.currentLookaheadSamples + delaySize) % delaySize;
         float sampleGain = 1.0f;
 
         for (auto& v : voices)
