@@ -8,6 +8,8 @@
 /bin/
 /lib/
 /install/
+/docs/build/
+/docs/node_modules/
 
 # ============================================================
 # CMake

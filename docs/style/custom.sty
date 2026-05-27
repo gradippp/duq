@@ -1,0 +1,99 @@
+\ProvidesPackage{style/custom}
+
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{etoolbox}
+\usepackage{fontspec}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric}
+\usepackage{eso-pic}
+
+% Colors
+\definecolor{duqblue}{RGB}{0, 0, 0}
+\definecolor{headercolor}{RGB}{0, 0, 0}
+
+% Metadata defaults
+\providecommand{\manualversion}{0.0.0}
+\providecommand{\gitcommit}{f2b454b}
+\providecommand{\softwareversion}{0.0.0}
+
+% Background command
+\newcommand{\duqbackground}{
+    \AddToShipoutPictureBG*{
+        \begin{tikzpicture}[remember picture, overlay]
+            \begin{scope}[opacity=0.05, black]
+                \foreach \i in {0,0.4,...,4} {
+                    \draw (current page.north east) ++(-1cm-\i, -1cm) -- ++(0, -4cm);
+                    \draw (current page.north east) ++(-1cm, -1cm-\i) -- ++(-4cm, 0);
+                }
+            \end{scope}
+            \begin{scope}[opacity=0.05, black]
+                \foreach \i in {0,0.4,...,4} {
+                    \draw (current page.south west) ++(1cm+\i, 1cm) -- ++(0, 4cm);
+                    \draw (current page.south west) ++(1cm, 1cm+\i) -- ++(4cm, 0);
+                }
+            \end{scope}
+        \end{tikzpicture}
+    }
+}
+
+% Fonts
+\setmainfont{Inter}[
+    Path = ../res/fonts/,
+    Extension = .ttf,
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+]
+
+\newfontfamily\headerfont{BarlowCondensed}[
+    Path = ../res/fonts/,
+    Extension = .ttf,
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    SemiBoldFont = *-SemiBold,
+]
+
+\setmonofont{JetBrainsMono-Medium}[
+    Path = ../res/fonts/,
+    Extension = .ttf,
+]
+
+% Header and Footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\color{headercolor}\headerfont Duq User Manual}
+\lhead{\color{headercolor}\headerfont Manual v\manualversion\ [\gitcommit]}
+\rfoot{\headerfont Page \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Section/Chapter Formatting
+\titleformat{\chapter}[display]
+  {\normalfont\headerfont\bfseries\huge\color{duqblue}}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+
+\titleformat{\section}
+  {\headerfont\Large\bfseries\color{duqblue}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\headerfont\large\bfseries\color{duqblue}}
+  {\thesubsection}{1em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=duqblue,
+    filecolor=magenta,      
+    urlcolor=duqblue,
+}
+
+% Custom title page commands
+\newcommand{\projecturl}{https://agradip.fyi/duq}
+\newcommand{\githuburl}{https://github.com/gradippp/duq}
+\newcommand{\authorname}{Agradip}
+\newcommand{\authoremail}{me@agradip.fyi}

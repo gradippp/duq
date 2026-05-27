@@ -237,3 +237,37 @@ add_custom_target(GenerateFactoryContent ALL
 
 # Ensure the entire directory is cleaned
 set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${FACTORY_OUTPUT_DIR}")
+
+# --- User Manual Documentation (LaTeX via pnpm) ---
+if(WIN32)
+    find_program(PNPM_EXECUTABLE pnpm.cmd)
+else()
+    find_program(PNPM_EXECUTABLE pnpm)
+endif()
+
+if(PNPM_EXECUTABLE)
+    set(DOCS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs")
+    set(DOCS_BUILD_DIR "${DOCS_SRC_DIR}/build")
+
+    if(WIN32)
+        set(GENERATE_COMMAND cmd /c ${PNPM_EXECUTABLE} run build)
+    else()
+        set(GENERATE_COMMAND ${PNPM_EXECUTABLE} run build)
+    endif()
+
+    add_custom_command(
+        OUTPUT "${DOCS_BUILD_DIR}/main.pdf"
+        COMMAND ${CMAKE_COMMAND} -E env GIT_COMMIT=${GIT_COMMIT} ${GENERATE_COMMAND} -- "${PLUGIN_VERSION}"
+        WORKING_DIRECTORY "${DOCS_SRC_DIR}"
+        DEPENDS "${DOCS_SRC_DIR}/main.tex" "${DOCS_SRC_DIR}/build.js"
+        COMMENT "Building User Manual via pnpm..."
+    )
+
+    add_custom_target(GenerateManual
+        DEPENDS "${DOCS_BUILD_DIR}/main.pdf"
+    )
+
+    set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${DOCS_BUILD_DIR}")
+else()
+    message(WARNING "pnpm not found. 'GenerateManual' target will not be available.")
+endif()
