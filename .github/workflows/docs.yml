@@ -2,12 +2,12 @@ name: Build Documentation
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "doc-test" ]
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "doc-test" ]
     paths:
       - 'docs/**'
   workflow_dispatch:

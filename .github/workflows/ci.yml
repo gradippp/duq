@@ -2,9 +2,9 @@ name: CI (Build Check)
 
 on:
   push:
-    branches: [ "main", "dev", "feat/ci-test" ]
+    branches: [ "main", "dev", "feat/ci-test", "doc-test" ]
   pull_request:
-    branches: [ "main", "dev", "feat/ci-test" ]
+    branches: [ "main", "dev", "feat/ci-test", "doc-test" ]
   workflow_dispatch:
 
 jobs:
