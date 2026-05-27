@@ -1,0 +1,46 @@
+\documentclass[12pt,a4paper]{report}
+
+% Input generated metadata
+\input{build/git_info.tex}
+
+\usepackage{style/custom}
+
+\graphicspath{{./}}
+
+\begin{document}
+
+% --- Custom Title Page ---
+\begin{titlepage}
+    \duqbackground
+    \centering
+    \headerfont
+    \vspace*{4.5cm}
+    
+    {\fontsize{48}{56}\selectfont \bfseries \color{duqblue} DUQ} \\[0.4cm]
+    {\Large \color{headercolor} MIDI-Based Envelope Trigger} \\[2.5cm]
+    
+    {\small \addfontfeature{LetterSpace=15} USER MANUAL} \\[3.5cm]
+    
+    \vfill
+    
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \small \color{headercolor}
+        Version \manualversion \\
+        Build \gitcommit \\
+        \vspace{0.2cm}
+        \rule{\textwidth}{0.4pt}
+    \end{minipage} \\[2cm]
+    
+    {\large \bfseries \authorname} \\[0.3cm]
+    {\small \faGlobe} \hspace{0.1cm} {\small \href{\projecturl}{agradip.fyi/duq}} \\[0.2cm]
+    {\small \faGithub} \hspace{0.1cm} {\small \href{\githuburl}{GitHub Repository}} \\[1cm]
+    
+    {\footnotesize \today}
+\end{titlepage}
+
+\tableofcontents
+
+\include{chapters/introduction}
+
+\end{document}
