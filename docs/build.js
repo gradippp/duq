@@ -6,9 +6,15 @@ const DOCS_DIR = __dirname;
 const BUILD_DIR = path.join(DOCS_DIR, 'build');
 const GIT_INFO_FILE = path.join(BUILD_DIR, 'git_info.tex');
 
-// 1. Ensure build directory exists
+// 1. Ensure build directory and subdirectories exist
 if (!fs.existsSync(BUILD_DIR)) {
     fs.mkdirSync(BUILD_DIR, { recursive: true });
+}
+
+// LaTeX \include{chapters/...} requires the 'chapters' directory to exist in the output-directory
+const chaptersBuildDir = path.join(BUILD_DIR, 'chapters');
+if (!fs.existsSync(chaptersBuildDir)) {
+    fs.mkdirSync(chaptersBuildDir, { recursive: true });
 }
 
 // 2. Get versions and git commit hash
