@@ -1,0 +1,39 @@
+name: Build Documentation
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  build_docs:
+    name: Build PDF Manual
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Manual
+        uses: xu-cheng/texlive-action@v2
+        with:
+          run: |
+            apk add --no-cache nodejs npm
+            npm install -g pnpm
+            cd docs
+            pnpm install
+            node build.js
+
+      - name: Upload PDF Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Duq-User-Manual
+          path: docs/build/main.pdf
