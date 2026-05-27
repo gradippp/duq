@@ -3,7 +3,6 @@
 \usepackage{geometry}
 \geometry{a4paper, margin=1in}
 \usepackage{graphicx}
-\usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{xcolor}
@@ -13,6 +12,7 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning, shapes.geometric}
 \usepackage{eso-pic}
+\usepackage{hyperref}
 
 % Colors
 \definecolor{duqblue}{RGB}{0, 0, 0}
@@ -67,6 +67,7 @@
 % Header and Footer
 \pagestyle{fancy}
 \fancyhf{}
+\setlength{\headheight}{15pt}
 \rhead{\color{headercolor}\headerfont Duq User Manual}
 \lhead{\color{headercolor}\headerfont Manual v\manualversion\ [\gitcommit]}
 \rfoot{\headerfont Page \thepage}
@@ -90,6 +91,8 @@
     linkcolor=duqblue,
     filecolor=magenta,      
     urlcolor=duqblue,
+    bookmarks=true,
+    linktoc=all,
 }
 
 % Custom title page commands
@@ -97,3 +100,18 @@
 \newcommand{\githuburl}{https://github.com/gradippp/duq}
 \newcommand{\authorname}{Agradip}
 \newcommand{\authoremail}{me@agradip.fyi}
+
+% Robust image inclusion that doesn't break without 'draft'
+\newcommand{\duqimage}[2][]{%
+    \IfFileExists{#2}{%
+        \includegraphics[#1]{#2}%
+    }{%
+        \fbox{\begin{minipage}{\textwidth}
+            \centering \headerfont \small
+            \vspace{1cm}
+            \faImage \quad Placeholder: \texttt{#2} \\
+            \textit{Screenshot not found}
+            \vspace{1cm}
+        \end{minipage}}%
+    }%
+}

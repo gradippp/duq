@@ -1,0 +1,27 @@
+\chapter{MIDI Routing Setup}
+\label{ch:midi_routing}
+
+Duq requires MIDI input to trigger its envelopes. Routing methods vary depending on your DAW.
+
+\section{Ableton Live}
+1. Create a MIDI track with your trigger pattern.
+2. On the MIDI track, set "MIDI To" to the Audio track containing Duq.
+3. In the second dropdown under "MIDI To", select "Duq".
+4. Set the MIDI track's Monitor to "In" or "Auto".
+
+\section{Logic Pro}
+1. Create an "Audio-Controlled-Unit" instance of Duq. This is done by selecting Duq from the "MIDI-controlled Effects" category in the instrument slot of a Software Instrument track.
+2. Use the "Sidechain" input menu in the plugin header to select the audio track you want to process.
+3. Logic will route MIDI from the Software Instrument track directly to the plugin.
+
+\section{FL Studio}
+1. Open Duq in the Mixer.
+2. In the Wrapper settings (gear icon), go to the "Vesta" (Plug) tab.
+3. Set an "Input port" (e.g., Port 1).
+4. Create a "MIDI Out" channel in the Channel Rack and set its port to 1.
+5. Patterns played on the MIDI Out channel will now trigger Duq.
+
+\section{Reaper}
+1. Create a track for your MIDI triggers and a track for your audio.
+2. Click the "Route" button on the MIDI track and add a new send to the audio track.
+3. Ensure MIDI is being sent (Audio: None, MIDI: All).

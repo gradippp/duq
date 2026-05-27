@@ -1,0 +1,13 @@
+\chapter{Lookahead and Latency}
+\label{ch:lookahead_latency}
+
+Understanding lookahead is vital for achieving sample-accurate timing in audio production.
+
+\section{The Lookahead Buffer}
+When Lookahead is enabled, Duq delays the incoming audio signal. This "lookahead" period allows the DSP engine to detect a MIDI trigger and begin applying gain reduction \textit{before} the corresponding audio transient reaches the modulation stage.
+
+\section{Latency Reporting}
+Duq is a zero-host-jitter plugin. It reports its exact lookahead delay as latency to the DAW. The DAW then applies \textbf{Plugin Delay Compensation (PDC)} to all other tracks in your project, keeping everything in phase.
+
+\section{Instant Updates}
+When you adjust the Lookahead slider, Duq instantly updates its latency report. While some DAWs handle this seamlessly during playback, others may require a brief pause or a transport restart to realign the project's timing.

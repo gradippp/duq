@@ -1,0 +1,21 @@
+\chapter{How Duq Works}
+\label{ch:how_it_works}
+
+Duq operates through a high-precision DSP engine that maps MIDI input to volume modulation.
+
+\section{Trigger Engine}
+When Duq receives a MIDI Note On message, it identifies the assigned envelope for that specific MIDI note. The plugin supports multiple envelopes, each mapped to a unique MIDI trigger note.
+
+\section{Envelope Execution}
+Once triggered, the envelope begins its playback cycle. Duq supports two primary timing modes:
+\begin{enumerate}
+    \item \textbf{Frequency Mode (Hz):} The envelope duration is determined by a fixed frequency. In this mode, if the MIDI note is held, the envelope will loop. If the note is released, the envelope finishes its current cycle and stops.
+    \item \textbf{Sync Mode (BPM):} The envelope duration is synchronized to the DAW's tempo and time signature (e.g., 1/4 note, 1/8 note).
+\end{enumerate}
+
+\section{Signal Path}
+1. \textbf{Input:} The audio signal enters the plugin.
+2. \textbf{Lookahead Buffer:} The signal is delayed by a user-defined lookahead time (0--100ms).
+3. \textbf{Modulation:} The triggered envelope shapes the gain of the delayed signal.
+4. \textbf{Mix:} The processed (wet) signal is blended with the original (dry) signal.
+5. \textbf{Output:} The final blended signal is sent to the DAW.

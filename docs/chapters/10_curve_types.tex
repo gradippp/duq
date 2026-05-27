@@ -1,0 +1,22 @@
+\chapter{Envelope Curve Types}
+\label{ch:curve_types}
+
+Duq uses advanced interpolation algorithms to calculate the gain values between points.
+
+\section{Available Interpolation Modes}
+\begin{enumerate}
+    \item \textbf{Linear:} A straight line between points. No tension adjustment available.
+    \item \textbf{Step:} An immediate jump in value at the midpoint (0.5) of the segment.
+    \item \textbf{Exponential:} A curve that starts slowly and accelerates (concave up) or starts quickly and slows down (concave down), depending on the tension.
+    \item \textbf{Logarithmic:} The inverse of exponential logic, often used for musical-sounding volume fades.
+    \item \textbf{S-Curve:} A sigmoidal shape that eases in and eases out, providing the smoothest transition between different gain levels.
+\end{enumerate}
+
+\section{The Tension Parameter}
+The tension (controlled via anchors) ranges from -1.0 to +1.0. 
+\begin{itemize}
+    \item \textbf{0.0:} Neutral/Linear behavior (for curve-supporting modes).
+    \item \textbf{Positive Values:} Aggressive start, slow finish.
+    \item \textbf{Negative Values:} Slow start, aggressive finish.
+\end{itemize}
+Technical Note: The tension internally scales the power factor of the curve formula from 1.0 (linear) up to 10.0 (aggressive).

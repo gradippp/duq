@@ -1,0 +1,24 @@
+\chapter{DAW Routing Examples}
+\label{ch:daw_routing_examples}
+
+This chapter provides detailed routing scenarios for common production tasks.
+
+\section{Scenario 1: Transparent Vocal Ducking}
+Goal: Subtly duck a delay/reverb bus whenever the lead vocal is active to improve intelligibility.
+1. Insert Duq on the \textbf{FX Return} track (Delay or Reverb).
+2. Use a "Vocal MIDI" track (or a MIDI trigger generated from the vocal track) to trigger a slow-release envelope in Duq.
+3. Use an \textbf{S-Curve} with 20-30ms smoothing for a natural-sounding fade.
+
+\section{Scenario 2: Creative "Trance Gate" Effect}
+Goal: Create a rhythmic gating effect on a synth pad.
+1. Insert Duq on the \textbf{Synth} track.
+2. Create a MIDI clip with a steady 1/16th note pattern.
+3. In Duq, design a "Step" envelope that quickly drops to 0.0 and returns to 1.0.
+4. Set Rate to \textbf{Sync 1/16}.
+
+\section{Scenario 3: Sidechaining Parallel Compression}
+Goal: Duck only the compressed signal of a drum bus.
+1. Set up a parallel compression bus for your drums.
+2. Insert Duq \textit{after} the compressor on the parallel bus.
+3. Trigger Duq from your Kick and Snare MIDI.
+4. This keeps your dry drum transients intact while pumping the compressed room/ambient sound.

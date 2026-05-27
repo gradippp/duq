@@ -1,0 +1,21 @@
+\chapter{Global Parameters}
+\label{ch:global_parameters}
+
+Global parameters affect the entire plugin instance and are located in the top header.
+
+\section{Mix (Dry/Wet)}
+Blends the processed signal with the original input signal.
+\begin{itemize}
+    \item \textbf{0\%:} Full dry (bypass).
+    \item \textbf{100\%:} Full wet (only modulated signal).
+\end{itemize}
+
+\section{Lookahead}
+The Lookahead parameter is critical for precise ducking. It delays the incoming audio signal to allow the plugin to "see" the MIDI trigger coming and react ahead of time.
+\begin{itemize}
+    \item \textbf{Range:} 0ms to 100ms.
+    \item \textbf{Why use it?} If your kick drum has a very sharp transient, you may want the ducking to start a few milliseconds \textit{before} the peak to ensure the transient is completely transparently attenuated.
+\end{itemize}
+
+\section{Plugin Delay Compensation (PDC)}
+Duq automatically reports its Lookahead value as latency to the DAW. This ensures that your entire project remains perfectly synchronized even when using high Lookahead values.

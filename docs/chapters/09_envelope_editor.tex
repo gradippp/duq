@@ -1,0 +1,27 @@
+\chapter{Envelope Editor}
+\label{ch:envelope_editor}
+
+The Envelope Editor is the heart of Duq, where you draw the gain modulation shapes.
+
+\section{Point Manipulation}
+\begin{itemize}
+    \item \textbf{Add Point:} Double-click anywhere on the grid to create a new point.
+    \item \textbf{Move Point:} Click and drag a point to change its time (X) and value (Y).
+    \item \textbf{Delete Point:} Double-click an existing point or Right-click and select "Delete". \textit{Note: The start and end points (at X=0 and X=1) cannot be deleted.}
+    \item \textbf{Fine Adjustment:} Hold \texttt{Shift} while dragging for high-precision movement.
+    \item \textbf{Snapping:} Hold \texttt{Shift} to snap points to the grid lines.
+\end{itemize}
+
+\section{Curve Interaction}
+Between every two points is an \textbf{Anchor}.
+\begin{itemize}
+    \item \textbf{Adjust Tension:} Drag the anchor up or down to change the curvature of the segment.
+    \item \textbf{Change Curve Type:} Right-click an anchor to select from the five available interpolation modes (Exponential, Linear, Logarithmic, S-Curve, Step).
+\end{itemize}
+
+\section{Zoom and Pan}
+\begin{itemize}
+    \item \textbf{Zoom:} Use the mouse wheel to zoom in/out of the editor.
+    \item \textbf{Pan:} Hold \texttt{Alt} and drag to move the view area when zoomed in.
+    \item \textbf{Grid Density:} Use \texttt{Ctrl + Mouse Wheel} to increase or decrease the grid snapping power.
+\end{itemize}

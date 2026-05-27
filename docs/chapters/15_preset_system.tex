@@ -1,0 +1,14 @@
+\chapter{Preset System}
+\label{ch:preset_system}
+
+Duq features a dual-layer preset system designed for both project-wide consistency and individual component reuse.
+
+\section{Preset Architecture}
+The system distinguishes between entire plugin states and individual modulation shapes:
+\begin{enumerate}
+    \item \textbf{Project Presets (.duq):} Store all envelopes, their MIDI assignments, global mix, and lookahead settings.
+    \item \textbf{Envelope Presets (.duq.env):} Store only the shape data for a single envelope.
+\end{enumerate}
+
+\section{User Folders}
+Presets are stored in the user's Documents folder under \texttt{Duq/Presets} and \texttt{Duq/Envelopes}. You can manually organize these into subfolders, which will be reflected in the plugin's browser.

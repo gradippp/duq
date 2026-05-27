@@ -1,0 +1,17 @@
+\chapter{Performance Considerations}
+\label{ch:performance_considerations}
+
+Duq is optimized for low CPU overhead, but certain settings can impact performance.
+
+\section{CPU Usage Factors}
+\begin{enumerate}
+    \item \textbf{Waveform Quality:} The High-quality setting for the waveform visualizer is the most CPU-intensive part of the UI. For large projects with many instances of Duq, consider using the "Low" or "Medium" quality settings.
+    \item \textbf{Active Envelopes:} While Duq is efficient, each active modulation voice requires DSP cycles. Disable unused envelopes using the "Power" icon in the sidebar to save resources.
+    \item \textbf{Lookahead:} High lookahead values do not significantly increase CPU usage but do increase memory allocation for the delay buffers.
+\end{enumerate}
+
+\section{Optimization Tips}
+\begin{itemize}
+    \item Use the \textbf{Global Bypass} (Mix at 0\%) when not actively using a track.
+    \item Keep the UI closed when not editing; Duq stops all non-essential UI rendering when the editor is hidden.
+\end{itemize}

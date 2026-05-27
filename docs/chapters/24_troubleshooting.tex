@@ -1,0 +1,28 @@
+\chapter{Troubleshooting}
+\label{ch:troubleshooting}
+
+\section{Common Issues}
+\begin{itemize}
+    \item \textbf{No Ducking occurring:}
+      \begin{itemize}
+          \item Check if Duq is receiving MIDI (look for the trigger animation in the sidebar).
+          \item Ensure the "Trigger Note" in the envelope row matches the MIDI note you are sending.
+          \item Verify that the \textbf{Depth} is not set to 0\%.
+          \item Check if the envelope is disabled (Power icon in sidebar).
+      \end{itemize}
+    \item \textbf{Clicking or Popping sounds:}
+      \begin{itemize}
+          \item Increase the \textbf{Smoothness} parameter (try 2--5ms).
+          \item Ensure your envelope doesn't have an instantaneous jump from 0.0 to 1.0 at the very end of the cycle.
+      \end{itemize}
+    \item \textbf{Plugin feels "Late":}
+      \begin{itemize}
+          \item Increase the \textbf{Lookahead} value.
+          \item Ensure your DAW's Plugin Delay Compensation (PDC) is enabled.
+      \end{itemize}
+    \item \textbf{High CPU usage:}
+      \begin{itemize}
+          \item Set \textbf{Waveform Quality} to "Low" in the Settings.
+          \item Close the plugin UI when not in use.
+      \end{itemize}
+\end{itemize}

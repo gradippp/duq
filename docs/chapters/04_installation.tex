@@ -1,0 +1,27 @@
+\chapter{Installation}
+\label{ch:installation}
+
+Duq is distributed as a standard audio plugin format (VST3 and AU).
+
+\section{Windows Installation}
+1. Copy the \texttt{Duq.vst3} file to your system's VST3 directory:
+   \begin{itemize}
+       \item \texttt{C:\textbackslash Program Files\textbackslash Common Files\textbackslash VST3}
+   \end{itemize}
+2. Ensure your DAW is configured to scan this directory.
+
+\section{macOS Installation}
+1. Copy the \texttt{Duq.vst3} file to:
+   \begin{itemize}
+       \item \texttt{/Library/Audio/Plug-Ins/Components} (for AU)
+       \item \texttt{/Library/Audio/Plug-Ins/VST3} (for VST3)
+   \end{itemize}
+2. Restart your DAW or perform a plugin rescan.
+
+\section{User Data Directory}
+Duq stores presets, themes, and configuration files in the following location:
+\begin{itemize}
+    \item \textbf{Windows:} \texttt{\%USERPROFILE\%\textbackslash Documents\textbackslash Duq}
+    \item \textbf{macOS:} \texttt{\textasciitilde/Documents/Duq}
+\end{itemize}
+This directory contains subfolders for \texttt{Presets}, \texttt{Envelopes}, and \texttt{Themes}.

@@ -1,0 +1,25 @@
+\chapter{Envelope Parameters}
+\label{ch:envelope_parameters}
+
+Each envelope has three primary performance parameters located in the bottom control section.
+
+\section{Rate / Frequency}
+Controls the duration of the envelope cycle.
+\begin{itemize}
+    \item \textbf{Frequency Mode:} Measured in Hz (0.1 to 100 Hz).
+    \item \textbf{Sync Mode:} Measured in musical divisions (1/1 to 1/32).
+\end{itemize}
+
+\section{Depth}
+Controls the intensity of the modulation.
+\begin{itemize}
+    \item \textbf{0\%:} No modulation (signal remains at unity).
+    \item \textbf{100\%:} Full modulation (the envelope values are applied directly to the signal gain).
+\end{itemize}
+
+\section{Smoothness}
+Applies a one-pole low-pass filter to the envelope signal to prevent "clicking" or artifacts during extremely fast gain changes.
+\begin{itemize}
+    \item \textbf{Range:} 0ms to 500ms.
+    \item \textbf{Usage:} Use small values (1-5ms) to transparently smooth out transients, or larger values for creative "pumping" effects.
+\end{itemize}

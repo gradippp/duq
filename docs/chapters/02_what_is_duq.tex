@@ -1,0 +1,22 @@
+\chapter{What Duq Is}
+\label{ch:what_is_duq}
+
+Duq is a MIDI-triggered envelope modulation effect categorized as a precision "ducker" or gain-shaping utility.
+
+\section{The Core Concept}
+The primary function of Duq is to apply a user-defined gain reduction envelope to an audio signal whenever a MIDI note is received. Unlike a compressor, which relies on an audio sidechain signal to detect peaks and trigger gain reduction, Duq relies on MIDI messages.
+
+\section{Duq vs. Sidechain Compression}
+While sidechain compression is the industry standard for "ducking" (e.g., ducking a bass track whenever a kick drum hits), it has inherent technical limitations:
+\begin{itemize}
+    \item \textbf{Detection Lag:} Compressors require time to detect the sidechain peak and react.
+    \item \textbf{Timing Inconsistency:} If the sidechain source varies in level or transients, the ducking behavior changes.
+    \item \textbf{Shape Limitations:} Compression curves are limited by attack, release, and knee parameters.
+\end{itemize}
+
+Duq solves these issues by:
+\begin{itemize}
+    \item \textbf{Instantaneous Triggering:} MIDI triggers are sample-accurate and do not rely on audio detection.
+    \item \textbf{Total Shape Control:} Users can draw the exact gain reduction curve required.
+    \item \textbf{Predictability:} The gain reduction is identical every time a specific MIDI note is triggered.
+\end{itemize}

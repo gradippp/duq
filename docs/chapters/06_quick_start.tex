@@ -1,0 +1,30 @@
+\chapter{Quick Start Guide}
+\label{ch:quick_start}
+
+Follow these steps to set up a basic ducking configuration in your DAW.
+
+\section{Basic Setup Example (Kick \& Bass)}
+Goal: Duck the bass track whenever the kick drum hits.
+
+1. \textbf{Insert Duq:} Place Duq as an insert effect on your \textbf{Bass} track.
+2. \textbf{Route MIDI:}
+   \begin{itemize}
+       \item Create a new MIDI track or use your existing Kick MIDI track.
+       \item Route the MIDI output of the Kick track to the Bass track where Duq is inserted.
+       \item Ensure Duq is receiving MIDI notes (indicated by the UI trigger feedback).
+   \end{itemize}
+3. \textbf{Select Envelope:} In the Envelope List (left sidebar), select an envelope or create a new one.
+4. \textbf{Assign Note:} Click the MIDI note display on the envelope row and press the MIDI note corresponding to your kick drum (e.g., C3).
+5. \textbf{Shape the Curve:}
+   \begin{itemize}
+       \item Double-click the grid to add points.
+       \item Drag points to define the ducking shape (usually starting at 1.0, dipping to 0.0, and returning to 1.0).
+       \item Adjust the curve tension by dragging the anchors between points.
+   \end{itemize}
+6. \textbf{Adjust Parameters:}
+   \begin{itemize}
+       \item Set \textbf{Rate} to sync or a specific Hz.
+       \item Increase \textbf{Depth} to 100\% for total silence at the dip.
+       \item Adjust \textbf{Lookahead} if the ducking feels slightly late (common for transient preservation).
+   \end{itemize}
+7. \textbf{Verify:} Play back your project and observe the gain reduction meter in Duq.
