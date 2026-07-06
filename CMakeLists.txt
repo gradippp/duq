@@ -99,6 +99,7 @@ file(GLOB_RECURSE src
 
 # Exclude tools from the main plugin target
 list(FILTER src EXCLUDE REGEX "src/tools/.*")
+list(FILTER src EXCLUDE REGEX "src/ui/utils/(ThemeManager|FontManager)\\.cpp")
 
 target_sources(${PLUGIN_NAME}
     PRIVATE
@@ -120,6 +121,25 @@ file(GLOB UI_SOURCES
 )
 source_group(Source\\ui FILES ${UI_SOURCES})
 
+add_library(DuqUIShared STATIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/ThemeManager.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/FontManager.cpp"
+)
+
+target_include_directories(DuqUIShared
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_BINARY_DIR}/juce_binarydata_${PLUGIN_NAME}BinaryData/JuceLibraryCode"
+)
+
+target_link_libraries(DuqUIShared
+    PUBLIC
+        juce::juce_core
+        juce::juce_graphics
+        juce::juce_gui_basics
+        juce::juce_audio_utils
+)
+
 file(GLOB_RECURSE DUQ_RESOURCES
     CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/res/*
@@ -130,6 +150,7 @@ juce_add_binary_data(${PLUGIN_NAME}BinaryData
 )
 
 target_link_libraries(${PLUGIN_NAME} PRIVATE ${PLUGIN_NAME}BinaryData)
+target_link_libraries(${PLUGIN_NAME} PRIVATE DuqUIShared)
 
 # These are some toggleable options from the JUCE CMake API
 target_compile_definitions(${PLUGIN_NAME}
@@ -181,12 +202,6 @@ file(GLOB_RECURSE GENERATOR_SRCS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator/*.h"
 )
 
-# We also need these core plugin logic files for the generator
-list(APPEND GENERATOR_SRCS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/ThemeManager.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/utils/FontManager.cpp"
-)
-
 add_executable(FactoryGenerator ${GENERATOR_SRCS})
 target_include_directories(FactoryGenerator PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tools/factory_generator"
@@ -202,6 +217,7 @@ target_compile_definitions(FactoryGenerator
 
 # Link to JUCE modules needed for serialization
 target_link_libraries(FactoryGenerator PRIVATE
+    DuqUIShared
     juce::juce_core
     juce::juce_data_structures
     juce::juce_graphics
