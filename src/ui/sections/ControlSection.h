@@ -1,8 +1,9 @@
 #pragma once
 #include <memory>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../../PluginProcessor.h"
 #include "../components/ControlKnobComponent.h"
+
+class DuqAudioProcessor;
 
 class ControlSection : public juce::Component,
     private juce::ValueTree::Listener

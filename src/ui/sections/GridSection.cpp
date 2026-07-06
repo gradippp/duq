@@ -137,23 +137,6 @@ void GridSection::setEnvelope(juce::ValueTree newEnvelope)
         auto parent = envelope.getParent();
         currentEnvelopeIndex = parent.isValid() ? parent.indexOf(envelope) : -1;
 
-        // Data Integrity Check
-        auto points = envelope.getOrCreateChildWithName("POINTS", nullptr);
-        auto segments = envelope.getOrCreateChildWithName("SEGMENTS", nullptr);
-        int numPoints = points.getNumChildren();
-        if (numPoints >= 2 && segments.getNumChildren() != numPoints - 1)
-        {
-            juce::SharedResourcePointer<ConfigManager> config;
-            segments.removeAllChildren(nullptr);
-            for (int i = 0; i < numPoints - 1; ++i)
-            {
-                juce::ValueTree s("SEGMENT");
-                s.setProperty("curve", config->getDefaultTension(), nullptr);
-                s.setProperty("type", config->getDefaultCurve(), nullptr);
-                segments.addChild(s, -1, nullptr);
-            }
-        }
-
         zoomX = (float)envelope.getProperty("zoomX", Defaults::zoom);
         zoomY = (float)envelope.getProperty("zoomY", Defaults::zoom);
         uniformZoom = (float)envelope.getProperty("uniformZoom", Defaults::zoom);

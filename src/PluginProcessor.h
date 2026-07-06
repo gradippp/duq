@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include "Globals.h"
 #include "dsp/EnvelopeProcessor.h"
 #include "utils/ConfigManager.h"
 
@@ -139,10 +141,24 @@ private:
         std::vector<DSPEnvelope> envelopes;
         int lookaheadSamples = 0;
         float currentLookaheadSamples = 0.0f;
+        float lookaheadSmoothCoeff = 0.005f;
         float mixPercent = 100.0f;
     } dspState;
 
-    juce::CriticalSection dspLock;
+    struct PendingEnvParamEdit
+    {
+        std::atomic<bool> dirty{ false };
+        std::atomic<bool> rateDirty{ false };
+        std::atomic<bool> depthDirty{ false };
+        std::atomic<bool> smoothDirty{ false };
+        std::atomic<float> rate{ 0.0f };
+        std::atomic<float> depth{ 0.0f };
+        std::atomic<float> smooth{ 0.0f };
+    };
+
+    std::array<PendingEnvParamEdit, Defaults::maxEnvelopeSlots> pendingEnvEdits;
+
+    juce::SpinLock dspLock;
     std::atomic<bool> requiresSync{ true };
     std::atomic<int> manualTriggerIndex{ -1 };
 
@@ -174,5 +190,6 @@ private:
     juce::SharedResourcePointer<ConfigManager> config;
 
     //==============================================================================
+    JUCE_DECLARE_WEAK_REFERENCEABLE(DuqAudioProcessor)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DuqAudioProcessor)
 };

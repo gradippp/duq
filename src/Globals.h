@@ -15,6 +15,8 @@ namespace Theme
 
 namespace Defaults
 {
+    constexpr int maxEnvelopeSlots = 12;
+
     const double rate = 2.0;
     const float depth = 100.0f;
     const float smooth = 0.0f;

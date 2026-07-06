@@ -1,5 +1,6 @@
 #include "ControlSection.h"
 #include "../utils/FontManager.h"
+#include "../../PluginProcessor.h"
 #include "../../Globals.h"
 
 static const std::vector<juce::String> rateDivisions =
@@ -112,14 +113,14 @@ void ControlSection::setEnvelope(juce::ValueTree env)
         depthKnob.setVisible(true);
         smoothKnob.setVisible(true);
 
-        // Link to automation parameters if within the first 12 slots
+        // Link to automation parameters if within the automated envelope slots
         if (processor != nullptr)
         {
             auto parent = envelope.getParent();
             if (parent.isValid())
             {
                 int index = parent.indexOf(envelope);
-                if (index >= 0 && index < 12)
+                if (index >= 0 && index < Defaults::maxEnvelopeSlots)
                 {
                     juce::String prefix = "env" + juce::String(index) + "_";
                     auto& vts = processor->parameters;

@@ -36,5 +36,24 @@ private:
     float zoomY = 1.0f;
     float offsetY = 0.0f;
 
+    void rebuildCache(int quality);
+
     juce::SharedResourcePointer<ConfigManager> config;
+
+    int lastWritePosition = -1;
+    int lastBufferLength = 0;
+    int lastWidth = 0;
+    int lastHeight = 0;
+    float lastZoomX = 1.0f;
+    float lastOffsetX = 0.0f;
+    float lastZoomY = 1.0f;
+    float lastOffsetY = 0.0f;
+    int lastQuality = -1;
+    bool lastShowSidechain = false;
+    bool lastShowSource = false;
+    bool cacheDirty = true;
+
+    juce::Path cachedSidechainPath;
+    juce::Path cachedPrePath;
+    juce::Path cachedPostPath;
 };

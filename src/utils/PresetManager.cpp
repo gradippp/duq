@@ -6,6 +6,63 @@ const juce::String PresetManager::envelopeExtension = "duq.env";
 const juce::String PresetManager::projectExtension = "duq";
 const juce::String PresetManager::themeExtension = "duq.theme";
 
+namespace
+{
+    bool shouldCopyProjectProperty(const juce::Identifier& id)
+    {
+        return id != juce::Identifier("zoomX")
+            && id != juce::Identifier("zoomY")
+            && id != juce::Identifier("uniformZoom")
+            && id != juce::Identifier("offsetX")
+            && id != juce::Identifier("offsetY");
+    }
+
+    bool repairEnvelopeModel(juce::ValueTree env)
+    {
+        if (!env.isValid() || env.getType() != juce::Identifier("ENVELOPE"))
+            return false;
+
+        auto points = env.getChildWithName("POINTS");
+        if (!points.isValid() || points.getNumChildren() < 2)
+            return false;
+
+        for (int i = 0; i < points.getNumChildren(); ++i)
+        {
+            auto p = points.getChild(i);
+            if (!p.hasProperty("x") || !p.hasProperty("y"))
+                return false;
+        }
+
+        auto segments = env.getOrCreateChildWithName("SEGMENTS", nullptr);
+        const int requiredSegments = points.getNumChildren() - 1;
+        juce::SharedResourcePointer<ConfigManager> config;
+
+        if (segments.getNumChildren() != requiredSegments)
+        {
+            segments.removeAllChildren(nullptr);
+            for (int i = 0; i < requiredSegments; ++i)
+            {
+                juce::ValueTree segment("SEGMENT");
+                segment.setProperty("curve", config->getDefaultTension(), nullptr);
+                segment.setProperty("type", config->getDefaultCurve(), nullptr);
+                segments.addChild(segment, -1, nullptr);
+            }
+            return true;
+        }
+
+        for (int i = 0; i < segments.getNumChildren(); ++i)
+        {
+            auto segment = segments.getChild(i);
+            if (!segment.hasProperty("curve"))
+                segment.setProperty("curve", config->getDefaultTension(), nullptr);
+            if (!segment.hasProperty("type"))
+                segment.setProperty("type", config->getDefaultCurve(), nullptr);
+        }
+
+        return true;
+    }
+}
+
 juce::File PresetManager::getEnvelopeDirectory()
 {
     auto dir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
@@ -92,10 +149,9 @@ bool PresetManager::saveProject(const juce::ValueTree& state, const juce::File& 
     // Copy global properties if we have the root
     if (root.isValid())
     {
-        const juce::Identifier props[] = { "mix", "lookahead" };
-        for (const auto& id : props)
+        for (const auto& id : root.getPropertyNames())
         {
-            if (root.hasProperty(id))
+            if (shouldCopyProjectProperty(id))
                 cleanProject.setProperty(id, root.getProperty(id), nullptr);
         }
     }
@@ -246,42 +302,9 @@ juce::ValueTree PresetManager::loadValueTreeFromXml(const juce::File& file, cons
         // If we want to strictly require metadata, we'd return juce::ValueTree() here.
     }
 
-    // Deep validation for ENVELOPE structure
-    auto validateEnvelope = [](juce::ValueTree env) -> bool
-    {
-        if (env.getType() != juce::Identifier("ENVELOPE"))
-            return false;
-
-        auto points = env.getChildWithName("POINTS");
-        if (!points.isValid() || points.getNumChildren() < 2)
-            return false;
-
-        // Verify points have required properties
-        for (int i = 0; i < points.getNumChildren(); ++i)
-        {
-            auto p = points.getChild(i);
-            if (!p.hasProperty("x") || !p.hasProperty("y"))
-                return false;
-        }
-
-        // SEGMENTS is mandatory in this version
-        auto segments = env.getChildWithName("SEGMENTS");
-        if (!segments.isValid() || segments.getNumChildren() != points.getNumChildren() - 1)
-            return false;
-
-        for (int i = 0; i < segments.getNumChildren(); ++i)
-        {
-            auto s = segments.getChild(i);
-            if (!s.hasProperty("curve") || !s.hasProperty("type"))
-                return false;
-        }
-
-        return true;
-    };
-
     if (expectedType == juce::Identifier("ENVELOPE"))
     {
-        if (!validateEnvelope(vt))
+        if (!repairEnvelopeModel(vt))
             return juce::ValueTree();
     }
     else if (expectedType == juce::Identifier("ENVELOPES"))
@@ -292,7 +315,7 @@ juce::ValueTree PresetManager::loadValueTreeFromXml(const juce::File& file, cons
             if (child.getType() == juce::Identifier("METADATA"))
                 continue;
 
-            if (!validateEnvelope(child))
+            if (!repairEnvelopeModel(child))
                 return juce::ValueTree();
         }
     }

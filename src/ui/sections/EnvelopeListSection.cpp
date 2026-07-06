@@ -188,10 +188,9 @@ void EnvelopeListSection::rebuildRowsFromModel()
                     onSaveRequested(envTree);
             };
 
-        row->onNameChanged = [this, i](const juce::String& newName)
+        row->onNameChanged = [this, envTree](const juce::String& newName)
             {
-                auto targetEnv = envelopesTree.getChild(i);
-                targetEnv.setProperty("name", newName.trim(), undoManager);
+                envTree.setProperty("name", newName.trim(), undoManager);
             };
 
         row->onNoteChanged = [this, envTree](int newNote) mutable

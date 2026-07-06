@@ -25,6 +25,7 @@ void WaveformComponent::setSampleBuffers(
     samplesPost = postData;
     samplesSidechain = sidechainData;
     bufferLength = bufferSize;
+    cacheDirty = true;
 }
 
 void WaveformComponent::setViewState(float zx, float ox, float zy, float oy)
@@ -33,6 +34,7 @@ void WaveformComponent::setViewState(float zx, float ox, float zy, float oy)
     offsetX = ox;
     zoomY = zy;
     offsetY = oy;
+    cacheDirty = true;
     repaint();
 }
 
@@ -42,14 +44,18 @@ void WaveformComponent::timerCallback()
         repaint();
 }
 
-void WaveformComponent::paint(juce::Graphics& g)
+void WaveformComponent::rebuildCache(int quality)
 {
-    if (!samplesPre || !samplesPost || bufferLength <= 0)
+    cacheDirty = false;
+    cachedSidechainPath.clear();
+    cachedPrePath.clear();
+    cachedPostPath.clear();
+
+    if (!samplesPre || !samplesPost || bufferLength <= 0 || getWidth() <= 0 || getHeight() <= 0)
         return;
 
     const int width = getWidth();
     const int height = getHeight();
-
     const float visibleWidthNorm = 1.0f / zoomX;
     const float visibleHeightNorm = 1.0f / zoomY;
     const float startSample = offsetX * bufferLength;
@@ -62,7 +68,6 @@ void WaveformComponent::paint(juce::Graphics& g)
         if (!data) return path;
 
         int step = 1;
-        int quality = config->getWaveformQuality();
         if (quality == 0)      step = 4;
         else if (quality == 1) step = 2;
 
@@ -87,18 +92,14 @@ void WaveformComponent::paint(juce::Graphics& g)
                 minVal = std::min(minVal, v);
                 maxVal = std::max(maxVal, v);
             }
-            
-            if (minVal > maxVal) continue;
 
-            // Map amplitude [-1, 1] to normalized Y [0, 1]
+            if (minVal > maxVal)
+                continue;
+
             float normYTop = (maxVal + 1.0f) * 0.5f;
             float normYBottom = (minVal + 1.0f) * 0.5f;
-
-            // Apply grid vertical zoom and offset
             float nyTop = (normYTop - offsetY) / visibleHeightNorm;
             float nyBottom = (normYBottom - offsetY) / visibleHeightNorm;
-
-            // Map to pixels
             float yTop = (1.0f - nyTop) * (float)height;
             float yBottom = (1.0f - nyBottom) * (float)height;
 
@@ -114,31 +115,72 @@ void WaveformComponent::paint(juce::Graphics& g)
                 path.lineTo((float)x, yBottom);
             }
         }
+
         return path;
     };
 
-    // 1. Draw Sidechain (Background)
-    if (samplesSidechain && config->getShowSidechainSignal())
+    cachedSidechainPath = (samplesSidechain && config->getShowSidechainSignal()) ? createWaveformPath(samplesSidechain) : juce::Path();
+    cachedPrePath = config->getShowSourceSignal() ? createWaveformPath(samplesPre) : juce::Path();
+    cachedPostPath = createWaveformPath(samplesPost);
+
+    lastWritePosition = writePosition != nullptr ? writePosition->load(std::memory_order_relaxed) : -1;
+    lastBufferLength = bufferLength;
+    lastWidth = width;
+    lastHeight = height;
+    lastZoomX = zoomX;
+    lastOffsetX = offsetX;
+    lastZoomY = zoomY;
+    lastOffsetY = offsetY;
+    lastQuality = quality;
+    lastShowSidechain = config->getShowSidechainSignal();
+    lastShowSource = config->getShowSourceSignal();
+}
+
+void WaveformComponent::paint(juce::Graphics& g)
+{
+    if (!samplesPre || !samplesPost || bufferLength <= 0)
+        return;
+
+    int quality = config->getWaveformQuality();
+    int writePos = writePosition != nullptr ? writePosition->load(std::memory_order_relaxed) : -1;
+    if (cacheDirty
+        || writePos != lastWritePosition
+        || bufferLength != lastBufferLength
+        || getWidth() != lastWidth
+        || getHeight() != lastHeight
+        || zoomX != lastZoomX
+        || offsetX != lastOffsetX
+        || zoomY != lastZoomY
+        || offsetY != lastOffsetY
+        || quality != lastQuality
+        || config->getShowSidechainSignal() != lastShowSidechain
+        || config->getShowSourceSignal() != lastShowSource)
     {
-        auto scPath = createWaveformPath(samplesSidechain);
+        rebuildCache(quality);
+    }
+
+    // 1. Draw Sidechain (Background)
+    if (!cachedSidechainPath.isEmpty())
+    {
         g.setColour(T_COL(sidechain).withAlpha(1.0f)); 
-        g.strokePath(scPath, juce::PathStrokeType(1.2f));
+        g.strokePath(cachedSidechainPath, juce::PathStrokeType(1.2f));
     }
 
     // 2. Draw Pre (Dry)
-    if (config->getShowSourceSignal())
+    if (!cachedPrePath.isEmpty())
     {
-        auto prePath = createWaveformPath(samplesPre);
         g.setColour(T_COL(waveform).withAlpha(0.3f));
-        g.strokePath(prePath, juce::PathStrokeType(1.0f));
+        g.strokePath(cachedPrePath, juce::PathStrokeType(1.0f));
     }
 
     // 3. Draw Post (Wet)
-    auto postPath = createWaveformPath(samplesPost);
     g.setColour(T_COL(waveform));
-    g.strokePath(postPath, juce::PathStrokeType(1.5f));
+    g.strokePath(cachedPostPath, juce::PathStrokeType(1.5f));
 
     // subtle center line (0.0 amplitude -> normY = 0.5)
+    const int height = getHeight();
+    const int width = getWidth();
+    const float visibleHeightNorm = 1.0f / zoomY;
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;
     float yCenter = (1.0f - nyCenter) * height;
     g.setColour(T_COL(gridMinor));
