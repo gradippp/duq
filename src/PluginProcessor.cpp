@@ -71,7 +71,15 @@ DuqAudioProcessor::DuqAudioProcessor()
         parameters.addParameterListener(prefix + "rate", this);
         parameters.addParameterListener(prefix + "depth", this);
         parameters.addParameterListener(prefix + "smooth", this);
+
+        // Cache raw parameter pointers once so syncToDSP avoids string lookups.
+        slotParams[(size_t)i].rate = parameters.getRawParameterValue(prefix + "rate");
+        slotParams[(size_t)i].depth = parameters.getRawParameterValue(prefix + "depth");
+        slotParams[(size_t)i].smooth = parameters.getRawParameterValue(prefix + "smooth");
+        envDirty[(size_t)i].store(false, std::memory_order_relaxed);
     }
+    mixParam = parameters.getRawParameterValue("mix");
+    lookaheadParam = parameters.getRawParameterValue("lookahead");
 
     // Host-undo bridge parameter. Kept automatable: hosts reliably record
     // automatable parameter changes in their own undo stack, which is what lets
@@ -237,121 +245,142 @@ void DuqAudioProcessor::timerCallback()
     }
 }
 
+DSPEnvelope DuqAudioProcessor::buildEnvelope(int i, const juce::ValueTree& envVT)
+{
+    DSPEnvelope de;
+
+    float rawRate, rawDepth, rawSmooth;
+
+    // Priority: Use automated parameters for the automated envelope slots
+    if (i < Defaults::maxEnvelopeSlots && slotParams[(size_t)i].rate != nullptr)
+    {
+        rawRate = slotParams[(size_t)i].rate->load();
+        rawDepth = slotParams[(size_t)i].depth->load();
+        rawSmooth = slotParams[(size_t)i].smooth->load();
+    }
+    else
+    {
+        rawRate = envVT.getProperty("rate", 2.0);
+        rawDepth = envVT.getProperty("depth", 100.0);
+        rawSmooth = envVT.getProperty("smooth", 0.0);
+    }
+
+    bool isFreq = (bool)envVT.getProperty("rateIsFrequencyMode", true);
+
+    if (isFreq)
+    {
+        de.rate = (double)rawRate;
+    }
+    else
+    {
+        // Sync divisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
+        static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
+
+        int idx = juce::jlimit(0, 5, (int)(rawRate / 16.66f));
+        de.rate = cycleMultipliers[idx];
+    }
+
+    de.depth = rawDepth / 100.0f;
+
+    // rawSmooth is now 0-500 ms
+    float smoothTimeSec = rawSmooth / 1000.0f;
+    de.smooth = rawSmooth / 500.0f; // Normalized 0..1 for UI/Internal consistency
+
+    double srate = getSampleRate();
+    if (srate <= 0) srate = 44100.0; // Fallback
+
+    if (smoothTimeSec > 0.0001f)
+        de.smoothCoeff = 1.0f - std::exp(-1.0f / (smoothTimeSec * (float)srate));
+    else
+        de.smoothCoeff = 1.0f;
+
+    de.triggerNote = envVT.getProperty("triggerNote", 60);
+    de.isFrequencyMode = isFreq;
+    de.isDisabled = (bool)envVT.getProperty("disabled", false);
+
+    double currentRate = de.rate;
+    if (!de.isFrequencyMode)
+        currentRate = de.rate * 2.0; // Default 120 bpm when transport is unavailable
+
+    de.phaseIncrement = currentRate / srate;
+
+    auto pointsVT = envVT.getChildWithName("POINTS");
+    if (pointsVT.isValid())
+    {
+        for (int j = 0; j < pointsVT.getNumChildren(); ++j)
+        {
+            auto pVT = pointsVT.getChild(j);
+            de.points.push_back({ (float)pVT.getProperty("x", 0.0f),
+                                  (float)pVT.getProperty("y", 0.0f) });
+        }
+    }
+
+    auto segmentsVT = envVT.getChildWithName("SEGMENTS");
+    if (segmentsVT.isValid())
+    {
+        int numSegmentsNeeded = std::max(0, (int)de.points.size() - 1);
+        for (int j = 0; j < numSegmentsNeeded; ++j)
+        {
+            if (j < segmentsVT.getNumChildren())
+            {
+                auto sVT = segmentsVT.getChild(j);
+                de.segments.push_back({ (float)sVT.getProperty("curve", 0.5f),
+                                        (CurveType)(int)sVT.getProperty("type", (int)CurveType::Exponential) });
+            }
+            else
+            {
+                de.segments.push_back({ 0.5f, CurveType::Exponential });
+            }
+        }
+    }
+
+    // Precompute the steady-state smoothed shape so the audio traces the same
+    // "smoothness line" the UI draws. Empty when smoothing is off.
+    if (rawSmooth > 0.0f && de.points.size() >= 2)
+    {
+        const DSPEnvelope& shapeEnv = de;
+        auto evaluateY = [&shapeEnv](float x) -> float {
+            size_t idx = 0;
+            return EnvelopeEvaluator::evaluate(shapeEnv, (double)x, idx);
+        };
+        double effectiveRate = EnvelopeSmoothing::effectiveCyclesPerSecond(rawRate, de.isFrequencyMode);
+        EnvelopeSmoothing::computeSteadyStateSmoothing(evaluateY, rawSmooth, effectiveRate, de.smoothedShape);
+    }
+
+    return de;
+}
+
 void DuqAudioProcessor::syncToDSP()
 {
-    std::vector<DSPEnvelope> newEnvelopes;
     auto envelopesTree = getEnvelopesTree();
+    const int numEnvelopes = envelopesTree.getNumChildren();
 
-    for (int i = 0; i < envelopesTree.getNumChildren(); ++i)
+    // A structural change (add/remove/reorder/preset-load) or a child-count
+    // mismatch forces a full rebuild; otherwise reuse unchanged envelopes and
+    // only rebuild the ones flagged dirty (the expensive smoothing recompute).
+    bool fullRebuild = envStructureChanged.exchange(false)
+        || numEnvelopes != (int)dspState.envelopes.size();
+
+    std::vector<DSPEnvelope> newEnvelopes;
+    newEnvelopes.reserve((size_t)numEnvelopes);
+
+    for (int i = 0; i < numEnvelopes; ++i)
     {
-        auto envVT = envelopesTree.getChild(i);
-        DSPEnvelope de;
-        
-        float rawRate, rawDepth, rawSmooth;
+        bool slotIsDirty = (i < Defaults::maxEnvelopeSlots)
+            && envDirty[(size_t)i].exchange(false);
 
-        // Priority: Use automated parameters for the automated envelope slots
-        if (i < Defaults::maxEnvelopeSlots)
-        {
-            juce::String prefix = "env" + juce::String(i) + "_";
-            rawRate = parameters.getRawParameterValue(prefix + "rate")->load();
-            rawDepth = parameters.getRawParameterValue(prefix + "depth")->load();
-            rawSmooth = parameters.getRawParameterValue(prefix + "smooth")->load();
-        }
+        // Non-slot envelopes have no cached-pointer/dirty path, so always rebuild.
+        bool mustBuild = fullRebuild || slotIsDirty || (i >= Defaults::maxEnvelopeSlots);
+
+        if (mustBuild)
+            newEnvelopes.push_back(buildEnvelope(i, envelopesTree.getChild(i)));
         else
-        {
-            rawRate = envVT.getProperty("rate", 2.0);
-            rawDepth = envVT.getProperty("depth", 100.0);
-            rawSmooth = envVT.getProperty("smooth", 0.0);
-        }
-
-        bool isFreq = (bool)envVT.getProperty("rateIsFrequencyMode", true);
-
-        if (isFreq)
-        {
-            de.rate = (double)rawRate;
-        }
-        else
-        {
-            // Sync divisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
-            static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
-            
-            int idx = juce::jlimit(0, 5, (int)(rawRate / 16.66f));
-            de.rate = cycleMultipliers[idx];
-        }
-
-        de.depth = rawDepth / 100.0f;
-        
-        // rawSmooth is now 0-500 ms
-        float smoothTimeSec = rawSmooth / 1000.0f; 
-        de.smooth = rawSmooth / 500.0f; // Normalized 0..1 for UI/Internal consistency
-
-        double srate = getSampleRate();
-        if (srate <= 0) srate = 44100.0; // Fallback
-
-        if (smoothTimeSec > 0.0001f)
-            de.smoothCoeff = 1.0f - std::exp(-1.0f / (smoothTimeSec * (float)srate));
-        else
-            de.smoothCoeff = 1.0f;
-
-        de.triggerNote = envVT.getProperty("triggerNote", 60);
-        de.isFrequencyMode = (bool)envVT.getProperty("rateIsFrequencyMode", true);
-        de.isDisabled = (bool)envVT.getProperty("disabled", false);
-
-        double currentRate = de.rate;
-        if (!de.isFrequencyMode)
-            currentRate = de.rate * 2.0; // Default 120 bpm when transport is unavailable
-
-        de.phaseIncrement = currentRate / srate;
-
-        auto pointsVT = envVT.getChildWithName("POINTS");
-        if (pointsVT.isValid())
-        {
-            for (int j = 0; j < pointsVT.getNumChildren(); ++j)
-            {
-                auto pVT = pointsVT.getChild(j);
-                de.points.push_back({ (float)pVT.getProperty("x", 0.0f), 
-                                      (float)pVT.getProperty("y", 0.0f) });
-            }
-        }
-
-        auto segmentsVT = envVT.getChildWithName("SEGMENTS");
-        if (segmentsVT.isValid())
-        {
-            int numSegmentsNeeded = std::max(0, (int)de.points.size() - 1);
-            for (int j = 0; j < numSegmentsNeeded; ++j)
-            {
-                if (j < segmentsVT.getNumChildren())
-                {
-                    auto sVT = segmentsVT.getChild(j);
-                    de.segments.push_back({ (float)sVT.getProperty("curve", 0.5f), 
-                                            (CurveType)(int)sVT.getProperty("type", (int)CurveType::Exponential) });
-                }
-                else
-                {
-                    de.segments.push_back({ 0.5f, CurveType::Exponential });
-                }
-            }
-        }
-
-        // Precompute the steady-state smoothed shape so the audio traces the same
-        // "smoothness line" the UI draws. Empty when smoothing is off.
-        if (rawSmooth > 0.0f && de.points.size() >= 2)
-        {
-            const DSPEnvelope& shapeEnv = de;
-            auto evaluateY = [&shapeEnv](float x) -> float {
-                size_t idx = 0;
-                return EnvelopeEvaluator::evaluate(shapeEnv, (double)x, idx);
-            };
-            double effectiveRate = EnvelopeSmoothing::effectiveCyclesPerSecond(rawRate, de.isFrequencyMode);
-            EnvelopeSmoothing::computeSteadyStateSmoothing(evaluateY, rawSmooth, effectiveRate, de.smoothedShape);
-        }
-
-        newEnvelopes.push_back(std::move(de));
+            newEnvelopes.push_back(dspState.envelopes[(size_t)i]); // reuse unchanged
     }
 
     // Build the rest of the new state locally before taking the lock.
-    float newMixPercent = parameters.getRawParameterValue("mix")->load();
-    float lookaheadMs = parameters.getRawParameterValue("lookahead")->load();
+    float newMixPercent = mixParam->load();
+    float lookaheadMs = lookaheadParam->load();
 
     double srate = getSampleRate();
     if (srate <= 0.0)
@@ -926,6 +955,9 @@ void DuqAudioProcessor::prepareToPlay (double sampleRate, [[maybe_unused]] int s
         n.store(false, std::memory_order_relaxed);
     resetVoices();
 
+    // Sample rate may have changed → smoothCoeff/phaseIncrement/smoothedShape all
+    // depend on it, so force a full rebuild rather than reusing stale envelopes.
+    envStructureChanged.store(true, std::memory_order_relaxed);
     syncToDSP();
 
     // Max lookahead is 100ms, size for 200ms to be safe
@@ -1000,6 +1032,7 @@ void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
         parameters.state.addListener(this);
         getEnvelopesTree().addListener(this);
 
+        envStructureChanged.store(true, std::memory_order_relaxed);
         syncToDSP();
         resetVoices();
     }
@@ -1008,6 +1041,25 @@ void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 void DuqAudioProcessor::valueTreePropertyChanged(juce::ValueTree& v, const juce::Identifier& i)
 {
     requiresSync = true;
+
+    // Mark only the affected envelope dirty so syncToDSP can reuse the rest.
+    // Walk up from the changed node (which may be a POINT/SEGMENT) to its owning
+    // ENVELOPE; if we can't attribute it to a slot envelope, force a full rebuild.
+    {
+        auto envelopesTree = getEnvelopesTree();
+        juce::ValueTree node = v;
+        juce::ValueTree envNode;
+        while (node.isValid())
+        {
+            if (node.getParent() == envelopesTree) { envNode = node; break; }
+            node = node.getParent();
+        }
+        int idx = envNode.isValid() ? envelopesTree.indexOf(envNode) : -1;
+        if (idx >= 0 && idx < Defaults::maxEnvelopeSlots)
+            envDirty[(size_t)idx].store(true, std::memory_order_relaxed);
+        else
+            envStructureChanged.store(true, std::memory_order_relaxed);
+    }
 
     // Sync from ValueTree back to Parameter if modified externally (e.g. Preset Load)
     if (v.hasType("ENVELOPE"))
@@ -1037,6 +1089,7 @@ void DuqAudioProcessor::valueTreePropertyChanged(juce::ValueTree& v, const juce:
 void DuqAudioProcessor::valueTreeChildOrderChanged(juce::ValueTree& v, int, int)
 {
     requiresSync = true;
+    envStructureChanged.store(true, std::memory_order_relaxed);
     resetVoices();
 
     if (v == getEnvelopesTree())
@@ -1095,6 +1148,8 @@ void DuqAudioProcessor::parameterChanged(const juce::String& parameterID, float 
 
             if (envIndex >= 0 && envIndex < Defaults::maxEnvelopeSlots)
             {
+                envDirty[static_cast<size_t>(envIndex)].store(true, std::memory_order_relaxed);
+
                 auto& pending = pendingEnvEdits[static_cast<size_t>(envIndex)];
                 if (propName == "rate")
                 {

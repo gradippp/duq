@@ -103,11 +103,12 @@ public:
 private:
     //==============================================================================
     void syncToDSP();
+    DSPEnvelope buildEnvelope(int index, const juce::ValueTree& envVT);
 
     // ValueTree::Listener
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
-    void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { requiresSync = true; }
-    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; resetVoices(); }
+    void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { envStructureChanged = true; requiresSync = true; }
+    void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { envStructureChanged = true; requiresSync = true; resetVoices(); }
     void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override;
 
     void rebindSlotParametersFromTree();
@@ -168,6 +169,19 @@ private:
     };
 
     std::array<PendingEnvParamEdit, Defaults::maxEnvelopeSlots> pendingEnvEdits;
+
+    // Cached raw parameter pointers (stable for the APVTS lifetime) so syncToDSP
+    // avoids per-sync string lookups. Populated in the constructor.
+    struct SlotParamPtrs { std::atomic<float>* rate = nullptr; std::atomic<float>* depth = nullptr; std::atomic<float>* smooth = nullptr; };
+    std::array<SlotParamPtrs, Defaults::maxEnvelopeSlots> slotParams;
+    std::atomic<float>* mixParam = nullptr;
+    std::atomic<float>* lookaheadParam = nullptr;
+
+    // Incremental-sync dirty tracking: rebuild only the DSPEnvelope entries whose
+    // source changed. envStructureChanged forces a full rebuild (add/remove/reorder,
+    // preset load, non-slot envelopes).
+    std::array<std::atomic<bool>, Defaults::maxEnvelopeSlots> envDirty;
+    std::atomic<bool> envStructureChanged{ true };
 
     juce::SpinLock dspLock;
     std::atomic<bool> requiresSync{ true };
