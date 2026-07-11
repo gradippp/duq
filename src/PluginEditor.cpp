@@ -256,8 +256,6 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     // Initial tooltip state
     if (!config->getShowTooltips())
         tooltipWindow.setMillisecondsBeforeTipAppears(std::numeric_limits<int>::max());
-
-    undoManager.clearUndoHistory();
 }
 
 DuqAudioProcessorEditor::~DuqAudioProcessorEditor()

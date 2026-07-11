@@ -140,7 +140,7 @@ void PointsContainer::rebuildPointComponents()
             {
                 if (safeGrid == nullptr || !targetNode.isValid()) return;
                 safeGrid->activeAnchorNode = targetNode;
-                safeGrid->activeDragCurve = juce::jlimit(-1.0f, 1.0f, newCurve);
+                safeGrid->activeDragCurve = juce::jlimit(0.0f, 1.0f, newCurve);
                 safeGrid->updatePointPositions();
                 
                 // Explicitly update path renderer with new curve data

@@ -13,7 +13,6 @@ class DuqAudioProcessor : public juce::AudioProcessor,
     private juce::AudioProcessorValueTreeState::Listener,
     private juce::Timer,
     public juce::ChangeListener,
-    public juce::AudioProcessorParameter::Listener,
     public juce::AsyncUpdater
 {
 public:
@@ -103,13 +102,14 @@ public:
 private:
     //==============================================================================
     void syncToDSP();
-    void processMidi(juce::MidiBuffer& midi);
 
     // ValueTree::Listener
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
     void valueTreeChildAdded(juce::ValueTree&, juce::ValueTree&) override { requiresSync = true; }
     void valueTreeChildRemoved(juce::ValueTree&, juce::ValueTree&, int) override { requiresSync = true; resetVoices(); }
-    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override { requiresSync = true; resetVoices(); }
+    void valueTreeChildOrderChanged(juce::ValueTree&, int, int) override;
+
+    void rebindSlotParametersFromTree();
 
     // APVTS::Listener
     void parameterChanged(const juce::String& parameterID, float newValue) override;
@@ -117,9 +117,8 @@ private:
     // ChangeListener
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
-    // AudioProcessorParameter::Listener
-    void parameterValueChanged(int parameterIndex, float newValue) override;
-    void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override;
+    // MIDI helpers
+    void handleMidiEvent(const juce::MidiMessage& msg);
 
     // Timer
     void timerCallback() override;
@@ -127,13 +126,10 @@ private:
     // AsyncUpdater
     void handleAsyncUpdate() override;
 
+    bool isRebindingSlots = false;
+
     //==============================================================================
     juce::UndoManager undoManager{ 200 };
-
-    juce::AudioParameterInt* undoTriggerParam = nullptr;
-    std::atomic<int> lastUndoTriggerValue{ 0 };
-    std::atomic<bool> isInternalAction{ false };
-    std::atomic<bool> isHostUndoing{ false };
 
     // DSP State
     struct InternalDSPState

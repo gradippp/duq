@@ -94,7 +94,7 @@ private:
             float x2 = getTrueX(p2);
             float y2 = getTrueY(p2);
 
-            float curve = 0.0f;
+            float curve = 0.5f;
             CurveType type = CurveType::Exponential;
             if (segments.isValid() && i < segments.getNumChildren())
             {
@@ -120,7 +120,7 @@ private:
         cachedFillPath.lineTo(state.normalizedToPixel({ firstX, 0.0f }));
         cachedFillPath.closeSubPath();
 
-        float smoothValue = (float)envelope.getProperty("smooth", 0.0) / 100.0f;
+        float smoothValue = (float)envelope.getProperty("smooth", 0.0) / 500.0f;
         if (smoothValue <= 0.001f)
         {
             cacheValid = true;

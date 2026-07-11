@@ -72,14 +72,8 @@ DuqAudioProcessor::DuqAudioProcessor()
         parameters.addParameterListener(prefix + "smooth", this);
     }
 
-    undoTriggerParam = new juce::AudioParameterInt(juce::ParameterID{ "undoTrigger", 1 }, "Undo Trigger", 0, 1000000, 0);
-    addParameter(undoTriggerParam);
-    undoTriggerParam->addListener(this);
-if (undoTriggerParam)
-    lastUndoTriggerValue = undoTriggerParam->get();
-
-undoManager.addChangeListener(this);
-config->addChangeListener(this);
+    undoManager.addChangeListener(this);
+    config->addChangeListener(this);
 
 // Envelope Voices
 voices.resize(maxVoices);
@@ -106,9 +100,6 @@ DuqAudioProcessor::~DuqAudioProcessor()
         parameters.removeParameterListener(prefix + "smooth", this);
     }
 
-    if (undoTriggerParam)
-        undoTriggerParam->removeListener(this);
-
     undoManager.removeChangeListener(this);
     config->removeChangeListener(this);
 }
@@ -119,64 +110,10 @@ void DuqAudioProcessor::changeListenerCallback(juce::ChangeBroadcaster* source)
     {
         undoManager.setMaxNumberOfStoredUnits(30000, config->getUndoLimit());
     }
-    else if (source == &undoManager && !isHostUndoing.load())
-    {
-        if (undoTriggerParam != nullptr)
-        {
-            isInternalAction.store(true);
-            int nextValue = undoTriggerParam->get() + 1;
-            lastUndoTriggerValue.store(nextValue);
-            
-            undoTriggerParam->beginChangeGesture();
-            undoTriggerParam->setValueNotifyingHost(undoTriggerParam->convertTo0to1((float)nextValue));
-            undoTriggerParam->endChangeGesture();
-            isInternalAction.store(false);
-        }
-    }
-}
-
-void DuqAudioProcessor::parameterValueChanged(int parameterIndex, float newValue)
-{
-    if (undoTriggerParam && parameterIndex == undoTriggerParam->getParameterIndex())
-    {
-        int newTriggerValue = undoTriggerParam->get();
-        int lastVal = lastUndoTriggerValue.load();
-        
-        // Ignore echo from our own notifications or duplicate host events
-        if (newTriggerValue == lastVal)
-            return; 
-
-        if (!isInternalAction.load())
-        {
-            if (newTriggerValue < lastVal)
-            {
-                lastUndoTriggerValue.store(newTriggerValue);
-                juce::WeakReference<DuqAudioProcessor> safeThis(this);
-                juce::MessageManager::callAsync([safeThis]() {
-                    if (auto* p = safeThis.get())
-                        p->performUndoRedo(true);
-                });
-            }
-            else if (newTriggerValue > lastVal)
-            {
-                lastUndoTriggerValue.store(newTriggerValue);
-                juce::WeakReference<DuqAudioProcessor> safeThis(this);
-                juce::MessageManager::callAsync([safeThis]() {
-                    if (auto* p = safeThis.get())
-                        p->performUndoRedo(false);
-                });
-            }
-        }
-        else
-        {
-            lastUndoTriggerValue.store(newTriggerValue);
-        }
-    }
 }
 
 void DuqAudioProcessor::performUndoRedo(bool isUndo)
 {
-    isHostUndoing.store(true);
     if (isUndo) undoManager.undo();
     else        undoManager.redo();
     triggerAsyncUpdate();
@@ -184,8 +121,6 @@ void DuqAudioProcessor::performUndoRedo(bool isUndo)
 
 void DuqAudioProcessor::handleAsyncUpdate()
 {
-    isHostUndoing.store(false);
-
     int capturedNote = capturedCalibrationNote.exchange(-1);
     if (capturedNote != -1)
     {
@@ -195,11 +130,6 @@ void DuqAudioProcessor::handleAsyncUpdate()
         int offset = 1 - (capturedNote / 12);
         config->setMidiOctaveOffset(offset);
     }
-}
-
-void DuqAudioProcessor::parameterGestureChanged(int parameterIndex, bool gestureIsStarting)
-{
-    juce::ignoreUnused(parameterIndex, gestureIsStarting);
 }
 
 void DuqAudioProcessor::timerCallback()
@@ -335,35 +265,44 @@ void DuqAudioProcessor::syncToDSP()
         newEnvelopes.push_back(std::move(de));
     }
 
+    // Build the rest of the new state locally before taking the lock.
+    float newMixPercent = parameters.getRawParameterValue("mix")->load();
+    float lookaheadMs = parameters.getRawParameterValue("lookahead")->load();
+
+    double srate = getSampleRate();
+    if (srate <= 0.0)
+        srate = 44100.0;
+
+    float newLookaheadSmoothCoeff;
+    constexpr float lookaheadSmoothingTimeSeconds = 0.005f;
+    if (lookaheadSmoothingTimeSeconds > 0.0f)
+        newLookaheadSmoothCoeff = 1.0f - std::exp(-1.0f / (lookaheadSmoothingTimeSeconds * (float)srate));
+    else
+        newLookaheadSmoothCoeff = 0.005f;
+
+    int targetLookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
+
+    int oldLookaheadSamples;
     {
         const juce::SpinLock::ScopedLockType sl(dspLock);
-        dspState.envelopes = std::move(newEnvelopes);
+        std::swap(dspState.envelopes, newEnvelopes);
 
-        float lookaheadMs = parameters.getRawParameterValue("lookahead")->load();
-        dspState.mixPercent = parameters.getRawParameterValue("mix")->load();
+        oldLookaheadSamples = dspState.lookaheadSamples;
+        dspState.mixPercent = newMixPercent;
+        dspState.lookaheadSmoothCoeff = newLookaheadSmoothCoeff;
+        dspState.lookaheadSamples = targetLookaheadSamples;
 
-        double srate = getSampleRate();
-        if (srate <= 0.0)
-            srate = 44100.0;
-
-        constexpr float lookaheadSmoothingTimeSeconds = 0.005f;
-        if (lookaheadSmoothingTimeSeconds > 0.0f)
-            dspState.lookaheadSmoothCoeff = 1.0f - std::exp(-1.0f / (lookaheadSmoothingTimeSeconds * (float)srate));
-        else
-            dspState.lookaheadSmoothCoeff = 0.005f;
-
-        int targetLookaheadSamples = (int)(lookaheadMs * srate / 1000.0);
-        
-        if (dspState.lookaheadSamples != targetLookaheadSamples)
-        {
-            dspState.lookaheadSamples = targetLookaheadSamples;
-            setLatencySamples(dspState.lookaheadSamples);
-            updateHostDisplay();
-        }
-
-        // Initialize smoothing on first run or if it's way off
+        // Initialize smoothing on first run or if it's way off; otherwise preserve
+        // the existing smoothing state across syncs.
         if (dspState.currentLookaheadSamples < 0.0f)
             dspState.currentLookaheadSamples = (float)dspState.lookaheadSamples;
+    }
+    // newEnvelopes (the old envelope vector) is destroyed here, outside the lock.
+
+    if (oldLookaheadSamples != targetLookaheadSamples)
+    {
+        setLatencySamples(targetLookaheadSamples);
+        updateHostDisplay();
     }
 }
 
@@ -440,85 +379,94 @@ void DuqAudioProcessor::addEnvelope(const juce::String& name, int note)
     }
 }
 
-void DuqAudioProcessor::processMidi(juce::MidiBuffer& midi)
+void DuqAudioProcessor::handleMidiEvent(const juce::MidiMessage& msg)
 {
-    const juce::SpinLock::ScopedLockType sl(dspLock);
-
-    for (const auto& metadata : midi)
+    // Called with dspLock already held.
+    if (msg.isNoteOn())
     {
-        const auto msg = metadata.getMessage();
+        int note = msg.getNoteNumber();
+        activeNotes[static_cast<size_t>(note)].store(true, std::memory_order_relaxed);
 
-        if (msg.isNoteOn())
+        // MIDI Calibration
+        if (calibrationMode.load())
         {
-            int note = msg.getNoteNumber();
-            activeNotes[static_cast<size_t>(note)].store(true, std::memory_order_relaxed);
+            capturedCalibrationNote.store(note);
+            calibrationMode.store(false);
+            triggerAsyncUpdate();
+            return; // Don't trigger envelopes while calibrating
+        }
 
-            // MIDI Calibration
-            if (calibrationMode.load())
+        // Find envelopes that match this note
+        for (size_t i = 0; i < dspState.envelopes.size(); ++i)
+        {
+            const auto& env = dspState.envelopes[i];
+            if (!env.isDisabled && env.triggerNote == note)
             {
-                capturedCalibrationNote.store(note);
-                calibrationMode.store(false);
-                triggerAsyncUpdate();
-                continue; // Don't trigger envelopes while calibrating
-            }
-
-            // Find envelopes that match this note
-            for (size_t i = 0; i < dspState.envelopes.size(); ++i)
-            {
-                const auto& env = dspState.envelopes[i];
-                if (!env.isDisabled && env.triggerNote == note)
+                // Start a new voice or retrigger
+                bool foundVoice = false;
+                for (auto& v : voices)
                 {
-                    // Start a new voice or retrigger
-                    bool foundVoice = false;
+                    if (v.isActive && v.envelopeIndex == i && v.noteNumber == note)
+                    {
+                        v.isActive = true;
+                        v.currentPhase = 0.0;
+                        v.lastSegmentIndex = 0;
+
+                        foundVoice = true;
+                        break;
+                    }
+                }
+
+                if (!foundVoice)
+                {
                     for (auto& v : voices)
                     {
-                        if (v.isActive && v.envelopeIndex == i && v.noteNumber == note)
+                        if (!v.isActive)
                         {
-                            v.isActive = true;
+                            v.envelopeIndex = static_cast<int>(i);
                             v.currentPhase = 0.0;
                             v.lastSegmentIndex = 0;
-                            
+                            v.noteNumber = note;
+                            v.isActive = true;
+
                             foundVoice = true;
                             break;
-                        }
-                    }
-
-                    if (!foundVoice)
-                    {
-                        for (auto& v : voices)
-                        {
-                            if (!v.isActive)
-                            {
-                                v.envelopeIndex = static_cast<int>(i);
-                                v.currentPhase = 0.0;
-                                v.lastSegmentIndex = 0;
-                                v.noteNumber = note;
-                                v.isActive = true;
-
-                                foundVoice = true;
-                                break;
-                            }
                         }
                     }
                 }
             }
         }
-        else if (msg.isNoteOff())
-        {
-            int note = msg.getNoteNumber();
-            activeNotes[note].store(false, std::memory_order_relaxed);
+    }
+    else if (msg.isNoteOff())
+    {
+        int note = msg.getNoteNumber();
+        activeNotes[static_cast<size_t>(note)].store(false, std::memory_order_relaxed);
 
-            // In ONE-SHOT mode, we do NOT deactivate voices on Note Off.
-            // They finish when currentPhase >= 1.0.
+        // In ONE-SHOT mode, we do NOT deactivate voices on Note Off.
+        // They finish when currentPhase >= 1.0.
+    }
+    else if (msg.isAllNotesOff() || msg.isAllSoundOff())
+    {
+        for (auto& n : activeNotes)
+            n.store(false, std::memory_order_relaxed);
+
+        for (auto& v : voices)
+        {
+            v.isActive = false;
+            v.envelopeIndex = -1;
         }
+    }
+    else if (msg.isResetAllControllers())
+    {
+        // Conservative: just clear the note-held state, leave voices to finish naturally.
+        for (auto& n : activeNotes)
+            n.store(false, std::memory_order_relaxed);
     }
 }
 
 void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::MidiBuffer& midi)
 {
-    processMidi(midi);
-
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples = buffer.getNumSamples();
@@ -583,8 +531,20 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     const int delaySize = delayBuffer.getNumSamples();
     constexpr int controlRate = 32;
 
+    // Sample-accurate MIDI: dispatch each event exactly at its sample position
+    // (this scope already holds dspLock, matching the previous processMidi() contract).
+    auto midiIt = midi.cbegin();
+    const auto midiEndIt = midi.cend();
+
     for (int i = 0; i < numSamples; ++i)
     {
+        // --- Handle MIDI events due at or before this sample ---
+        while (midiIt != midiEndIt && (*midiIt).samplePosition <= i)
+        {
+            handleMidiEvent((*midiIt).getMessage());
+            ++midiIt;
+        }
+
         // --- Control Rate Update ---
         if (i % controlRate == 0)
         {
@@ -726,6 +686,13 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             delayWritePos = 0;
     }
 
+    // Drain any trailing events (e.g. samplePosition == numSamples edge case).
+    while (midiIt != midiEndIt)
+    {
+        handleMidiEvent((*midiIt).getMessage());
+        ++midiIt;
+    }
+
     monpos.store(writeIndex, std::memory_order_relaxed);
 
     inputMeterLevel.store(inputPeak, std::memory_order_relaxed);
@@ -848,6 +815,10 @@ void DuqAudioProcessor::prepareToPlay (double sampleRate, [[maybe_unused]] int s
     masterGain.reset(sampleRate, 0.001); // 1ms smoothing for punchy transients
     masterGain.setCurrentAndTargetValue(1.0f);
 
+    for (auto& n : activeNotes)
+        n.store(false, std::memory_order_relaxed);
+    resetVoices();
+
     syncToDSP();
 
     // Max lookahead is 100ms, size for 200ms to be safe
@@ -918,11 +889,12 @@ void DuqAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
         getEnvelopesTree().removeListener(this);
 
         parameters.replaceState(juce::ValueTree::fromXml(*xml));
-        
+
         parameters.state.addListener(this);
         getEnvelopesTree().addListener(this);
-        
+
         syncToDSP();
+        resetVoices();
     }
 }
 
@@ -955,10 +927,55 @@ void DuqAudioProcessor::valueTreePropertyChanged(juce::ValueTree& v, const juce:
     }
 }
 
+void DuqAudioProcessor::valueTreeChildOrderChanged(juce::ValueTree& v, int, int)
+{
+    requiresSync = true;
+    resetVoices();
+
+    if (v == getEnvelopesTree())
+        rebindSlotParametersFromTree();
+}
+
+void DuqAudioProcessor::rebindSlotParametersFromTree()
+{
+    // After a reorder, the ValueTree order has changed but the automated slot
+    // parameters (env{i}_rate/depth/smooth) are still bound to their old index.
+    // Re-push each slot's parameter values from the (now reordered) tree so the
+    // knobs follow the envelope rather than the slot.
+    auto envelopes = getEnvelopesTree();
+
+    isRebindingSlots = true;
+
+    for (int i = 0; i < Defaults::maxEnvelopeSlots && i < envelopes.getNumChildren(); ++i)
+    {
+        auto env = envelopes.getChild(i);
+        juce::String prefix = "env" + juce::String(i) + "_";
+
+        auto pushParam = [this, &env, &prefix](const juce::String& suffix, double defaultValue)
+        {
+            if (auto* param = parameters.getParameter(prefix + suffix))
+            {
+                float value = (float)(double)env.getProperty(suffix, defaultValue);
+                float target = parameters.getParameterRange(prefix + suffix).convertTo0to1(value);
+                param->setValueNotifyingHost(target);
+            }
+        };
+
+        pushParam("rate", 2.0);
+        pushParam("depth", 100.0);
+        pushParam("smooth", 0.0);
+    }
+
+    isRebindingSlots = false;
+}
+
 //==============================================================================
 void DuqAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
 {
     requiresSync = true;
+
+    if (isRebindingSlots)
+        return;
 
     // Sync automated parameters back into the ValueTree for UI consistency
     if (parameterID.startsWith("env"))

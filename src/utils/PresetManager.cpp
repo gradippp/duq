@@ -149,8 +149,9 @@ bool PresetManager::saveProject(const juce::ValueTree& state, const juce::File& 
     // Copy global properties if we have the root
     if (root.isValid())
     {
-        for (const auto& id : root.getPropertyNames())
+        for (int i = 0; i < root.getNumProperties(); ++i)
         {
+            const auto id = root.getPropertyName(i);
             if (shouldCopyProjectProperty(id))
                 cleanProject.setProperty(id, root.getProperty(id), nullptr);
         }

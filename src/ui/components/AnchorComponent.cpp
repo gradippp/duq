@@ -115,15 +115,18 @@ void AnchorComponent::showTensionDialog()
     aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
     aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
-    aw->enterModalState(true, juce::ModalCallbackFunction::create([this, aw](int result)
+    juce::Component::SafePointer<GridSection> safeGrid(&grid);
+    juce::ValueTree segmentTree = segment;
+
+    aw->enterModalState(true, juce::ModalCallbackFunction::create([safeGrid, segmentTree, aw](int result) mutable
     {
-        if (result == 1)
+        if (result == 1 && safeGrid != nullptr)
         {
             float val = aw->getTextEditorContents("tension").getFloatValue();
-            auto& um = grid.getUndoManager();
+            auto& um = safeGrid->getUndoManager();
             um.beginNewTransaction("Set Tension");
-            segment.setProperty("curve", juce::jlimit(0.0f, 1.0f, val), &um);
-            grid.repaint();
+            segmentTree.setProperty("curve", juce::jlimit(0.0f, 1.0f, val), &um);
+            safeGrid->repaint();
         }
         delete aw;
     }));

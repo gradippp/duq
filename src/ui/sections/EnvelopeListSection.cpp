@@ -93,6 +93,7 @@ EnvelopeListSection::EnvelopeListSection()
 
 EnvelopeListSection::~EnvelopeListSection()
 {
+    viewport.setLookAndFeel(nullptr);
     addButton.setLookAndFeel(nullptr);
     importButton.setLookAndFeel(nullptr);
 }
@@ -188,7 +189,7 @@ void EnvelopeListSection::rebuildRowsFromModel()
                     onSaveRequested(envTree);
             };
 
-        row->onNameChanged = [this, envTree](const juce::String& newName)
+        row->onNameChanged = [this, envTree](const juce::String& newName) mutable
             {
                 envTree.setProperty("name", newName.trim(), undoManager);
             };
