@@ -20,6 +20,11 @@ struct DSPEnvelope
     std::vector<DSPPoint> points;
     std::vector<DSPSegment> segments;
 
+    // Steady-state smoothed shape over phase [0,1] (empty when smooth == 0).
+    // When present, the DSP samples this instead of evaluating the raw curve,
+    // so the audio matches the on-screen smoothness line. Built in syncToDSP.
+    std::vector<float> smoothedShape;
+
     double rate = 20.0;
     double phaseIncrement = 0.0;
     float depth = 1.0f;

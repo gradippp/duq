@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "GridBackground.h"
 #include "../../dsp/EnvelopeCurves.h"
+#include "../../dsp/EnvelopeSmoothing.h"
 
 class EnvelopePathRenderer : public juce::Component
 {
@@ -162,40 +163,21 @@ private:
 
         float rawRate = (float)envelope.getProperty("rate", 20.0);
         bool isFreq = (bool)envelope.getProperty("rateIsFrequencyMode", true);
-        double currentRate = rawRate;
-        if (!isFreq)
-        {
-            static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
-            int idx = juce::jlimit(0, 5, (int)(rawRate / 16.66f));
-            currentRate = cycleMultipliers[idx] * 2.0;
-        }
-        if (currentRate <= 0.0)
-            currentRate = 1.0;
-
-        double durationSec = 1.0 / currentRate;
-        const int smoothSteps = 400;
         float smoothMs = (float)envelope.getProperty("smooth", 0.0);
-        float smoothTimeSec = smoothMs / 1000.0f;
-        double visualSrate = smoothSteps / durationSec;
-        float coeff = 1.0f - std::exp(-1.0f / (smoothTimeSec * (float)visualSrate));
+        double effectiveRate = EnvelopeSmoothing::effectiveCyclesPerSecond(rawRate, isFreq);
 
-        float currentSmoothY = 1.0f;
-        for (int cycle = 0; cycle < 10; ++cycle)
-        {
-            for (int i = 0; i <= smoothSteps; ++i)
-            {
-                float x = (float)i / smoothSteps;
-                currentSmoothY += (evaluateY(x) - currentSmoothY) * coeff;
-            }
-        }
+        // Use the exact same steady-state smoothing the DSP uses, so the drawn
+        // line and the audio gain are identical.
+        const int smoothSteps = 400;
+        std::vector<float> smoothed;
+        std::function<float(float)> eval = evaluateY;
+        EnvelopeSmoothing::computeSteadyStateSmoothing(eval, smoothMs, effectiveRate, smoothed, smoothSteps);
 
-        cachedSmoothPath.startNewSubPath(state.normalizedToPixel({ 0.0f, currentSmoothY }));
+        cachedSmoothPath.startNewSubPath(state.normalizedToPixel({ 0.0f, smoothed[0] }));
         for (int i = 1; i <= smoothSteps; ++i)
         {
             float x = (float)i / smoothSteps;
-            float targetY = evaluateY(x);
-            currentSmoothY += (targetY - currentSmoothY) * coeff;
-            cachedSmoothPath.lineTo(state.normalizedToPixel({ x, currentSmoothY }));
+            cachedSmoothPath.lineTo(state.normalizedToPixel({ x, smoothed[(size_t)i] }));
         }
 
         hasSmoothOverlay = true;

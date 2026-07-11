@@ -10,6 +10,7 @@
 #include "PluginEditor.h"
 #include "model/EnvelopeData.h"
 #include "dsp/EnvelopeEvaluator.h"
+#include "dsp/EnvelopeSmoothing.h"
 #include "Globals.h"
 
 static juce::ValueTree createDefaultEnvelope(const juce::String& name, int note)
@@ -332,6 +333,19 @@ void DuqAudioProcessor::syncToDSP()
             }
         }
 
+        // Precompute the steady-state smoothed shape so the audio traces the same
+        // "smoothness line" the UI draws. Empty when smoothing is off.
+        if (rawSmooth > 0.0f && de.points.size() >= 2)
+        {
+            const DSPEnvelope& shapeEnv = de;
+            auto evaluateY = [&shapeEnv](float x) -> float {
+                size_t idx = 0;
+                return EnvelopeEvaluator::evaluate(shapeEnv, (double)x, idx);
+            };
+            double effectiveRate = EnvelopeSmoothing::effectiveCyclesPerSecond(rawRate, de.isFrequencyMode);
+            EnvelopeSmoothing::computeSteadyStateSmoothing(evaluateY, rawSmooth, effectiveRate, de.smoothedShape);
+        }
+
         newEnvelopes.push_back(std::move(de));
     }
 
@@ -455,8 +469,19 @@ void DuqAudioProcessor::addEnvelope(const juce::String& name, int note)
 // smooth onset.
 static void initVoiceGain(EnvelopeVoice& v, const DSPEnvelope& env)
 {
-    size_t dummyIndex = 0;
-    float startVal = EnvelopeEvaluator::evaluate(env, 0.0, dummyIndex);
+    // Start on the smoothness line (its steady-state phase-0 value) when smoothing
+    // is active, otherwise the raw envelope start. Keeps a fresh trigger consistent
+    // with what the UI draws.
+    float startVal;
+    if (!env.smoothedShape.empty())
+    {
+        startVal = env.smoothedShape.front();
+    }
+    else
+    {
+        size_t dummyIndex = 0;
+        startVal = EnvelopeEvaluator::evaluate(env, 0.0, dummyIndex);
+    }
     v.currentGain = 1.0f - (1.0f - (startVal * startVal)) * env.depth;
     v.targetGain = v.currentGain;
     v.gainDelta = 0.0f;
@@ -635,19 +660,18 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 if (v.isActive && v.envelopeIndex >= 0 && v.envelopeIndex < (int)dspState.envelopes.size())
                 {
                     const auto& env = dspState.envelopes[v.envelopeIndex];
-                    
-                    // Evaluate at current phase
-                    float envVal = EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex);
+
+                    // When smoothing is active, sample the precomputed steady-state
+                    // shape (the same curve the UI draws) by phase; otherwise follow
+                    // the raw envelope. Smoothing lives in the shape, so the gain
+                    // just tracks it (the per-block gainDelta ramp de-zippers).
+                    float envVal = env.smoothedShape.empty()
+                        ? EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex)
+                        : EnvelopeSmoothing::sampleShape(env.smoothedShape, v.currentPhase);
                     float mappedVal = envVal * envVal;
                     float targetVoiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
-                    
-                    // Target with smoothing. The per-control-period approach
-                    // factor (smoothCoeff * N) is only a valid one-pole
-                    // approximation while smoothCoeff is small; clamp to 1.0 so
-                    // it can never overshoot (at smooth=0, smoothCoeff==1 would
-                    // otherwise give a factor of N and slam the gain to the clamps).
-                    const float approach = juce::jmin(1.0f, env.smoothCoeff * (float)samplesToNextControl);
-                    v.targetGain = v.currentGain + (targetVoiceGain - v.currentGain) * approach;
+
+                    v.targetGain = targetVoiceGain;
                     v.gainDelta = (v.targetGain - v.currentGain) * invSamples;
                 }
             }
