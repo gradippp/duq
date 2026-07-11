@@ -641,8 +641,13 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                     float mappedVal = envVal * envVal;
                     float targetVoiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
                     
-                    // Target with smoothing
-                    v.targetGain = v.currentGain + (targetVoiceGain - v.currentGain) * (env.smoothCoeff * (float)samplesToNextControl);
+                    // Target with smoothing. The per-control-period approach
+                    // factor (smoothCoeff * N) is only a valid one-pole
+                    // approximation while smoothCoeff is small; clamp to 1.0 so
+                    // it can never overshoot (at smooth=0, smoothCoeff==1 would
+                    // otherwise give a factor of N and slam the gain to the clamps).
+                    const float approach = juce::jmin(1.0f, env.smoothCoeff * (float)samplesToNextControl);
+                    v.targetGain = v.currentGain + (targetVoiceGain - v.currentGain) * approach;
                     v.gainDelta = (v.targetGain - v.currentGain) * invSamples;
                 }
             }
