@@ -13,6 +13,7 @@ class DuqAudioProcessor : public juce::AudioProcessor,
     private juce::AudioProcessorValueTreeState::Listener,
     private juce::Timer,
     public juce::ChangeListener,
+    public juce::AudioProcessorParameter::Listener,
     public juce::AsyncUpdater
 {
 public:
@@ -117,6 +118,10 @@ private:
     // ChangeListener
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
+    // AudioProcessorParameter::Listener (host-undo bridge via undoTriggerParam)
+    void parameterValueChanged(int parameterIndex, float newValue) override;
+    void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override;
+
     // MIDI helpers
     void handleMidiEvent(const juce::MidiMessage& msg);
 
@@ -130,6 +135,16 @@ private:
 
     //==============================================================================
     juce::UndoManager undoManager{ 200 };
+
+    // Host-undo bridge: an integer parameter the host records in its own undo
+    // stack; host Ctrl-Z/Ctrl-Y reverts it, which we translate into our internal
+    // UndoManager. Undo/redo is deferred to the message-thread timer (never the
+    // audio thread) via pendingHostUndoRedo.
+    juce::AudioParameterInt* undoTriggerParam = nullptr;
+    std::atomic<int> lastUndoTriggerValue{ 0 };
+    std::atomic<bool> isInternalAction{ false };
+    std::atomic<bool> isHostUndoing{ false };
+    std::atomic<int> pendingHostUndoRedo{ 0 }; // -1 = undo, +1 = redo, 0 = idle
 
     // DSP State
     struct InternalDSPState

@@ -72,6 +72,16 @@ DuqAudioProcessor::DuqAudioProcessor()
         parameters.addParameterListener(prefix + "smooth", this);
     }
 
+    // Host-undo bridge parameter. Kept automatable: hosts reliably record
+    // automatable parameter changes in their own undo stack, which is what lets
+    // host Ctrl-Z drive our internal UndoManager. (A non-automatable variant
+    // hides it from automation lanes but silently breaks host-undo capture in
+    // some hosts, so we intentionally keep it automatable.)
+    undoTriggerParam = new juce::AudioParameterInt(juce::ParameterID{ "undoTrigger", 1 }, "Undo Trigger", 0, 1000000, 0);
+    addParameter(undoTriggerParam);
+    undoTriggerParam->addListener(this);
+    lastUndoTriggerValue = undoTriggerParam->get();
+
     undoManager.addChangeListener(this);
     config->addChangeListener(this);
 
@@ -100,6 +110,9 @@ DuqAudioProcessor::~DuqAudioProcessor()
         parameters.removeParameterListener(prefix + "smooth", this);
     }
 
+    if (undoTriggerParam)
+        undoTriggerParam->removeListener(this);
+
     undoManager.removeChangeListener(this);
     config->removeChangeListener(this);
 }
@@ -110,10 +123,61 @@ void DuqAudioProcessor::changeListenerCallback(juce::ChangeBroadcaster* source)
     {
         undoManager.setMaxNumberOfStoredUnits(30000, config->getUndoLimit());
     }
+    else if (source == &undoManager && !isHostUndoing.load())
+    {
+        // An internal edit happened: bump the host-undo bridge parameter so the
+        // host records it in its own undo stack. Guarded by isInternalAction so
+        // the resulting parameterValueChanged echo is ignored.
+        if (undoTriggerParam != nullptr)
+        {
+            isInternalAction.store(true);
+            int nextValue = undoTriggerParam->get() + 1;
+            lastUndoTriggerValue.store(nextValue);
+
+            undoTriggerParam->beginChangeGesture();
+            undoTriggerParam->setValueNotifyingHost(undoTriggerParam->convertTo0to1((float)nextValue));
+            undoTriggerParam->endChangeGesture();
+            isInternalAction.store(false);
+        }
+    }
+}
+
+void DuqAudioProcessor::parameterValueChanged(int parameterIndex, float /*newValue*/)
+{
+    if (undoTriggerParam == nullptr || parameterIndex != undoTriggerParam->getParameterIndex())
+        return;
+
+    int newTriggerValue = undoTriggerParam->get();
+    int lastVal = lastUndoTriggerValue.load();
+
+    // Ignore echo from our own notifications or duplicate host events.
+    if (newTriggerValue == lastVal)
+        return;
+
+    if (!isInternalAction.load())
+    {
+        // Host moved the bridge parameter (e.g. Ctrl-Z/Ctrl-Y reverting it).
+        // Defer the actual undo/redo to the message-thread timer so we never
+        // touch the UndoManager (or allocate) on the audio thread.
+        lastUndoTriggerValue.store(newTriggerValue);
+        pendingHostUndoRedo.store(newTriggerValue < lastVal ? -1 : 1);
+    }
+    else
+    {
+        lastUndoTriggerValue.store(newTriggerValue);
+    }
+}
+
+void DuqAudioProcessor::parameterGestureChanged(int parameterIndex, bool gestureIsStarting)
+{
+    juce::ignoreUnused(parameterIndex, gestureIsStarting);
 }
 
 void DuqAudioProcessor::performUndoRedo(bool isUndo)
 {
+    // Suppress the undoManager change-callback → undoTriggerParam bump while we
+    // perform a host-driven (or button-driven) undo, so we don't re-record it.
+    isHostUndoing.store(true);
     if (isUndo) undoManager.undo();
     else        undoManager.redo();
     triggerAsyncUpdate();
@@ -121,6 +185,8 @@ void DuqAudioProcessor::performUndoRedo(bool isUndo)
 
 void DuqAudioProcessor::handleAsyncUpdate()
 {
+    isHostUndoing.store(false);
+
     int capturedNote = capturedCalibrationNote.exchange(-1);
     if (capturedNote != -1)
     {
@@ -134,6 +200,10 @@ void DuqAudioProcessor::handleAsyncUpdate()
 
 void DuqAudioProcessor::timerCallback()
 {
+    // Drain any host-driven undo/redo request on the message thread.
+    if (int req = pendingHostUndoRedo.exchange(0); req != 0)
+        performUndoRedo(req < 0);
+
     auto envelopes = parameters.state.getChildWithName("ENVELOPES");
     for (int i = 0; i < Defaults::maxEnvelopeSlots; ++i)
     {
@@ -379,6 +449,20 @@ void DuqAudioProcessor::addEnvelope(const juce::String& name, int note)
     }
 }
 
+// Seed a freshly triggered voice's gain state so it immediately holds the
+// envelope's start value. Without this, a voice activated between control-rate
+// boundaries would apply a stale gain until the next boundary, breaking the
+// smooth onset.
+static void initVoiceGain(EnvelopeVoice& v, const DSPEnvelope& env)
+{
+    size_t dummyIndex = 0;
+    float startVal = EnvelopeEvaluator::evaluate(env, 0.0, dummyIndex);
+    v.currentGain = 1.0f - (1.0f - (startVal * startVal)) * env.depth;
+    v.targetGain = v.currentGain;
+    v.gainDelta = 0.0f;
+    v.lastSegmentIndex = 0;
+}
+
 void DuqAudioProcessor::handleMidiEvent(const juce::MidiMessage& msg)
 {
     // Called with dspLock already held.
@@ -410,7 +494,7 @@ void DuqAudioProcessor::handleMidiEvent(const juce::MidiMessage& msg)
                     {
                         v.isActive = true;
                         v.currentPhase = 0.0;
-                        v.lastSegmentIndex = 0;
+                        initVoiceGain(v, env);
 
                         foundVoice = true;
                         break;
@@ -425,9 +509,9 @@ void DuqAudioProcessor::handleMidiEvent(const juce::MidiMessage& msg)
                         {
                             v.envelopeIndex = static_cast<int>(i);
                             v.currentPhase = 0.0;
-                            v.lastSegmentIndex = 0;
                             v.noteNumber = note;
                             v.isActive = true;
+                            initVoiceGain(v, env);
 
                             foundVoice = true;
                             break;
@@ -514,14 +598,9 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 const auto& env = dspState.envelopes[mTrig];
                 v.envelopeIndex = mTrig;
                 v.currentPhase = 0.0;
-                v.lastSegmentIndex = 0;
                 v.noteNumber = -1; // Manual
-                
-                // Initialize gain to starting position
-                size_t dummyIndex = 0;
-                float startVal = EnvelopeEvaluator::evaluate(env, 0.0, dummyIndex);
-                v.currentGain = 1.0f - (1.0f - (startVal * startVal)) * env.depth;
-                
+                initVoiceGain(v, env);
+
                 v.isActive = true;
                 break;
             }
