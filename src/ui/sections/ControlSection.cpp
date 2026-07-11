@@ -1,6 +1,7 @@
 #include "ControlSection.h"
 #include "../utils/FontManager.h"
 #include "../../PluginProcessor.h"
+#include "../../dsp/RateUtils.h"
 #include "../../Globals.h"
 
 static const std::vector<juce::String> rateDivisions =
@@ -51,9 +52,8 @@ ControlSection::ControlSection()
             if (rateIsFrequencyMode)
                 return juce::String(value, 2) + " Hz";
 
-            // Map 0..100 to 0..5
-            int index = juce::jlimit(0, 5, (int)(value / 16.66f));
-            return rateDivisions[static_cast<size_t>(index)];
+            // Map 0..100 to a sync division label
+            return rateDivisions[static_cast<size_t>(RateUtils::syncDivisionIndex(value))];
         };
 
     smoothKnob.valueFormatter =

@@ -4,6 +4,7 @@
 #include <functional>
 #include <cmath>
 #include <algorithm>
+#include "RateUtils.h"
 
 /**
     Shared envelope smoothing used by BOTH the DSP (PluginProcessor::syncToDSP)
@@ -25,9 +26,7 @@ namespace EnvelopeSmoothing
         if (isFreqMode)
             return rawRate;
 
-        static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
-        int idx = std::clamp((int)(rawRate / 16.66), 0, 5);
-        return cycleMultipliers[idx] * 2.0;
+        return RateUtils::syncDivisionMultiplier(rawRate) * 2.0;
     }
 
     // Fills 'out' with (steps + 1) samples of the steady-state smoothed shape over

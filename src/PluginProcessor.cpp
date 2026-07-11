@@ -274,10 +274,7 @@ DSPEnvelope DuqAudioProcessor::buildEnvelope(int i, const juce::ValueTree& envVT
     else
     {
         // Sync divisions: 1/1, 1/2, 1/4, 1/8, 1/16, 1/32
-        static const double cycleMultipliers[] = { 0.25, 0.5, 1.0, 2.0, 4.0, 8.0 };
-
-        int idx = juce::jlimit(0, 5, (int)(rawRate / 16.66f));
-        de.rate = cycleMultipliers[idx];
+        de.rate = RateUtils::syncDivisionMultiplier(rawRate);
     }
 
     de.depth = rawDepth / 100.0f;
