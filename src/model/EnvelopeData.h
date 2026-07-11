@@ -130,47 +130,6 @@ struct EnvelopeControls
     }
 };
 
-struct EnvelopeViewState
-{
-    float zoomX = 1.0f;
-    float zoomY = 1.0f;
-    float offsetX = 0.0f;
-    float offsetY = 0.0f;
-    int gridPower = 4;
-};
-
-/**
-    The complete data for a single envelope instance.
-*/
-struct EnvelopeData
-{
-    juce::String name;
-    bool isDisabled = false;
-
-    EnvelopeShape shape;
-    EnvelopeControls controls;
-    EnvelopeViewState viewState;
-
-    juce::ValueTree toValueTree() const
-    {
-        juce::ValueTree vt("ENVELOPE");
-        vt.setProperty("name", name, nullptr);
-        vt.setProperty("disabled", isDisabled, nullptr);
-        
-        // Merge controls into the main tree for legacy support / APVTS compatibility
-        auto ctrlVT = controls.toValueTree();
-        for (int i = 0; i < ctrlVT.getNumProperties(); ++i)
-            vt.setProperty(ctrlVT.getPropertyName(i), ctrlVT.getProperty(ctrlVT.getPropertyName(i)), nullptr);
-
-        shape.applyToValueTree(vt);
-        
-        // View state
-        vt.setProperty("zoomX", viewState.zoomX, nullptr);
-        vt.setProperty("zoomY", viewState.zoomY, nullptr);
-        vt.setProperty("offsetX", viewState.offsetX, nullptr);
-        vt.setProperty("offsetY", viewState.offsetY, nullptr);
-        vt.setProperty("gridPower", viewState.gridPower, nullptr);
-
-        return vt;
-    }
-};
+// NOTE: The authoring-only aggregate structs (EnvelopeData, EnvelopeViewState)
+// live in src/tools/factory_generator/FactoryEnvelopeData.h — the runtime plugin
+// works with ValueTrees / DSPEnvelope directly and does not use them.

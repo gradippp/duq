@@ -1,5 +1,5 @@
 #include "FactoryData.h"
-#include "model/EnvelopeData.h"
+#include "FactoryEnvelopeData.h"
 
 namespace FactoryData {
     FactoryAsset getDefaultEnvelope() {
