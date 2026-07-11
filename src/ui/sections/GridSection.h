@@ -9,12 +9,14 @@
 #include "PointsContainer.h"
 
 class GridSection : public juce::Component,
-    private juce::ValueTree::Listener,
-    private juce::Timer
+    private juce::ValueTree::Listener
 {
 public:
     GridSection();
     ~GridSection() override;
+
+    // Driven by the editor's shared 60Hz frame timer; also ticks the waveform.
+    void onFrameTick();
 
     // Envelope
     void setEnvelope(juce::ValueTree newEnvelope);
@@ -106,9 +108,6 @@ private:
 
     void updatePanCursor();
     void updateViewState();
-
-    // Timer for debounced writing to ValueTree
-    void timerCallback() override;
 
     bool isPanning = false;
     juce::Point<int> panStartMouse;

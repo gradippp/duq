@@ -25,13 +25,10 @@ GridSection::GridSection() : pointsContainer(*this)
     pointsContainer.setInterceptsMouseClicks(false, true);
 
     setOpaque(false);
-    startTimerHz(60); // 60fps animation
 }
 
 GridSection::~GridSection()
 {
-    stopTimer();
-
     if (envelope.isValid())
         envelope.removeListener(this);
 }
@@ -324,8 +321,9 @@ void GridSection::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWhe
     isUserZooming = true;
 }
 
-void GridSection::timerCallback()
+void GridSection::onFrameTick()
 {
+    waveform.onFrameTick();
     playheadOverlay.update(state, processor, currentEnvelopeIndex);
 
     if (pendingZoomWrite && --zoomWriteCounter <= 0) {

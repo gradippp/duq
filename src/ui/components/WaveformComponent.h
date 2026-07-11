@@ -5,12 +5,14 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../../utils/ConfigManager.h"
 
-class WaveformComponent : public juce::Component,
-    private juce::Timer
+class WaveformComponent : public juce::Component
 {
 public:
     WaveformComponent();
     ~WaveformComponent() override;
+
+    // Driven by the editor's shared 60Hz frame timer (via GridSection).
+    void onFrameTick();
 
     void setSampleBuffers(const std::atomic<int>* writePos,
         const float* preData,
@@ -23,8 +25,6 @@ public:
     void paint(juce::Graphics& g) override;
 
 private:
-    void timerCallback() override;
-
     const std::atomic<int>* writePosition = nullptr;
     const float* samplesPre = nullptr;
     const float* samplesPost = nullptr;

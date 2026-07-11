@@ -5,12 +5,10 @@ WaveformComponent::WaveformComponent()
 {
     setOpaque(false);
     setInterceptsMouseClicks(false, false);
-    startTimerHz(60);
 }
 
 WaveformComponent::~WaveformComponent()
 {
-    stopTimer();
 }
 
 void WaveformComponent::setSampleBuffers(
@@ -38,7 +36,7 @@ void WaveformComponent::setViewState(float zx, float ox, float zy, float oy)
     repaint();
 }
 
-void WaveformComponent::timerCallback()
+void WaveformComponent::onFrameTick()
 {
     if (isVisible())
         repaint();

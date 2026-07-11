@@ -4,8 +4,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <atomic>
 
-class MeterComponent : public juce::Component,
-    private juce::Timer
+class MeterComponent : public juce::Component
 {
 public:
     enum class Direction
@@ -32,10 +31,12 @@ public:
 
     void paint(juce::Graphics& g) override;
 
+    // Advances meter smoothing/peak state and repaints. Driven by the editor's
+    // shared 60Hz frame timer (see PluginEditor).
+    void onFrameTick();
+
 private:
     MeterMode mode = MeterMode::AudioLevel;
-
-    void timerCallback() override;
 
     std::atomic<float>& inputLevel;
 

@@ -222,6 +222,14 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
 
     startTimerHz(10);
 
+    // Shared 60Hz frame tick for grid (which also ticks its waveform) and meters.
+    frameTimer.onTick = [this]
+    {
+        gridSection.onFrameTick();
+        meterSection.tickMeters();
+    };
+    frameTimer.startTimerHz(60);
+
     gridSection.setSampleBuffers(
         &audioProcessor.getMonitorWritePosition(),
         audioProcessor.getMonitorSamplesPre(),
@@ -265,6 +273,7 @@ DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
 
+    frameTimer.stopTimer();
     stopTimer();
 }
 

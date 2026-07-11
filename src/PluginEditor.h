@@ -59,5 +59,15 @@ private:
     juce::SharedResourcePointer<ConfigManager> config;
     juce::TooltipWindow tooltipWindow{ this };
 
+    // Single shared 60Hz animation timer that drives the grid/waveform/meters,
+    // replacing five independent per-component Timers. (The editor's own base
+    // Timer stays at 10Hz for undo-state/MIDI-activity polling.)
+    struct FrameTimer : public juce::Timer
+    {
+        std::function<void()> onTick;
+        void timerCallback() override { if (onTick) onTick(); }
+    };
+    FrameTimer frameTimer;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DuqAudioProcessorEditor)
 };

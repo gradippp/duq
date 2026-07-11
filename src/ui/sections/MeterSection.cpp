@@ -24,6 +24,13 @@ MeterSection::MeterSection(std::atomic<float>& inputSource,
     addAndMakeVisible(outputMeter);
 }
 
+void MeterSection::tickMeters()
+{
+    inputMeter.onFrameTick();
+    reductionMeter.onFrameTick();
+    outputMeter.onFrameTick();
+}
+
 void MeterSection::resized()
 {
     auto area = getLocalBounds().reduced(4);

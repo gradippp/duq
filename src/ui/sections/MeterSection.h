@@ -13,6 +13,9 @@ public:
 
     void resized() override;
 
+    // Forwards the editor's shared 60Hz frame tick to the three meters.
+    void tickMeters();
+
 private:
     // ===== Meter Components =====
     MeterComponent inputMeter;

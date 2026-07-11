@@ -9,12 +9,10 @@ MeterComponent::MeterComponent(std::atomic<float>& source,
     meterDirection(dir),
     labelText(label)
 {
-    startTimerHz(60);
 }
 
 MeterComponent::~MeterComponent()
 {
-    stopTimer();
 }
 
 void MeterComponent::setMode(MeterMode newMode)
@@ -28,7 +26,7 @@ void MeterComponent::setLabel(const juce::String& newLabel)
     repaint();
 }
 
-void MeterComponent::timerCallback()
+void MeterComponent::onFrameTick()
 {
     float value = juce::jlimit(0.0f, 1.0f, inputLevel.load());
 
