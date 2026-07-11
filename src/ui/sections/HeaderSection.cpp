@@ -1,6 +1,7 @@
 #include "HeaderSection.h"
 #include "../utils/IconFactory.h"
 #include "../utils/FontManager.h"
+#include "../utils/DialogUtils.h"
 
 CompactTimingSlider::CompactTimingSlider(const juce::String& label) : labelName(label)
 {
@@ -51,19 +52,14 @@ void CompactTimingSlider::mouseDown(const juce::MouseEvent& e)
 
 void CompactTimingSlider::showValueEntryDialog()
 {
-    auto* window = new juce::AlertWindow("Enter Value", "Type a new value (ms):", juce::AlertWindow::NoIcon);
-    window->addTextEditor("value", juce::String(getValue()));
-    window->addButton("OK", 1);
-    window->addButton("Cancel", 0);
-    
-    window->enterModalState(true, juce::ModalCallbackFunction::create([this, window](int result) {
-        if (result == 1)
+    Dialogs::showTextEntry("Enter Value", "Type a new value (ms):",
+        { { "value", {}, juce::String(getValue()), true } },
+        [safe = juce::Component::SafePointer<CompactTimingSlider>(this)]
+        (const std::map<juce::String, juce::String>& values)
         {
-            auto val = window->getTextEditor("value")->getText().getDoubleValue();
-            setValue(val, juce::sendNotification);
-        }
-        delete window;
-    }));
+            if (safe != nullptr)
+                safe->setValue(values.at("value").getDoubleValue(), juce::sendNotification);
+        });
 }
 
 //==============================================================================

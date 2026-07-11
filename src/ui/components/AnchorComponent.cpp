@@ -2,6 +2,7 @@
 #include "../sections/GridSection.h"
 #include "../../model/EnvelopeData.h"
 #include "../../utils/ConfigManager.h"
+#include "../utils/DialogUtils.h"
 #include "../../Globals.h"
 
 AnchorComponent::AnchorComponent(GridSection& owner,
@@ -110,26 +111,18 @@ void AnchorComponent::mouseDown(const juce::MouseEvent& e)
 void AnchorComponent::showTensionDialog()
 {
     juce::SharedResourcePointer<ConfigManager> config;
-    auto* aw = new juce::AlertWindow("Set Tension", "Enter tension value (0.0 to 1.0):", juce::MessageBoxIconType::NoIcon);
-    aw->addTextEditor("tension", juce::String((float)segment.getProperty("curve", config->getDefaultTension())), "Tension:");
-    aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-
-    juce::Component::SafePointer<GridSection> safeGrid(&grid);
-    juce::ValueTree segmentTree = segment;
-
-    aw->enterModalState(true, juce::ModalCallbackFunction::create([safeGrid, segmentTree, aw](int result) mutable
-    {
-        if (result == 1 && safeGrid != nullptr)
+    Dialogs::showTextEntry("Set Tension", "Enter tension value (0.0 to 1.0):",
+        { { "tension", "Tension:", juce::String((float)segment.getProperty("curve", config->getDefaultTension())), true } },
+        [safeGrid = juce::Component::SafePointer<GridSection>(&grid), segmentTree = segment]
+        (const std::map<juce::String, juce::String>& values) mutable
         {
-            float val = aw->getTextEditorContents("tension").getFloatValue();
+            if (safeGrid == nullptr) return;
+            float val = juce::jlimit(0.0f, 1.0f, values.at("tension").getFloatValue());
             auto& um = safeGrid->getUndoManager();
             um.beginNewTransaction("Set Tension");
-            segmentTree.setProperty("curve", juce::jlimit(0.0f, 1.0f, val), &um);
+            segmentTree.setProperty("curve", val, &um);
             safeGrid->repaint();
-        }
-        delete aw;
-    }));
+        });
 }
 
 void AnchorComponent::mouseDrag(const juce::MouseEvent& e)

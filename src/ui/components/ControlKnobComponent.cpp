@@ -1,5 +1,6 @@
 #include "ControlKnobComponent.h"
 #include "../utils/FontManager.h"
+#include "../utils/DialogUtils.h"
 #include "../../Globals.h"
 ControlKnobComponent::ControlKnobComponent(const juce::String& name, const float initialValue,
     const juce::String& unitSuffix)
@@ -99,36 +100,14 @@ void ControlKnobComponent::showContextMenu()
 
 void ControlKnobComponent::showValueEntryDialog()
 {
-    auto* window = new juce::AlertWindow(
-        "Enter Value",
-        "Type a new value:",
-        juce::AlertWindow::NoIcon);
-
-    window->addTextEditor("value",
-        juce::String(knob.getValue()));
-
-    window->addButton("OK", 1);
-    window->addButton("Cancel", 0);
-
-    window->enterModalState(
-        true,
-        juce::ModalCallbackFunction::create(
-            [this, window](int result)
-            {
-                if (result == 1)
-                {
-                    auto text =
-                        window->getTextEditor("value")->getText();
-
-                    auto newValue = text.getDoubleValue();
-
-                    knob.setValue(newValue,
-                        juce::sendNotification);
-                }
-
-                delete window;
-            }),
-        true);
+    Dialogs::showTextEntry("Enter Value", "Type a new value:",
+        { { "value", {}, juce::String(knob.getValue()), true } },
+        [safe = juce::Component::SafePointer<ControlKnobComponent>(this)]
+        (const std::map<juce::String, juce::String>& values)
+        {
+            if (safe != nullptr)
+                safe->knob.setValue(values.at("value").getDoubleValue(), juce::sendNotification);
+        });
 }
 
 void ControlKnobComponent::handleCustomMenuResult(int result)

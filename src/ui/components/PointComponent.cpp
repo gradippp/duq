@@ -1,5 +1,6 @@
 #include "PointComponent.h"
 #include "../sections/GridSection.h"
+#include "../utils/DialogUtils.h"
 #include "../../Globals.h"
 
 PointComponent::PointComponent(GridSection& owner, juce::ValueTree node)
@@ -192,36 +193,16 @@ void PointComponent::showPositionDialog()
     int numPoints = points.getNumChildren();
     bool isEndpoint = (index == 0 || index == numPoints - 1);
 
-    auto* aw = new juce::AlertWindow("Edit Position", "Enter normalized coordinates (0.0 - 1.0):", juce::MessageBoxIconType::NoIcon);
-
-    aw->addTextEditor("x", juce::String((float)point["x"], 3), "Time (X):");
-    aw->addTextEditor("y", juce::String((float)point["y"], 3), "Value (Y):");
-
-    // Disable X editing for endpoints
-    if (isEndpoint)
-    {
-        if (auto* editor = aw->getTextEditor("x"))
+    Dialogs::showTextEntry("Edit Position", "Enter normalized coordinates (0.0 - 1.0):",
+        { { "x", "Time (X):", juce::String((float)point["x"], isEndpoint ? 1 : 3), !isEndpoint },
+          { "y", "Value (Y):", juce::String((float)point["y"], 3), true } },
+        [safeGrid = juce::Component::SafePointer<GridSection>(&grid), pointTree = point, isEndpoint]
+        (const std::map<juce::String, juce::String>& values) mutable
         {
-            editor->setEnabled(false);
-            editor->setText(juce::String((float)point["x"], 1)); 
-        }
-    }
+            if (safeGrid == nullptr) return;
 
-    aw->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-
-    juce::Component::SafePointer<GridSection> safeGrid(&grid);
-    juce::ValueTree pointTree = point;
-
-    aw->enterModalState(true, juce::ModalCallbackFunction::create([safeGrid, pointTree, isEndpoint, aw](int result) mutable
-    {
-        if (result == 1 && safeGrid != nullptr)
-        {
-            float x = aw->getTextEditorContents("x").getFloatValue();
-            float y = aw->getTextEditorContents("y").getFloatValue();
-
-            x = juce::jlimit(0.0f, 1.0f, x);
-            y = juce::jlimit(0.0f, 1.0f, y);
+            float x = juce::jlimit(0.0f, 1.0f, values.at("x").getFloatValue());
+            float y = juce::jlimit(0.0f, 1.0f, values.at("y").getFloatValue());
 
             auto& um = safeGrid->getUndoManager();
             um.beginNewTransaction("Edit Point Position");
@@ -230,7 +211,5 @@ void PointComponent::showPositionDialog()
                 pointTree.setProperty("x", x, &um);
 
             pointTree.setProperty("y", y, &um);
-        }
-        delete aw;
-    }));
+        });
 }
