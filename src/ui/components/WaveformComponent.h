@@ -3,6 +3,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <span>
 #include "../../utils/ConfigManager.h"
 
 class WaveformComponent : public juce::Component
@@ -15,10 +16,9 @@ public:
     void onFrameTick();
 
     void setSampleBuffers(const std::atomic<int>* writePos,
-        const float* preData,
-        const float* postData,
-        const float* sidechainData,
-        int bufferSize);
+        std::span<const float> preData,
+        std::span<const float> postData,
+        std::span<const float> sidechainData);
 
     void setViewState(float zoomX, float offsetX, float zoomY = 1.0f, float offsetY = 0.0f);
 
@@ -26,9 +26,9 @@ public:
 
 private:
     const std::atomic<int>* writePosition = nullptr;
-    const float* samplesPre = nullptr;
-    const float* samplesPost = nullptr;
-    const float* samplesSidechain = nullptr;
+    std::span<const float> samplesPre;
+    std::span<const float> samplesPost;
+    std::span<const float> samplesSidechain;
     int bufferLength = 0;
 
     float zoomX = 1.0f;

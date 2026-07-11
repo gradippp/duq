@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "Globals.h"
@@ -74,9 +75,9 @@ public:
     //==============================================================================
     // Monitor buffer
     int getMonitorBufferSize() const noexcept { return monitorBufferSize; }
-    const float* getMonitorSamplesPre() const noexcept { return monSamplesPre; }
-    const float* getMonitorSamplesPost() const noexcept { return monSamplesPost; }
-    const float* getMonitorSamplesSidechain() const noexcept { return monSamplesSidechain; }
+    std::span<const float> getMonitorSamplesPre() const noexcept { return { monSamplesPre, (size_t)monitorBufferSize }; }
+    std::span<const float> getMonitorSamplesPost() const noexcept { return { monSamplesPost, (size_t)monitorBufferSize }; }
+    std::span<const float> getMonitorSamplesSidechain() const noexcept { return { monSamplesSidechain, (size_t)monitorBufferSize }; }
     const std::atomic<int>& getMonitorWritePosition() const noexcept { return monpos; }
 
     //==============================================================================

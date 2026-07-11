@@ -236,8 +236,7 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
         &audioProcessor.getMonitorWritePosition(),
         audioProcessor.getMonitorSamplesPre(),
         audioProcessor.getMonitorSamplesPost(),
-        audioProcessor.getMonitorSamplesSidechain(),
-        audioProcessor.getMonitorBufferSize());
+        audioProcessor.getMonitorSamplesSidechain());
 
     gridSection.setProcessor(&audioProcessor);
 

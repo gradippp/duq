@@ -55,10 +55,9 @@ public:
 
     // Waveform
     void setSampleBuffers(const std::atomic<int>* writePos,
-        const float* preData,
-        const float* postData,
-        const float* sidechainData,
-        int bufferSize);
+        std::span<const float> preData,
+        std::span<const float> postData,
+        std::span<const float> sidechainData);
 
     // Mouse interaction
     void mouseMove(const juce::MouseEvent&) override;

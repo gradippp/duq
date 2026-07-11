@@ -13,16 +13,15 @@ WaveformComponent::~WaveformComponent()
 
 void WaveformComponent::setSampleBuffers(
     const std::atomic<int>* writePos,
-    const float* preData,
-    const float* postData,
-    const float* sidechainData,
-    int bufferSize)
+    std::span<const float> preData,
+    std::span<const float> postData,
+    std::span<const float> sidechainData)
 {
     writePosition = writePos;
     samplesPre = preData;
     samplesPost = postData;
     samplesSidechain = sidechainData;
-    bufferLength = bufferSize;
+    bufferLength = (int)preData.size();
     cacheDirty = true;
 }
 
@@ -49,7 +48,7 @@ void WaveformComponent::rebuildCache(int quality)
     cachedPrePath.clear();
     cachedPostPath.clear();
 
-    if (!samplesPre || !samplesPost || bufferLength <= 0 || getWidth() <= 0 || getHeight() <= 0)
+    if (samplesPre.empty() || samplesPost.empty() || bufferLength <= 0 || getWidth() <= 0 || getHeight() <= 0)
         return;
 
     const int width = getWidth();
@@ -60,10 +59,10 @@ void WaveformComponent::rebuildCache(int quality)
     const float visibleSamples = visibleWidthNorm * bufferLength;
     const float samplesPerPixel = visibleSamples / (float)width;
 
-    auto createWaveformPath = [&](const float* data) -> juce::Path
+    auto createWaveformPath = [&](std::span<const float> data) -> juce::Path
     {
         juce::Path path;
-        if (!data) return path;
+        if (data.empty()) return path;
 
         int step = 1;
         if (quality == 0)      step = 4;
@@ -86,7 +85,7 @@ void WaveformComponent::rebuildCache(int quality)
             int sampleStep = (quality == 0) ? 16 : (quality == 1) ? 4 : 1;
             for (int i = start; i < end; i += sampleStep)
             {
-                float v = data[i];
+                float v = data[(size_t)i];
                 minVal = std::min(minVal, v);
                 maxVal = std::max(maxVal, v);
             }
@@ -117,7 +116,7 @@ void WaveformComponent::rebuildCache(int quality)
         return path;
     };
 
-    cachedSidechainPath = (samplesSidechain && config->getShowSidechainSignal()) ? createWaveformPath(samplesSidechain) : juce::Path();
+    cachedSidechainPath = (!samplesSidechain.empty() && config->getShowSidechainSignal()) ? createWaveformPath(samplesSidechain) : juce::Path();
     cachedPrePath = config->getShowSourceSignal() ? createWaveformPath(samplesPre) : juce::Path();
     cachedPostPath = createWaveformPath(samplesPost);
 
@@ -136,7 +135,7 @@ void WaveformComponent::rebuildCache(int quality)
 
 void WaveformComponent::paint(juce::Graphics& g)
 {
-    if (!samplesPre || !samplesPost || bufferLength <= 0)
+    if (samplesPre.empty() || samplesPost.empty() || bufferLength <= 0)
         return;
 
     int quality = config->getWaveformQuality();
