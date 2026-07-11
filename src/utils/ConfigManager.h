@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../model/EnvelopeData.h"
+#include "../Globals.h"
 
 class ConfigManager : public juce::ChangeBroadcaster
 {
@@ -40,22 +41,22 @@ public:
     int getUndoLimit() const { return getProps()->getIntValue ("undoLimit", 200); }
 
     void setDefaultCurve (int type) { getProps()->setValue ("defaultCurve", type); sendChangeMessage(); }
-    int getDefaultCurve() const { return getProps()->getIntValue ("defaultCurve", 0); }
+    int getDefaultCurve() const { return getProps()->getIntValue ("defaultCurve", Defaults::curveType); }
 
     void setDefaultTension (float tension) { getProps()->setValue ("defaultTension", tension); sendChangeMessage(); }
-    float getDefaultTension() const { return (float)getProps()->getDoubleValue ("defaultTension", 0.5); }
+    float getDefaultTension() const { return (float)getProps()->getDoubleValue ("defaultTension", Defaults::curve); }
 
     void setDefaultRate (float rate) { getProps()->setValue ("defaultRate", rate); sendChangeMessage(); }
-    float getDefaultRate() const { return (float)getProps()->getDoubleValue ("defaultRate", 2.0); }
+    float getDefaultRate() const { return (float)getProps()->getDoubleValue ("defaultRate", Defaults::rate); }
 
     void setDefaultDepth (float depth) { getProps()->setValue ("defaultDepth", depth); sendChangeMessage(); }
-    float getDefaultDepth() const { return (float)getProps()->getDoubleValue ("defaultDepth", 100.0); }
+    float getDefaultDepth() const { return (float)getProps()->getDoubleValue ("defaultDepth", Defaults::depth); }
 
     void setDefaultSmooth (float smooth) { getProps()->setValue ("defaultSmooth", smooth); sendChangeMessage(); }
-    float getDefaultSmooth() const { return (float)getProps()->getDoubleValue ("defaultSmooth", 0.0); }
+    float getDefaultSmooth() const { return (float)getProps()->getDoubleValue ("defaultSmooth", Defaults::smooth); }
 
     void setDefaultTriggerNote (int note) { getProps()->setValue ("defaultTriggerNote", note); sendChangeMessage(); }
-    int getDefaultTriggerNote() const { return getProps()->getIntValue ("defaultTriggerNote", 36); }
+    int getDefaultTriggerNote() const { return getProps()->getIntValue ("defaultTriggerNote", Defaults::triggerNote); }
 
     void setDefaultPoints (const juce::String& xml) { getProps()->setValue ("defaultPoints", xml); sendChangeMessage(); }
     juce::String getDefaultPoints() const { return getProps()->getValue ("defaultPoints", ""); }
