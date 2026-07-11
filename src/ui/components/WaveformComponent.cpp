@@ -143,8 +143,9 @@ void WaveformComponent::paint(juce::Graphics& g)
 
     int quality = config->getWaveformQuality();
     int writePos = writePosition != nullptr ? writePosition->load(std::memory_order_relaxed) : -1;
-    if (cacheDirty
-        || writePos != lastWritePosition
+
+    // "Real" changes (zoom/pan/size/quality/config) must rebuild immediately.
+    bool structuralChange = cacheDirty
         || bufferLength != lastBufferLength
         || getWidth() != lastWidth
         || getHeight() != lastHeight
@@ -154,10 +155,29 @@ void WaveformComponent::paint(juce::Graphics& g)
         || offsetY != lastOffsetY
         || quality != lastQuality
         || config->getShowSidechainSignal() != lastShowSidechain
-        || config->getShowSourceSignal() != lastShowSource)
+        || config->getShowSourceSignal() != lastShowSource;
+
+    // Playback advances writePos every block, which would rebuild the full
+    // min/max scan + 3 Paths at 60Hz. Only rebuild for playback motion once the
+    // write head has moved at least ~1 pixel, and cap that path to ~30fps.
+    bool motionChange = false;
+    if (!structuralChange && writePos != lastWritePosition && bufferLength > 0)
     {
-        rebuildCache(quality);
+        int delta = writePos - lastWritePosition;
+        if (delta < 0) delta += bufferLength;         // ring-aware
+        float samplesPerPixel = (getWidth() > 0)
+            ? ((1.0f / zoomX) * (float)bufferLength) / (float)getWidth()
+            : (float)bufferLength;
+        double now = juce::Time::getMillisecondCounterHiRes();
+        if ((float)delta >= samplesPerPixel && (now - lastRebuildMs) >= 33.0)
+        {
+            motionChange = true;
+            lastRebuildMs = now;
+        }
     }
+
+    if (structuralChange || motionChange)
+        rebuildCache(quality);
 
     // 1. Draw Sidechain (Background)
     if (!cachedSidechainPath.isEmpty())

@@ -52,6 +52,7 @@ private:
     bool lastShowSidechain = false;
     bool lastShowSource = false;
     bool cacheDirty = true;
+    double lastRebuildMs = 0.0;
 
     juce::Path cachedSidechainPath;
     juce::Path cachedPrePath;
