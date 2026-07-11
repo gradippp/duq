@@ -482,7 +482,7 @@ static void initVoiceGain(EnvelopeVoice& v, const DSPEnvelope& env)
         size_t dummyIndex = 0;
         startVal = EnvelopeEvaluator::evaluate(env, 0.0, dummyIndex);
     }
-    v.currentGain = 1.0f - (1.0f - (startVal * startVal)) * env.depth;
+    v.currentGain = 1.0f - (1.0f - startVal) * env.depth;
     v.targetGain = v.currentGain;
     v.gainDelta = 0.0f;
     v.lastSegmentIndex = 0;
@@ -668,8 +668,7 @@ void DuqAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                     float envVal = env.smoothedShape.empty()
                         ? EnvelopeEvaluator::evaluate(env, v.currentPhase, v.lastSegmentIndex)
                         : EnvelopeSmoothing::sampleShape(env.smoothedShape, v.currentPhase);
-                    float mappedVal = envVal * envVal;
-                    float targetVoiceGain = 1.0f - (1.0f - mappedVal) * env.depth;
+                    float targetVoiceGain = 1.0f - (1.0f - envVal) * env.depth;
 
                     v.targetGain = targetVoiceGain;
                     v.gainDelta = (v.targetGain - v.currentGain) * invSamples;
