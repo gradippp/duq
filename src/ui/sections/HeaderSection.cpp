@@ -16,27 +16,27 @@ void CompactTimingSlider::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
     
     // Background
-    g.setColour(T_COL(sectionBackground).withAlpha(0.8f));
+    g.setColour(Theme::get(ThemeManager::sectionBackground).withAlpha(0.8f));
     g.fillRoundedRectangle(bounds, 2.0f);
     
     // Fill based on value (Visual Progress)
     auto fillWidth = bounds.getWidth() * static_cast<float>(getValue() / getMaximum());
-    g.setColour(T_COL(accent).withAlpha(0.1f));
+    g.setColour(Theme::get(ThemeManager::accent).withAlpha(0.1f));
     g.fillRoundedRectangle(bounds.withWidth(fillWidth), 2.0f);
 
     // Label
-    g.setColour(T_COL(textLabel));
+    g.setColour(Theme::get(ThemeManager::textLabel));
     g.setFont(FontManager::getBarlowBold(10.0f));
     auto labelArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f).reduced(6, 0);
     g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
     
     // Value
-    g.setColour(T_COL(textMain));
+    g.setColour(Theme::get(ThemeManager::textMain));
     g.setFont(FontManager::getJetBrainsMono(11.0f));
     g.drawFittedText(juce::String(getValue(), 1) + " ms", bounds.reduced(6, 0).toNearestInt(), juce::Justification::centredRight, 1);
     
     // Border
-    g.setColour(T_COL(border).withAlpha(0.5f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.5f));
     g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 2.0f, 1.0f);
 }
 
@@ -96,12 +96,12 @@ void CompactKnob::paint(juce::Graphics& g)
     // Label and Value
     if (bounds.getWidth() > 10.0f)
     {
-        g.setColour(T_COL(textLabel));
+        g.setColour(Theme::get(ThemeManager::textLabel));
         g.setFont(FontManager::getBarlowBold(10.0f));
         auto labelArea = bounds.removeFromTop(bounds.getHeight() * 0.5f).reduced(4, 0);
         g.drawFittedText(labelName, labelArea.toNearestInt(), juce::Justification::centredLeft, 1);
         
-        g.setColour(T_COL(textMain));
+        g.setColour(Theme::get(ThemeManager::textMain));
         g.setFont(FontManager::getJetBrainsMono(10.0f));
         g.drawFittedText(juce::String(juce::roundToInt(getValue())) + "%", bounds.reduced(4, 0).toNearestInt(), juce::Justification::centredLeft, 1);
     }
@@ -167,11 +167,11 @@ void HeaderSection::refreshTheme()
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                T_COL(uiHover));
+                Theme::get(ThemeManager::uiHover));
 
-            auto normal = Icons::load(iconName, T_COL(textMain));
-            auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
-            auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
+            auto normal = Icons::load(iconName, Theme::get(ThemeManager::textMain));
+            auto over = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.85f));
+            auto down = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.6f));
 
             if (normal != nullptr)
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -183,8 +183,8 @@ void HeaderSection::refreshTheme()
     setupIconButton(initPresetButton, "close"); 
     setupIconButton(settingsButton, "settings");
 
-    presetNameLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.85f));
-    brandLabel.setColour(juce::Label::textColourId, T_COL(textMain).withAlpha(0.9f));
+    presetNameLabel.setColour(juce::Label::textColourId, Theme::get(ThemeManager::textMain).withAlpha(0.85f));
+    brandLabel.setColour(juce::Label::textColourId, Theme::get(ThemeManager::textMain).withAlpha(0.9f));
     
     repaint();
 }
@@ -257,22 +257,22 @@ void HeaderSection::paint(juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
 
     // ---------- Background ----------
-    g.setColour(T_COL(headerBackground));
+    g.setColour(Theme::get(ThemeManager::headerBackground));
     g.fillAll();
 
     // Subtle metallic top highlight
-    g.setColour(T_COL(accent).withAlpha(0.03f));
+    g.setColour(Theme::get(ThemeManager::accent).withAlpha(0.03f));
     g.fillRect(bounds.removeFromTop(1.0f));
 
     // ---------- Bottom Divider ----------
-    g.setColour(T_COL(border));
+    g.setColour(Theme::get(ThemeManager::border));
     g.drawLine(0.0f, bounds.getBottom() - 1.0f, bounds.getRight(), bounds.getBottom() - 1.0f, 1.0f);
 
     // ---------- Preset "Bay" (Center) ----------
     auto centerArea = getLocalBounds().withSizeKeepingCentre(280, 28).toFloat();
-    g.setColour(T_COL(background).withAlpha(0.4f));
+    g.setColour(Theme::get(ThemeManager::background).withAlpha(0.4f));
     g.fillRoundedRectangle(centerArea, 2.0f);
-    g.setColour(T_COL(border).withAlpha(0.5f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.5f));
     g.drawRoundedRectangle(centerArea, 2.0f, 1.0f);
 }
 

@@ -214,18 +214,18 @@ void ControlSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
 
-    g.fillAll(T_COL(sectionBackground));
+    g.fillAll(Theme::get(ThemeManager::sectionBackground));
 
-    g.setColour(T_COL(border));
+    g.setColour(Theme::get(ThemeManager::border));
     g.drawRect(bounds, 1);
 
     constexpr int headerHeight = 32;
     auto headerArea = bounds.removeFromTop(headerHeight);
 
-    g.setColour(T_COL(headerBackground));
+    g.setColour(Theme::get(ThemeManager::headerBackground));
     g.fillRect(headerArea);
 
-    g.setColour(T_COL(textMain));
+    g.setColour(Theme::get(ThemeManager::textMain));
     g.setFont(FontManager::getBarlowBold(16.0f));
 
     g.drawText("CONTROLS",
@@ -234,7 +234,7 @@ void ControlSection::paint(juce::Graphics& g)
 
     if (!hasEnvelope)
     {
-        g.setColour(T_COL(textDimmed));
+        g.setColour(Theme::get(ThemeManager::textDimmed));
         g.setFont(FontManager::getInterRegular(14.0f));
 
         g.drawText("Select an envelope to edit",

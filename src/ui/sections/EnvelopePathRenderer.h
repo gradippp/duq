@@ -35,18 +35,18 @@ public:
         if (!cacheValid)
             return;
 
-        juce::ColourGradient grad(T_COL(envelopeFillTop), 0, (float)state.viewArea.getY(),
-                                  T_COL(envelopeFillBot), 0, (float)state.viewArea.getBottom(), false);
+        juce::ColourGradient grad(Theme::get(ThemeManager::envelopeFillTop), 0, (float)state.viewArea.getY(),
+                                  Theme::get(ThemeManager::envelopeFillBot), 0, (float)state.viewArea.getBottom(), false);
         g.setGradientFill(grad);
         g.fillPath(cachedFillPath);
 
         if (hasSmoothOverlay)
         {
-            g.setColour(T_COL(accent).withAlpha(0.35f));
+            g.setColour(Theme::get(ThemeManager::accent).withAlpha(0.35f));
             g.strokePath(cachedSmoothPath, juce::PathStrokeType(2.5f, juce::PathStrokeType::curved));
         }
 
-        g.setColour(T_COL(envelopeLine));
+        g.setColour(Theme::get(ThemeManager::envelopeLine));
         g.strokePath(cachedCurvePath, juce::PathStrokeType(2.0f));
     }
 

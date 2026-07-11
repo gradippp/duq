@@ -124,11 +124,11 @@ void EnvelopeRowComponent::refreshTheme()
                 juce::Colours::transparentBlack);
 
             button.setColour(juce::DrawableButton::backgroundOnColourId,
-                T_COL(uiHover));
+                Theme::get(ThemeManager::uiHover));
 
-            auto normal = Icons::load(iconName, T_COL(textMain));
-            auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
-            auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
+            auto normal = Icons::load(iconName, Theme::get(ThemeManager::textMain));
+            auto over = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.85f));
+            auto down = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.6f));
 
             if (normal != nullptr)
                 button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -138,12 +138,12 @@ void EnvelopeRowComponent::refreshTheme()
     setupIconButton(replaceButton, "replace");
     setupIconButton(deleteButton, "delete");
 
-    noteButton.setColour(juce::TextButton::buttonColourId, T_COL(uiHover));
-    noteButton.setColour(juce::TextButton::textColourOffId, T_COL(textMain));
-    noteButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiSelected));
+    noteButton.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::uiHover));
+    noteButton.setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textMain));
+    noteButton.setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiSelected));
 
     bool isDisabled = (bool)envelope.getProperty("disabled", false);
-    nameLabel.setColour(juce::Label::textColourId, isDisabled ? T_COL(textDimmed) : T_COL(textMain));
+    nameLabel.setColour(juce::Label::textColourId, isDisabled ? Theme::get(ThemeManager::textDimmed) : Theme::get(ThemeManager::textMain));
 
     repaint();
 }
@@ -165,7 +165,7 @@ void EnvelopeRowComponent::refreshFromTree()
     bool isDisabled = (bool)envelope.getProperty("disabled", false);
 
     nameLabel.setColour(juce::Label::textColourId,
-        isDisabled ? T_COL(textDimmed) : T_COL(textMain));
+        isDisabled ? Theme::get(ThemeManager::textDimmed) : Theme::get(ThemeManager::textMain));
 
     float alpha = isDisabled ? 0.4f : 1.0f;
     noteButton.setAlpha(alpha);
@@ -279,12 +279,12 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Background
     // ===============================
 
-    juce::Colour bgColour = T_COL(sectionBackground);
+    juce::Colour bgColour = Theme::get(ThemeManager::sectionBackground);
 
     if (isSelected)
-        bgColour = T_COL(uiSelected);
+        bgColour = Theme::get(ThemeManager::uiSelected);
     else if (isHovered)
-        bgColour = T_COL(uiHover);
+        bgColour = Theme::get(ThemeManager::uiHover);
 
     if (isDisabled)
         bgColour = bgColour.withAlpha(0.1f);
@@ -297,7 +297,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // ===============================
     {
         auto handleArea = bounds.removeFromLeft(12).reduced(4, 8);
-        g.setColour(T_COL(textDimmed).withAlpha(0.3f));
+        g.setColour(Theme::get(ThemeManager::textDimmed).withAlpha(0.3f));
         
         for (int i = 0; i < 3; ++i)
         {
@@ -311,7 +311,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Envelope name
     // ===============================
 
-    g.setColour(isDisabled ? T_COL(textDimmed) : T_COL(textMain));
+    g.setColour(isDisabled ? Theme::get(ThemeManager::textDimmed) : Theme::get(ThemeManager::textMain));
     g.setFont(FontManager::getInterRegular(13.0f));
 
     auto nameArea = bounds;
@@ -332,7 +332,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
             .removeFromRight(20)
             .withSizeKeepingCentre(dotSize, dotSize);
 
-        g.setColour(T_COL(midiIndicator));
+        g.setColour(Theme::get(ThemeManager::midiIndicator));
         g.fillEllipse(dotArea.toFloat());
     }
 
@@ -340,7 +340,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Bottom separator
     // ===============================
 
-    g.setColour(T_COL(border).withAlpha(0.3f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.3f));
     g.drawLine(0.0f,
         (float)getHeight() - 1.0f,
         (float)getWidth(),
@@ -349,7 +349,7 @@ void EnvelopeRowComponent::paint(juce::Graphics& g)
     // Overlay for disabled state
     if (isDisabled)
     {
-        g.setColour(T_COL(uiDisabledOverlay).withAlpha(0.2f));
+        g.setColour(Theme::get(ThemeManager::uiDisabledOverlay).withAlpha(0.2f));
         g.fillRect(bounds);
     }
 }

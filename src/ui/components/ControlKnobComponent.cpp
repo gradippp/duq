@@ -118,7 +118,7 @@ void ControlKnobComponent::handleCustomMenuResult(int result)
 
 void ControlKnobComponent::lookAndFeelChanged()
 {
-    valueLabel.setColour(juce::Label::textColourId, T_COL(textMain));
+    valueLabel.setColour(juce::Label::textColourId, Theme::get(ThemeManager::textMain));
     repaint();
 }
 
@@ -146,7 +146,7 @@ void ControlKnobComponent::paint(juce::Graphics& g)
 
     auto labelArea = bounds.removeFromLeft(bounds.getWidth() - 60);
 
-    g.setColour(T_COL(textLabel));
+    g.setColour(Theme::get(ThemeManager::textLabel));
     g.setFont(FontManager::getInterMedium(13.0f));
 
     g.drawText(labelText,

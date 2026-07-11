@@ -87,7 +87,7 @@ void MeterComponent::paint(juce::Graphics& g)
     // ----- Draw Label -----
     if (labelText.isNotEmpty())
     {
-        g.setColour(T_COL(textLabel));
+        g.setColour(Theme::get(ThemeManager::textLabel));
         g.setFont(FontManager::getBarlowBold(14.0f));
         g.drawFittedText(labelText.toUpperCase(),
             labelArea.toNearestInt(),
@@ -96,10 +96,10 @@ void MeterComponent::paint(juce::Graphics& g)
     }
 
     // ----- Meter Track (Background) -----
-    g.setColour(T_COL(sectionBackground));
+    g.setColour(Theme::get(ThemeManager::sectionBackground));
     g.fillRoundedRectangle(meterBounds, 2.0f);
     
-    g.setColour(T_COL(border).withAlpha(0.3f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.3f));
     g.drawRoundedRectangle(meterBounds, 2.0f, 1.0f);
 
     // ----- Filled Meter -----
@@ -129,8 +129,8 @@ void MeterComponent::paint(juce::Graphics& g)
             }
 
             juce::Colour baseColor = (mode == MeterMode::Envelope) ? 
-                                    T_COL(meterReduction) : 
-                                    T_COL(meterFill);
+                                    Theme::get(ThemeManager::meterReduction) : 
+                                    Theme::get(ThemeManager::meterFill);
 
             juce::ColourGradient grad(baseColor.withAlpha(0.6f), fillArea.getX(), 0,
                                       baseColor, fillArea.getRight(), 0, false);
@@ -138,7 +138,7 @@ void MeterComponent::paint(juce::Graphics& g)
             if (mode == MeterMode::AudioLevel)
             {
                 grad.addColour(0.7, baseColor);
-                grad.addColour(0.9, T_COL(meterReduction));
+                grad.addColour(0.9, Theme::get(ThemeManager::meterReduction));
             }
 
             g.setGradientFill(grad);
@@ -155,13 +155,13 @@ void MeterComponent::paint(juce::Graphics& g)
         // --- Peak Indicator ---
         if (peakLevel > 0.001f)
         {
-            g.setColour(T_COL(accent).withAlpha(0.8f));
+            g.setColour(Theme::get(ThemeManager::accent).withAlpha(0.8f));
             g.fillRect(peakX - 1.0f, fillArea.getY(), 2.0f, fillArea.getHeight());
         }
     }
 
     // ----- Modern Tick Marks -----
-    g.setColour(T_COL(border).withAlpha(0.5f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.5f));
     const int numTicks = 10;
     for (int i = 1; i < numTicks; ++i)
     {

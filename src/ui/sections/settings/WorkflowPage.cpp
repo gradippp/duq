@@ -73,7 +73,7 @@ WorkflowPage::WorkflowPage()
 
     addAndMakeVisible(midiStatusLabel);
     midiStatusLabel.setFont(FontManager::getInterRegular(12.0f));
-    midiStatusLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
+    midiStatusLabel.setColour(juce::Label::textColourId, Theme::get(ThemeManager::textDimmed));
     
     config->addChangeListener(this);
 }
@@ -123,11 +123,11 @@ void WorkflowPage::paint(juce::Graphics& g)
     drawControlLabel(g, "Undo History Limit", undoLimitSlider.getBounds());
 
     // Group 2: Envelope Defaults
-    g.setColour(T_COL(textLabel));
+    g.setColour(Theme::get(ThemeManager::textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
     int group2Y = undoLimitSlider.getBottom() + 30;
     g.drawText("ENVELOPE DEFAULTS", 20.0f, (float)group2Y, 200.0f, 30.0f, juce::Justification::centredLeft);
-    g.setColour(T_COL(border).withAlpha(0.3f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.3f));
     g.drawLine(20.0f, (float)group2Y + 25.0f, (float)getWidth() - 20.0f, (float)group2Y + 25.0f, 1.0f);
 
     drawControlLabel(g, "Default Rate", defaultRateSlider.getBounds());
@@ -136,20 +136,20 @@ void WorkflowPage::paint(juce::Graphics& g)
 
     // Group 3: Default Shape
     int group3Y = defaultSmoothSlider.getBottom() + 30;
-    g.setColour(T_COL(textLabel));
+    g.setColour(Theme::get(ThemeManager::textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
     g.drawText("DEFAULT ENVELOPE SHAPE", 20.0f, (float)group3Y, 200.0f, 30.0f, juce::Justification::centredLeft);
-    g.setColour(T_COL(border).withAlpha(0.3f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.3f));
     g.drawLine(20.0f, (float)group3Y + 25.0f, (float)getWidth() - 20.0f, (float)group3Y + 25.0f, 1.0f);
 
     drawControlLabel(g, "Set default from current envelope:", currentEnvelopesCombo.getBounds());
 
     // Group 4: MIDI Calibration
     int group4Y = shapePreview.getBottom() + 30;
-    g.setColour(T_COL(textLabel));
+    g.setColour(Theme::get(ThemeManager::textLabel));
     g.setFont(FontManager::getBarlowBold(14.0f));
     g.drawText("MIDI SETTINGS", 20.0f, (float)group4Y, 200.0f, 30.0f, juce::Justification::centredLeft);
-    g.setColour(T_COL(border).withAlpha(0.3f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.3f));
     g.drawLine(20.0f, (float)group4Y + 25.0f, (float)getWidth() - 20.0f, (float)group4Y + 25.0f, 1.0f);
 
     drawControlLabel(g, "MIDI Octave Calibration", calibrateMidiButton.getBounds());
@@ -252,35 +252,35 @@ void WorkflowPage::timerCallback()
     if (processor->isCalibrationMode())
     {
         calibrateMidiButton.setButtonText("Waiting for MIDI...");
-        calibrateMidiButton.setColour(juce::TextButton::buttonColourId, T_COL(accent).withAlpha(0.2f));
+        calibrateMidiButton.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::accent).withAlpha(0.2f));
     }
     else
     {
         calibrateMidiButton.setButtonText("Listen for C0");
-        calibrateMidiButton.setColour(juce::TextButton::buttonColourId, T_COL(uiHover));
+        calibrateMidiButton.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::uiHover));
         stopTimer();
     }
 }
 
 void WorkflowPage::lookAndFeelChanged()
 {
-    defaultCurveCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
-    currentEnvelopesCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+    defaultCurveCombo.setColour(juce::ComboBox::textColourId, Theme::get(ThemeManager::widgetText));
+    currentEnvelopesCombo.setColour(juce::ComboBox::textColourId, Theme::get(ThemeManager::widgetText));
     
     // Explicitly update slider text box colors and their internal labels
     auto updateSlider = [this](juce::Slider& s) {
-        s.setColour(juce::Slider::textBoxTextColourId, T_COL(widgetText));
-        s.setColour(juce::Slider::textBoxBackgroundColourId, T_COL(widgetBackground));
-        s.setColour(juce::Slider::textBoxOutlineColourId, T_COL(widgetOutline));
+        s.setColour(juce::Slider::textBoxTextColourId, Theme::get(ThemeManager::widgetText));
+        s.setColour(juce::Slider::textBoxBackgroundColourId, Theme::get(ThemeManager::widgetBackground));
+        s.setColour(juce::Slider::textBoxOutlineColourId, Theme::get(ThemeManager::widgetOutline));
         
         // Brute-force child traversal to clear any local color overrides
         for (auto* child : s.getChildren())
         {
             if (auto* l = dynamic_cast<juce::Label*>(child))
             {
-                l->setColour(juce::Label::textColourId, T_COL(widgetText));
-                l->setColour(juce::Label::backgroundColourId, T_COL(widgetBackground));
-                l->setColour(juce::Label::outlineColourId, T_COL(widgetOutline));
+                l->setColour(juce::Label::textColourId, Theme::get(ThemeManager::widgetText));
+                l->setColour(juce::Label::backgroundColourId, Theme::get(ThemeManager::widgetBackground));
+                l->setColour(juce::Label::outlineColourId, Theme::get(ThemeManager::widgetOutline));
             }
         }
     };
@@ -291,10 +291,10 @@ void WorkflowPage::lookAndFeelChanged()
     updateSlider(defaultDepthSlider);
     updateSlider(defaultSmoothSlider);
 
-    calibrateMidiButton.setColour(juce::TextButton::textColourOffId, T_COL(textMain));
-    calibrateMidiButton.setColour(juce::TextButton::buttonColourId, T_COL(uiHover));
+    calibrateMidiButton.setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textMain));
+    calibrateMidiButton.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::uiHover));
 
-    midiStatusLabel.setColour(juce::Label::textColourId, T_COL(textDimmed));
+    midiStatusLabel.setColour(juce::Label::textColourId, Theme::get(ThemeManager::textDimmed));
     
     // Update status label
     int offset = config->getMidiOctaveOffset();

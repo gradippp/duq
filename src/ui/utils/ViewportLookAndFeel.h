@@ -10,7 +10,7 @@ public:
     {
         refreshColours();
         setColour(juce::ScrollBar::backgroundColourId, juce::Colours::transparentBlack);
-        setColour(juce::ScrollBar::thumbColourId, T_COL(accent).withAlpha(0.15f));
+        setColour(juce::ScrollBar::thumbColourId, Theme::get(ThemeManager::accent).withAlpha(0.15f));
         setColour(juce::ScrollBar::trackColourId, juce::Colours::transparentBlack);
     }
 
@@ -24,7 +24,7 @@ public:
             : juce::Rectangle<int>(thumbStartPosition, y + 2, thumbSize, height - 4);
 
         auto alpha = isMouseDown ? 0.4f : (isMouseOver ? 0.25f : 0.15f);
-        g.setColour(T_COL(accent).withAlpha(alpha));
+        g.setColour(Theme::get(ThemeManager::accent).withAlpha(alpha));
         g.fillRoundedRectangle(thumbArea.toFloat(), thumbArea.getWidth() * 0.5f);
     }
 

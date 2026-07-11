@@ -61,7 +61,7 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        g.fillAll(T_COL(background));
+        g.fillAll(Theme::get(ThemeManager::background));
 
         int divisions = 1 << state.gridPower;
         float baseStep = 1.0f / divisions;
@@ -102,7 +102,7 @@ public:
 
             auto p = state.normalizedToPixel({ normX, 0.0f });
             bool isMajor = (i % 4 == 0);
-            g.setColour(isMajor ? T_COL(gridMajor) : T_COL(gridMinor));
+            g.setColour(isMajor ? Theme::get(ThemeManager::gridMajor) : Theme::get(ThemeManager::gridMinor));
             g.drawLine(p.x, (float)viewArea.getY(), p.x, (float)viewArea.getBottom());
         }
 
@@ -116,7 +116,7 @@ public:
 
             auto p = state.normalizedToPixel({ 0.0f, normY });
             bool isMajor = (i % 4 == 0);
-            g.setColour(isMajor ? T_COL(gridMajor) : T_COL(gridMinor));
+            g.setColour(isMajor ? Theme::get(ThemeManager::gridMajor) : Theme::get(ThemeManager::gridMinor));
             g.drawLine((float)viewArea.getX(), p.y, (float)viewArea.getRight(), p.y);
         }
     }

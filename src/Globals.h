@@ -8,9 +8,6 @@
 namespace Theme
 {
     inline juce::Colour get(ThemeManager::ColourID id) { return ThemeManager::getInstance().getColour(id); }
-
-    // Shorthands for cleaner code in components
-    #define T_COL(name) Theme::get(ThemeManager::name)
 }
 
 namespace Defaults

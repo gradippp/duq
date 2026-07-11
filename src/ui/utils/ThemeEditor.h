@@ -38,7 +38,7 @@ public:
 
     void refreshTheme()
     {
-        nameLabel.setColour(juce::Label::textColourId, T_COL(textLabel));
+        nameLabel.setColour(juce::Label::textColourId, Theme::get(ThemeManager::textLabel));
         repaint();
     }
 
@@ -50,7 +50,7 @@ public:
     void paint(juce::Graphics& g) override
     {
         // Divider
-        g.setColour(T_COL(border).withAlpha(0.1f));
+        g.setColour(Theme::get(ThemeManager::border).withAlpha(0.1f));
         g.drawLine(0.0f, (float)getHeight() - 1.0f, (float)getWidth(), (float)getHeight() - 1.0f, 1.0f);
     }
 
@@ -114,7 +114,7 @@ private:
         void paintButton(juce::Graphics& g, bool, bool) override {
             g.setColour(ThemeManager::getInstance().getColour(id));
             g.fillRoundedRectangle(getLocalBounds().toFloat(), 2.0f);
-            g.setColour(T_COL(border));
+            g.setColour(Theme::get(ThemeManager::border));
             g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 2.0f, 1.0f);
         }
     } colorButton;

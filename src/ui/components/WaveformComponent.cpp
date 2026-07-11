@@ -180,19 +180,19 @@ void WaveformComponent::paint(juce::Graphics& g)
     // 1. Draw Sidechain (Background)
     if (!cachedSidechainPath.isEmpty())
     {
-        g.setColour(T_COL(sidechain).withAlpha(1.0f)); 
+        g.setColour(Theme::get(ThemeManager::sidechain).withAlpha(1.0f)); 
         g.strokePath(cachedSidechainPath, juce::PathStrokeType(1.2f));
     }
 
     // 2. Draw Pre (Dry)
     if (!cachedPrePath.isEmpty())
     {
-        g.setColour(T_COL(waveform).withAlpha(0.3f));
+        g.setColour(Theme::get(ThemeManager::waveform).withAlpha(0.3f));
         g.strokePath(cachedPrePath, juce::PathStrokeType(1.0f));
     }
 
     // 3. Draw Post (Wet)
-    g.setColour(T_COL(waveform));
+    g.setColour(Theme::get(ThemeManager::waveform));
     g.strokePath(cachedPostPath, juce::PathStrokeType(1.5f));
 
     // subtle center line (0.0 amplitude -> normY = 0.5)
@@ -201,7 +201,7 @@ void WaveformComponent::paint(juce::Graphics& g)
     const float visibleHeightNorm = 1.0f / zoomY;
     float nyCenter = (0.5f - offsetY) / visibleHeightNorm;
     float yCenter = (1.0f - nyCenter) * height;
-    g.setColour(T_COL(gridMinor));
+    g.setColour(Theme::get(ThemeManager::gridMinor));
     g.drawLine(0.0f, yCenter, (float)width, yCenter);
 }
 

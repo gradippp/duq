@@ -11,18 +11,18 @@ void SettingsSection::SidebarButton::paintButton(juce::Graphics& g, bool isMouse
 
     if (isSelected)
     {
-        g.setColour(T_COL(uiSelected).withAlpha(0.2f));
+        g.setColour(Theme::get(ThemeManager::uiSelected).withAlpha(0.2f));
         g.fillRect(bounds);
-        g.setColour(T_COL(accent));
+        g.setColour(Theme::get(ThemeManager::accent));
         g.fillRect(bounds.removeFromLeft(3.0f));
     }
     else if (isMouseOverButton)
     {
-        g.setColour(T_COL(uiHover).withAlpha(0.1f));
+        g.setColour(Theme::get(ThemeManager::uiHover).withAlpha(0.1f));
         g.fillRect(bounds);
     }
 
-    g.setColour(isSelected ? T_COL(accent) : T_COL(textDimmed));
+    g.setColour(isSelected ? Theme::get(ThemeManager::accent) : Theme::get(ThemeManager::textDimmed));
     g.setFont(FontManager::getBarlowBold(13.0f));
     g.drawText(getButtonText(), getLocalBounds().reduced(15, 0), juce::Justification::centredLeft);
 }
@@ -38,11 +38,11 @@ SettingsSection::SettingsSection()
     {
         button.setClickingTogglesState(false);
         button.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
-        button.setColour(juce::DrawableButton::backgroundOnColourId, T_COL(uiHover));
+        button.setColour(juce::DrawableButton::backgroundOnColourId, Theme::get(ThemeManager::uiHover));
 
-        auto normal = Icons::load(iconName, T_COL(textMain));
-        auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
-        auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
+        auto normal = Icons::load(iconName, Theme::get(ThemeManager::textMain));
+        auto over = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.85f));
+        auto down = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.6f));
 
         if (normal != nullptr)
             button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -116,15 +116,15 @@ void SettingsSection::paint(juce::Graphics& g)
     auto sidebarArea = bounds.removeFromLeft(160);
 
     // Sidebar Background
-    g.setColour(T_COL(background).brighter(0.02f));
+    g.setColour(Theme::get(ThemeManager::background).brighter(0.02f));
     g.fillRect(sidebarArea);
 
     // Sidebar Divider
-    g.setColour(T_COL(border));
+    g.setColour(Theme::get(ThemeManager::border));
     g.drawLine((float)sidebarArea.getRight(), 0.0f, (float)sidebarArea.getRight(), (float)getHeight(), 1.0f);
 
     // Section Title in Sidebar
-    g.setColour(T_COL(accent).withAlpha(0.8f));
+    g.setColour(Theme::get(ThemeManager::accent).withAlpha(0.8f));
     g.setFont(FontManager::getInterBold(18.0f));
     g.drawText("SETTINGS", sidebarArea.removeFromTop(60).reduced(15, 0), juce::Justification::centredLeft);
 }
@@ -168,11 +168,11 @@ void SettingsSection::lookAndFeelChanged()
     {
         button.setClickingTogglesState(false);
         button.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
-        button.setColour(juce::DrawableButton::backgroundOnColourId, T_COL(uiHover));
+        button.setColour(juce::DrawableButton::backgroundOnColourId, Theme::get(ThemeManager::uiHover));
 
-        auto normal = Icons::load(iconName, T_COL(textMain));
-        auto over = Icons::load(iconName, T_COL(textMain).withAlpha(0.85f));
-        auto down = Icons::load(iconName, T_COL(textMain).withAlpha(0.6f));
+        auto normal = Icons::load(iconName, Theme::get(ThemeManager::textMain));
+        auto over = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.85f));
+        auto down = Icons::load(iconName, Theme::get(ThemeManager::textMain).withAlpha(0.6f));
 
         if (normal != nullptr)
             button.setImages(normal.get(), over.get(), down.get(), nullptr);
@@ -182,9 +182,9 @@ void SettingsSection::lookAndFeelChanged()
 
     for (auto& btn : sidebarButtons)
     {
-        btn->setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
-        btn->setColour(juce::TextButton::textColourOffId, T_COL(textDimmed));
-        btn->setColour(juce::TextButton::textColourOnId, T_COL(accent));
+        btn->setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiHover));
+        btn->setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textDimmed));
+        btn->setColour(juce::TextButton::textColourOnId, Theme::get(ThemeManager::accent));
     }
 
     // Explicitly notify all pages, even if they aren't currently in the component tree

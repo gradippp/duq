@@ -55,11 +55,11 @@ void GeneralPage::paint(juce::Graphics& g)
 
     // Separator between general and theme settings
     float sepY1 = (float)(showSidechainToggle.getBottom() + 30);
-    g.setColour(T_COL(border).withAlpha(0.2f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.2f));
     g.drawLine(20.0f, sepY1, (float)getWidth() - 20.0f, sepY1, 1.0f);
 
     // Theme Section Title
-    g.setColour(T_COL(accent).withAlpha(0.8f));
+    g.setColour(Theme::get(ThemeManager::accent).withAlpha(0.8f));
     g.setFont(FontManager::getInterBold(14.0f));
     g.drawText("UI THEMES & COLOURS (EXPERIMENTAL)", 20, (int)sepY1 + 20, 350, 20, juce::Justification::centredLeft);
 
@@ -158,12 +158,12 @@ void GeneralPage::changeListenerCallback([[maybe_unused]] juce::ChangeBroadcaste
 
 void GeneralPage::lookAndFeelChanged()
 {
-    showSourceToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
-    showSidechainToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
-    tooltipsToggle.setColour(juce::ToggleButton::textColourId, T_COL(widgetText));
+    showSourceToggle.setColour(juce::ToggleButton::textColourId, Theme::get(ThemeManager::widgetText));
+    showSidechainToggle.setColour(juce::ToggleButton::textColourId, Theme::get(ThemeManager::widgetText));
+    tooltipsToggle.setColour(juce::ToggleButton::textColourId, Theme::get(ThemeManager::widgetText));
     
-    waveformQualityCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
-    themeCombo.setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+    waveformQualityCombo.setColour(juce::ComboBox::textColourId, Theme::get(ThemeManager::widgetText));
+    themeCombo.setColour(juce::ComboBox::textColourId, Theme::get(ThemeManager::widgetText));
 
     repaint();
 }

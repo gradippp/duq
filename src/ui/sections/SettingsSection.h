@@ -30,9 +30,9 @@ private:
             setClickingTogglesState(true);
             setRadioGroupId(100);
             setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-            setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
-            setColour(juce::TextButton::textColourOffId, T_COL(textDimmed));
-            setColour(juce::TextButton::textColourOnId, T_COL(accent));
+            setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiHover));
+            setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textDimmed));
+            setColour(juce::TextButton::textColourOnId, Theme::get(ThemeManager::accent));
         }
 
         void paintButton(juce::Graphics& g, bool isMouseOverButton, bool isMouseDownOnButton) override;

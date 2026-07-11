@@ -7,7 +7,7 @@
 
 /**
     Central LookAndFeel for the entire application.
-    Uses T_COL() directly to bypass JUCE's color ID system and ensure
+    Uses Theme::get() directly to bypass JUCE's color ID system and ensure
     perfect theme synchronization.
 */
 class GlobalLookAndFeel : public juce::LookAndFeel_V4
@@ -21,29 +21,29 @@ public:
     void refreshColours()
     {
         // Set standard JUCE colours to match theme for components not overridden
-        setColour(juce::TextButton::buttonColourId, T_COL(sectionBackground));
-        setColour(juce::TextButton::buttonOnColourId, T_COL(uiSelected));
-        setColour(juce::TextButton::textColourOffId, T_COL(textMain));
-        setColour(juce::TextButton::textColourOnId, T_COL(accent));
+        setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::sectionBackground));
+        setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiSelected));
+        setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textMain));
+        setColour(juce::TextButton::textColourOnId, Theme::get(ThemeManager::accent));
 
-        setColour(juce::ComboBox::backgroundColourId, T_COL(widgetBackground));
-        setColour(juce::ComboBox::outlineColourId, T_COL(widgetOutline));
-        setColour(juce::ComboBox::textColourId, T_COL(widgetText));
+        setColour(juce::ComboBox::backgroundColourId, Theme::get(ThemeManager::widgetBackground));
+        setColour(juce::ComboBox::outlineColourId, Theme::get(ThemeManager::widgetOutline));
+        setColour(juce::ComboBox::textColourId, Theme::get(ThemeManager::widgetText));
 
-        setColour(juce::Label::textColourId, T_COL(textMain));
+        setColour(juce::Label::textColourId, Theme::get(ThemeManager::textMain));
         setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
         setColour(juce::Label::outlineColourId, juce::Colours::transparentBlack);
         
-        setColour(juce::Slider::backgroundColourId, T_COL(widgetBackground));
-        setColour(juce::Slider::thumbColourId, T_COL(accent));
-        setColour(juce::Slider::trackColourId, T_COL(accent).withAlpha(0.5f));
-        setColour(juce::Slider::textBoxTextColourId, T_COL(widgetText));
-        setColour(juce::Slider::textBoxBackgroundColourId, T_COL(widgetBackground));
-        setColour(juce::Slider::textBoxOutlineColourId, T_COL(widgetOutline).withAlpha(0.3f));
+        setColour(juce::Slider::backgroundColourId, Theme::get(ThemeManager::widgetBackground));
+        setColour(juce::Slider::thumbColourId, Theme::get(ThemeManager::accent));
+        setColour(juce::Slider::trackColourId, Theme::get(ThemeManager::accent).withAlpha(0.5f));
+        setColour(juce::Slider::textBoxTextColourId, Theme::get(ThemeManager::widgetText));
+        setColour(juce::Slider::textBoxBackgroundColourId, Theme::get(ThemeManager::widgetBackground));
+        setColour(juce::Slider::textBoxOutlineColourId, Theme::get(ThemeManager::widgetOutline).withAlpha(0.3f));
 
-        setColour(juce::TextEditor::backgroundColourId, T_COL(widgetBackground));
-        setColour(juce::TextEditor::textColourId, T_COL(widgetText));
-        setColour(juce::TextEditor::outlineColourId, T_COL(widgetOutline));
+        setColour(juce::TextEditor::backgroundColourId, Theme::get(ThemeManager::widgetBackground));
+        setColour(juce::TextEditor::textColourId, Theme::get(ThemeManager::widgetText));
+        setColour(juce::TextEditor::outlineColourId, Theme::get(ThemeManager::widgetOutline));
     }
 
     // ==============================================================================
@@ -63,13 +63,13 @@ public:
 
         if (isWidget || bg.getAlpha() > 0)
         {
-            g.setColour(isWidget ? T_COL(widgetBackground) : bg);
+            g.setColour(isWidget ? Theme::get(ThemeManager::widgetBackground) : bg);
             g.fillRoundedRectangle(bounds, 2.0f);
         }
 
         if (isWidget || outline.getAlpha() > 0)
         {
-            g.setColour(isWidget ? T_COL(widgetOutline) : outline);
+            g.setColour(isWidget ? Theme::get(ThemeManager::widgetOutline) : outline);
             g.drawRoundedRectangle(bounds.reduced(0.5f), 2.0f, 1.0f);
         }
 
@@ -88,7 +88,7 @@ public:
     {
         if (ed.isReadOnly()) return;
 
-        g.setColour(T_COL(widgetOutline));
+        g.setColour(Theme::get(ThemeManager::widgetOutline));
         g.drawRoundedRectangle(0.5f, 0.5f, width - 1.0f, height - 1.0f, 2.0f, 1.0f);
     }
 
@@ -102,16 +102,16 @@ public:
         auto bounds = button.getLocalBounds().toFloat();
         auto cornerSize = 2.0f;
 
-        auto baseColour = T_COL(sectionBackground);
+        auto baseColour = Theme::get(ThemeManager::sectionBackground);
         if (isButtonDown)
-            baseColour = T_COL(uiSelected).withAlpha(0.4f);
+            baseColour = Theme::get(ThemeManager::uiSelected).withAlpha(0.4f);
         else if (isMouseOverButton)
-            baseColour = T_COL(uiHover);
+            baseColour = Theme::get(ThemeManager::uiHover);
 
         g.setColour(baseColour);
         g.fillRoundedRectangle(bounds, cornerSize);
 
-        g.setColour(T_COL(border).withAlpha(isMouseOverButton ? 0.8f : 0.4f));
+        g.setColour(Theme::get(ThemeManager::border).withAlpha(isMouseOverButton ? 0.8f : 0.4f));
         g.drawRoundedRectangle(bounds.reduced(0.5f), cornerSize, 1.0f);
     }
 
@@ -120,7 +120,7 @@ public:
         juce::ignoreUnused(isMouseOverButton, isButtonDown);
         g.setFont(FontManager::getBarlowBold(13.0f));
         
-        auto textCol = button.getToggleState() ? T_COL(accent) : T_COL(textMain);
+        auto textCol = button.getToggleState() ? Theme::get(ThemeManager::accent) : Theme::get(ThemeManager::textMain);
         g.setColour(textCol.withAlpha(button.isEnabled() ? 1.0f : 0.5f));
 
         g.drawFittedText(button.getButtonText(), button.getLocalBounds().reduced(4, 0), juce::Justification::centred, 2);
@@ -140,16 +140,16 @@ public:
         auto boxRect = juce::Rectangle<float>(x, y, w, h).reduced(1.0f);
 
         // Background
-        g.setColour(T_COL(widgetBackground));
+        g.setColour(Theme::get(ThemeManager::widgetBackground));
         g.fillRoundedRectangle(boxRect, 2.0f);
 
         // Outline
-        g.setColour(T_COL(widgetOutline).withAlpha(isMouseOverButton ? 1.0f : 0.6f));
+        g.setColour(Theme::get(ThemeManager::widgetOutline).withAlpha(isMouseOverButton ? 1.0f : 0.6f));
         g.drawRoundedRectangle(boxRect.reduced(0.5f), 2.0f, 1.2f);
 
         if (ticked)
         {
-            g.setColour(T_COL(widgetTick));
+            g.setColour(Theme::get(ThemeManager::widgetTick));
             
             // Draw a thick, high-contrast checkmark
             juce::Path p;
@@ -173,11 +173,11 @@ public:
         auto bounds = juce::Rectangle<int>(width, height).toFloat();
 
         // Background
-        g.setColour(T_COL(widgetBackground));
+        g.setColour(Theme::get(ThemeManager::widgetBackground));
         g.fillRoundedRectangle(bounds, 2.0f);
 
         // Outline
-        g.setColour(T_COL(widgetOutline).withAlpha(box.hasKeyboardFocus(true) ? 1.0f : 0.6f));
+        g.setColour(Theme::get(ThemeManager::widgetOutline).withAlpha(box.hasKeyboardFocus(true) ? 1.0f : 0.6f));
         g.drawRoundedRectangle(bounds.reduced(0.5f), 2.0f, 1.2f);
 
         // Arrow Area
@@ -190,7 +190,7 @@ public:
                       centre.x + arrowSize, centre.y - arrowSize * 0.5f,
                       centre.x, centre.y + arrowSize * 0.5f);
 
-        g.setColour(T_COL(widgetText).withAlpha(0.7f));
+        g.setColour(Theme::get(ThemeManager::widgetText).withAlpha(0.7f));
         g.fillPath(p);
     }
 
@@ -201,7 +201,7 @@ public:
         label.setJustificationType(juce::Justification::centredLeft);
         
         // Force the label color from the theme
-        label.setColour(juce::Label::textColourId, T_COL(widgetText));
+        label.setColour(juce::Label::textColourId, Theme::get(ThemeManager::widgetText));
     }
 
     juce::Font getComboBoxFont(juce::ComboBox&) override
@@ -229,7 +229,7 @@ public:
                 trackRect = { x + width * 0.5f - trackWidth * 0.5f, (float)y, trackWidth, (float)height };
 
             // Track Background
-            g.setColour(T_COL(widgetBackground).darker(0.05f));
+            g.setColour(Theme::get(ThemeManager::widgetBackground).darker(0.05f));
             g.fillRoundedRectangle(trackRect, trackWidth * 0.5f);
 
             // Active Track
@@ -239,7 +239,7 @@ public:
             else
                 activeTrack = { trackRect.getX(), sliderPos, trackWidth, trackRect.getBottom() - sliderPos };
 
-            g.setColour(T_COL(accent));
+            g.setColour(Theme::get(ThemeManager::accent));
             g.fillRoundedRectangle(activeTrack, trackWidth * 0.5f);
 
             // Thumb
@@ -250,10 +250,10 @@ public:
             else
                 thumbRect = { x + width * 0.5f - thumbSize * 0.5f, sliderPos - thumbSize * 0.5f, thumbSize, thumbSize };
 
-            g.setColour(T_COL(textMain));
+            g.setColour(Theme::get(ThemeManager::textMain));
             g.fillEllipse(thumbRect);
             
-            g.setColour(T_COL(widgetOutline));
+            g.setColour(Theme::get(ThemeManager::widgetOutline));
             g.drawEllipse(thumbRect, 1.5f);
         }
         else
@@ -274,11 +274,11 @@ public:
         auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
         // --- Outer Ring (Shadow/Glow) ---
-        g.setColour(T_COL(knobShadow).withAlpha(0.2f));
+        g.setColour(Theme::get(ThemeManager::knobShadow).withAlpha(0.2f));
         g.drawEllipse(centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f, 1.0f);
 
         // --- Base Circle ---
-        g.setColour(T_COL(sectionBackground));
+        g.setColour(Theme::get(ThemeManager::sectionBackground));
         g.fillEllipse(centreX - radius + 1.0f, centreY - radius + 1.0f, (radius - 1.0f) * 2.0f, (radius - 1.0f) * 2.0f);
 
         // --- Arcs Area ---
@@ -288,13 +288,13 @@ public:
         // Background arc (Track)
         juce::Path bgArc;
         bgArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, rotaryStartAngle, rotaryEndAngle, true);
-        g.setColour(T_COL(knobTrack));
+        g.setColour(Theme::get(ThemeManager::knobTrack));
         g.strokePath(bgArc, juce::PathStrokeType(thickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         // Value arc (Active)
         juce::Path valueArc;
         valueArc.addCentredArc(centreX, centreY, arcRadius, arcRadius, 0.0f, rotaryStartAngle, angle, true);
-        g.setColour(T_COL(knobAccent));
+        g.setColour(Theme::get(ThemeManager::knobAccent));
         g.strokePath(valueArc, juce::PathStrokeType(thickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         // --- Indicator (Dot) ---
@@ -304,7 +304,7 @@ public:
         float sinA = std::sin(angle - juce::MathConstants<float>::halfPi);
         juce::Point<float> dotPos (centreX + dotDist * cosA, centreY + dotDist * sinA);
 
-        g.setColour(T_COL(knobIndicator));
+        g.setColour(Theme::get(ThemeManager::knobIndicator));
         g.fillEllipse(dotPos.x - dotRadius, dotPos.y - dotRadius, dotRadius * 2.0f, dotRadius * 2.0f);
     }
 
@@ -331,10 +331,10 @@ public:
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override
     {
         auto area = juce::Rectangle<int>(width, height).toFloat();
-        g.setColour(T_COL(contextMenuBackground));
+        g.setColour(Theme::get(ThemeManager::contextMenuBackground));
         g.fillRoundedRectangle(area, 4.0f);
 
-        g.setColour(T_COL(contextMenuBorder));
+        g.setColour(Theme::get(ThemeManager::contextMenuBorder));
         g.drawRoundedRectangle(area.reduced(0.5f), 4.0f, 1.0f);
     }
 
@@ -348,7 +348,7 @@ public:
         if (isSeparator)
         {
             auto r = area.reduced(5, 0);
-            g.setColour(T_COL(border).withAlpha(0.5f));
+            g.setColour(Theme::get(ThemeManager::border).withAlpha(0.5f));
             g.drawLine((float)r.getX(), (float)r.getCentreY(), (float)r.getRight(), (float)r.getCentreY());
             return;
         }
@@ -357,11 +357,11 @@ public:
 
         if (isHighlighted && isActive)
         {
-            g.setColour(T_COL(contextMenuHighlight));
+            g.setColour(Theme::get(ThemeManager::contextMenuHighlight));
             g.fillRoundedRectangle(itemArea.reduced(2.0f, 1.0f), 3.0f);
         }
 
-        g.setColour(textColourToUse != nullptr ? *textColourToUse : T_COL(contextMenuText));
+        g.setColour(textColourToUse != nullptr ? *textColourToUse : Theme::get(ThemeManager::contextMenuText));
         g.setFont(FontManager::getInterRegular(13.0f));
 
         auto textRect = itemArea.reduced(10, 0);
@@ -371,7 +371,7 @@ public:
         {
             const float tickSize = 6.0f;
             auto tickArea = itemArea.removeFromRight(20).withSizeKeepingCentre(tickSize, tickSize);
-            g.setColour(T_COL(accent));
+            g.setColour(Theme::get(ThemeManager::accent));
             g.fillEllipse(tickArea);
         }
     }

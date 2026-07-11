@@ -57,10 +57,10 @@ EnvelopeListSection::EnvelopeListSection()
         button.setButtonText(text);
         button.setComponentID(iconName);
         button.setTooltip(tooltip);
-        button.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
-        button.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
-        button.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));
-        button.setColour(juce::TextButton::textColourOnId, T_COL(textMain));
+        button.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::background).withAlpha(0.4f));
+        button.setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiHover));
+        button.setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textLabel));
+        button.setColour(juce::TextButton::textColourOnId, Theme::get(ThemeManager::textMain));
     };
 
     setupButton(addButton, "ADD", "add", "Add a new default envelope");
@@ -138,15 +138,15 @@ void EnvelopeListSection::lookAndFeelChanged()
     buttonLnf.refreshColours();
     viewportLnf.refreshColours();
 
-    addButton.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
-    addButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
-    addButton.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));
-    addButton.setColour(juce::TextButton::textColourOnId, T_COL(textMain));
+    addButton.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::background).withAlpha(0.4f));
+    addButton.setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiHover));
+    addButton.setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textLabel));
+    addButton.setColour(juce::TextButton::textColourOnId, Theme::get(ThemeManager::textMain));
 
-    importButton.setColour(juce::TextButton::buttonColourId, T_COL(background).withAlpha(0.4f));
-    importButton.setColour(juce::TextButton::buttonOnColourId, T_COL(uiHover));
-    importButton.setColour(juce::TextButton::textColourOffId, T_COL(textLabel));
-    importButton.setColour(juce::TextButton::textColourOnId, T_COL(textMain));
+    importButton.setColour(juce::TextButton::buttonColourId, Theme::get(ThemeManager::background).withAlpha(0.4f));
+    importButton.setColour(juce::TextButton::buttonOnColourId, Theme::get(ThemeManager::uiHover));
+    importButton.setColour(juce::TextButton::textColourOffId, Theme::get(ThemeManager::textLabel));
+    importButton.setColour(juce::TextButton::textColourOnId, Theme::get(ThemeManager::textMain));
 
     repaint();
 }
@@ -261,20 +261,20 @@ void EnvelopeListSection::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
 
-    g.fillAll(T_COL(sectionBackground));
+    g.fillAll(Theme::get(ThemeManager::sectionBackground));
 
     // Outer border
-    g.setColour(T_COL(border));
+    g.setColour(Theme::get(ThemeManager::border));
     g.drawRect(bounds, 1);
 
     // ===== Header Area =====
     constexpr int headerHeight = 32;
     auto headerArea = bounds.removeFromTop(headerHeight);
 
-    g.setColour(T_COL(headerBackground));
+    g.setColour(Theme::get(ThemeManager::headerBackground));
     g.fillRect(headerArea);
 
-    g.setColour(T_COL(textMain));
+    g.setColour(Theme::get(ThemeManager::textMain));
     g.setFont(FontManager::getBarlowBold(16.0f));
 
     g.drawText("ENVELOPES",
@@ -282,7 +282,7 @@ void EnvelopeListSection::paint(juce::Graphics& g)
         juce::Justification::centredLeft);
 
     auto footerBounds = getLocalBounds().removeFromBottom(40);
-    g.setColour(T_COL(border).withAlpha(0.5f));
+    g.setColour(Theme::get(ThemeManager::border).withAlpha(0.5f));
     g.drawLine(0.0f, static_cast<float>(footerBounds.getY()), static_cast<float>(getWidth()), static_cast<float>(footerBounds.getY()), 1.0f);
 }
 
@@ -300,7 +300,7 @@ void EnvelopeListSection::paintOverChildren(juce::Graphics& g)
         // Ensure we don't draw over the header or footer
         if (dropY >= (float)headerHeight && dropY < (float)footerBounds.getY())
         {
-            g.setColour(T_COL(accent));
+            g.setColour(Theme::get(ThemeManager::accent));
             g.drawLine(0.0f, dropY, (float)getWidth(), dropY, 2.0f);
         }
     }

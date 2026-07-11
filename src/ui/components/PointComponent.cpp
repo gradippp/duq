@@ -34,14 +34,14 @@ void PointComponent::paint(juce::Graphics& g)
 
     if (isHovering)
     {
-        g.setColour(T_COL(point).withAlpha(0.3f));
+        g.setColour(Theme::get(ThemeManager::point).withAlpha(0.3f));
         g.fillEllipse(bounds);
-        g.setColour(T_COL(point));
+        g.setColour(Theme::get(ThemeManager::point));
         g.fillEllipse(bounds.reduced(2.0f));
     }
     else
     {
-        g.setColour(T_COL(point));
+        g.setColour(Theme::get(ThemeManager::point));
         g.fillEllipse(bounds.reduced(2.0f));
     }
 }

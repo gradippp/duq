@@ -338,7 +338,7 @@ void DuqAudioProcessorEditor::showSection(Section section)
 //==============================================================================
 void DuqAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll(T_COL(background));
+    g.fillAll(Theme::get(ThemeManager::background));
 }
 
 void DuqAudioProcessorEditor::resized()
