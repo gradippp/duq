@@ -31,7 +31,9 @@ void EnvelopeListSection::CustomButtonLookAndFeel::drawButtonText(juce::Graphics
         {
             float iconSize = 14.0f;
             float spacing = 6.0f;
-            float textWidth = g.getCurrentFont().getStringWidthFloat(button.getButtonText());
+            juce::GlyphArrangement glyphs;
+            glyphs.addLineOfText(g.getCurrentFont(), button.getButtonText(), 0.0f, 0.0f);
+            float textWidth = glyphs.getBoundingBox(0, -1, true).getWidth();
             float totalWidth = iconSize + spacing + textWidth;
 
             auto startX = (bounds.getWidth() - totalWidth) * 0.5f;

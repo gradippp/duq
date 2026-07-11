@@ -226,7 +226,7 @@ void EnvelopeRowComponent::mouseDrag(const juce::MouseEvent& e)
                     paint(g);
 
                     auto desc = juce::var(envelope["name"].toString());
-                    container->startDragging(desc, this, preview, true, nullptr);
+                    container->startDragging(desc, this, juce::ScaledImage(preview), true, nullptr);
                 }
             }
         }
