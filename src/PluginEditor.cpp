@@ -26,10 +26,12 @@ DuqAudioProcessorEditor::DuqAudioProcessorEditor(DuqAudioProcessor& p)
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
 
-    globalLookAndFeel = std::make_unique<GlobalLookAndFeel>();
-    
-    juce::LookAndFeel::setDefaultLookAndFeel(globalLookAndFeel.get());
-    setLookAndFeel(globalLookAndFeel.get());
+    setLookAndFeel(&globalLookAndFeel.get());
+
+    // Only the first editor sets the process-wide default LnF (to the shared
+    // instance); the last one to close clears it (see destructor).
+    if (defaultLnfRefCount++ == 0)
+        juce::LookAndFeel::setDefaultLookAndFeel(&globalLookAndFeel.get());
 
     envelopeListSection.setUndoManager(undoManager);
 
@@ -270,8 +272,12 @@ DuqAudioProcessorEditor::~DuqAudioProcessorEditor()
 {
     config->removeChangeListener(this);
     ThemeManager::getInstance().removeChangeListener(this);
-    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
+
+    // Clear the process-wide default only when the last editor closes (the shared
+    // LnF object is still alive here, before the SharedResourcePointer releases).
+    if (--defaultLnfRefCount == 0)
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 
     frameTimer.stopTimer();
     stopTimer();
@@ -299,12 +305,9 @@ void DuqAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* so
     }
     else if (source == &ThemeManager::getInstance())
     {
-        // 1. Refresh global LookAndFeel
-        if (globalLookAndFeel) 
-        {
-            globalLookAndFeel->refreshColours();
-            globalLookAndFeel->setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
-        }
+        // 1. Refresh the shared LookAndFeel
+        globalLookAndFeel->refreshColours();
+        globalLookAndFeel->setDefaultSansSerifTypeface(FontManager::getJetBrainsMono(12.0f).getTypefacePtr());
 
         // 2. Trigger LookAndFeelChanged recursively
         sendLookAndFeelChange();

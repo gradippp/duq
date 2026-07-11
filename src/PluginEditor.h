@@ -41,9 +41,11 @@ public:
     void showSection(Section section);
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    std::unique_ptr<GlobalLookAndFeel> globalLookAndFeel;
+    // One LookAndFeel shared across all editor instances (so two DUQ instances
+    // in a host don't clobber each other's default LnF). The process-wide
+    // default is set by the first editor and cleared by the last, via a refcount.
+    juce::SharedResourcePointer<GlobalLookAndFeel> globalLookAndFeel;
+    static inline int defaultLnfRefCount = 0;
 
     DuqAudioProcessor& audioProcessor;
     juce::UndoManager& undoManager;
