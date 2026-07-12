@@ -2,15 +2,20 @@ name: Build Documentation
 
 on:
   push:
-    branches: [ "main", "dev", "doc-test" ]
+    branches: [ "master", "dev" ]
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
   pull_request:
-    branches: [ "main", "dev", "doc-test" ]
+    branches: [ "master", "dev" ]
     paths:
       - 'docs/**'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build_docs:
