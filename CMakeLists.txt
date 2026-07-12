@@ -140,6 +140,14 @@ target_link_libraries(DuqUIShared
         juce::juce_audio_utils
 )
 
+# Disable the JUCE web-browser backend for this target too. juce_audio_utils
+# pulls in juce_gui_extra, whose Linux browser backend needs gtk/gtk.h; without
+# this the Linux CI fails to compile DuqUIShared. Mirrors the plugin/tool targets.
+target_compile_definitions(DuqUIShared
+    PUBLIC
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0)
+
 file(GLOB_RECURSE DUQ_RESOURCES
     CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/res/*
